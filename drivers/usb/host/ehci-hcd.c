@@ -881,7 +881,12 @@ submit_int_msg(struct usb_device *dev, unsigned long pipe, void *buffer,
 	       int length, int interval)
 {
 
-	debug("dev=%p, pipe=%lu, buffer=%p, length=%d, interval=%d",
-	      dev, pipe, buffer, length, interval);
-	return -1;
+	if (usb_pipetype(pipe) != PIPE_INTERRUPT) {
+		debug("non-interrupt pipe (type=%lu)", usb_pipetype(pipe));
+		return -1;
+	}
+
+	debug("interval=%d", interval);
+
+	return ehci_submit_async(dev, pipe, buffer, length, NULL);
 }

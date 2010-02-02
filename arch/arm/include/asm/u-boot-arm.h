@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
+ *
  * (C) Copyright 2002
  * Sysgo Real-Time Solutions, GmbH <www.elinos.com>
  * Marius Groeger <mgroeger@sysgo.de>
@@ -35,6 +37,8 @@ extern ulong _bss_start;	/* code + data end == BSS start */
 extern ulong _bss_end;		/* BSS end */
 extern ulong IRQ_STACK_START;	/* top of IRQ stack */
 extern ulong FIQ_STACK_START;	/* top of FIQ stack */
+extern ulong _STACK_BASE;	/* stack base: (used to be same as _armboot_start) */
+
 
 /* cpu/.../cpu.c */
 int	cpu_init(void);

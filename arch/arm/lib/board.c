@@ -1,4 +1,6 @@
 /*
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
+ *
  * (C) Copyright 2002-2006
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
@@ -277,7 +279,11 @@ void start_armboot (void)
 #endif
 
 	/* Pointer is writable since we allocated a register for it */
+#if defined(CONFIG_STACK_BASE)
+	gd = (gd_t*)(_STACK_BASE - CONFIG_SYS_MALLOC_LEN - sizeof(gd_t));
+#else
 	gd = (gd_t*)(_armboot_start - CONFIG_SYS_MALLOC_LEN - sizeof(gd_t));
+#endif
 	/* compiler optimization barrier needed for GCC >= 3.4 */
 	__asm__ __volatile__("": : :"memory");
 
@@ -295,9 +301,18 @@ void start_armboot (void)
 		}
 	}
 
+#if defined(CONFIG_STACK_BASE)
+	/* _STACK_BASE is defined in the board-specific linker script
+	 * Heap was assumed to be just under the start address _armboot_start.
+	 * Heap is carved out of stack space in start.S
+	 */
+	mem_malloc_init (_STACK_BASE - CONFIG_SYS_MALLOC_LEN,
+			CONFIG_SYS_MALLOC_LEN);
+#else
 	/* armboot_start is defined in the board-specific linker script */
 	mem_malloc_init (_armboot_start - CONFIG_SYS_MALLOC_LEN,
 			CONFIG_SYS_MALLOC_LEN);
+#endif
 
 #ifndef CONFIG_SYS_NO_FLASH
 	/* configure available FLASH banks */

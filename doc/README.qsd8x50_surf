@@ -1,0 +1,208 @@
+
+U-Boot for QSD8x50 SURF
+=========================
+
+This document describes how to install u-boot on QSD8x50 SURF 
+(both 256mb and 512mb).
+
+
+-------------------------
+Compiling U-Boot
+-------------------------
+
+This version requires ld >= v2.18 (from binutils) and is known to work 
+with gcc 4.2.3
+
+$ make QSD8x50_surf_config
+$ make 
+
+This should yield u-boot.bin file. This is to be wrapped with an appropriate
+header so that it can replace the apps bootloader (appsboot.mbn).
+
+-------------------------
+U-Boot Configuration 
+-------------------------
+
+U-Boot can be customised by modifying the preprocessor definitions in 
+include/configs/QSD8x50_surf.h
+
+CONFIG_SILENT_CONSOLE
+All console output is supressed when defined.
+
+CONFIG_BOOTDELAY
+A value of "n" will set the autoboot countdown to n seconds on startup
+
+CONFIG_BOOTARGS "<string>"
+
+This sets the kernel commandline to <string>
+This can also be set at runtime by
+
+QSD8x50_surf>setenv bootargs <string>
+
+CONFIG_BOOTCOMMAND "<string>"
+
+This the command executed automatically after the autoboot delay runs out. 
+This will be bypassed if the autoboot is interrupted by the user. 
+
+SDC_INSTANCE
+Setting this to n will use slot n of the SD card. Valid values are 1-4. 
+
+CONFIG_LCDC_CONSOLE
+Defining this causes the stdin to be usbkbd and stdout, stderr to be lcdc.
+If undefined the console uses serial for stdin, stdout and stderr. 
+The serial port is setup to be 115200bps, 8 data bits, no parity, 1 stop bit 
+and no flow control. 
+
+-------------------------
+Memory Configuration
+-------------------------
+
+The following will set the DRAM configuration of U-Boot
+
+CONFIG_NEW_MEM_MAP
+If defined the new memory map addresses are used. 
+The base is 0x24000000 and there two banks initialised. 
+
+Note: 
+U-boot currently supports only 2 DRAM banks. 
+Using more than 2 banks require change to dram_init() function.
+
+The memory addresses and sizes can be set by changing the following parameters
+
+PHYS_SDRAM_1            
+PHYS_SDRAM_1_SIZE
+
+and the following, if applicable (for example not present when using old memory map)
+
+PHYS_SDRAM_2
+PHYS_SDRAM_2_SIZE 
+
+Each bank is passed individually to the kernel as a separate ATAG_MEM. 
+
+Hint: "ramconfig" command can be used to override the defaults set above.
+
+-------------------------
+New Commands
+-------------------------
+
+gettime
+
+Dumps the time elapsed since timer start. Useful for measuring performance.
+
+ramconfig
+
+Sets the DRAM bank sizes and base address
+Dumps the current configuration if no parameters are passed
+
+-------------------------
+Booting from NAND
+-------------------------
+
+A kernel image with mkimage header or multi-file image should be flashed to the
+APPS partition of the NAND (apps.mbn). 
+
+To boot from NAND, use the following command:
+
+nboot <load_addr> 0 0
+
+The offset of 0 is relative to the start of the APPS partition. 
+
+-------------------------
+Bitmap support. 
+-------------------------
+QSD8x50 LCDC driver currently support displaying 24 bpp 800x480 size bitmaps. 
+
+For eg: If the bitmap is on the sd card in slot 1 (depends on SDC_INSTANCE) 
+it can be displayed as follows
+
+QSD8x50_surf> mmcinit 
+QSD8x50_surf> ext2load mmc 0 <load_addr> <filename>
+QSD8x50_surf> bmp display <load_addr>
+
+This sequence when performed through CONFIG_BOOTCOMMAND 
+can serve as a splash screen.
+
+-------------------------
+Features
+-------------------------
+
+- Load images from SD card
+- Load images from TFTP 
+- Load images from NAND
+- Load images from USB storage 
+- Console on LCDC
+- USB keyboard support
+- Warm Boot support
+
+-------------------------
+Files modified 
+-------------------------
+./MAKEALL			
+./Makefile
+
+
+./common/cmd_ext2.c
+./common/console.c	
+./common/cmd_nand.c
+./common/Makefile
+./common/lcd.c
+
+./include/lcd.h
+./include/asm-arm/u-boot-arm.h	
+
+
+./drivers/mtd/nand/nand_base.c	
+./drivers/mtd/nand/nand_util.c
+./drivers/usb_ehci_core.c	
+./drivers\usb\Makefile	
+
+./fs/ext2/ext2fs.c	
+./fs/fat/fat.c	
+
+./lib_arm/board.c
+./lib_arm/bootm.c	
+
+-------------------------
+Files added
+-------------------------
+
+./board/QSD8x50_surf/Makefile
+./board/QSD8x50_surf/QSD8x50_surf.c
+./board/QSD8x50_surf/config.mk
+./board/QSD8x50_surf/lcdc.c
+./board/QSD8x50_surf/memory_map.c
+./board/QSD8x50_surf/memtypes.h
+./board/QSD8x50_surf/platform.S
+./board/QSD8x50_surf/u-boot.lds
+
+./cpu/armv7Scorpion/interrupts.c
+./cpu/armv7Scorpion/Makefile
+./cpu/armv7Scorpion/cache.S
+./cpu/armv7Scorpion/config.mk
+./cpu/armv7Scorpion/stack_heap.c
+./cpu/armv7Scorpion/start.S
+./cpu/armv7Scorpion/QSD8x50/Makefile
+./cpu/armv7Scorpion/QSD8x50/adm.c
+./cpu/armv7Scorpion/QSD8x50/cache_mmu.c
+./cpu/armv7Scorpion/QSD8x50/ehci.c
+./cpu/armv7Scorpion/QSD8x50/mmc.c
+./cpu/armv7Scorpion/QSD8x50/nand_qc.c
+./cpu/armv7Scorpion/QSD8x50/serial_qc.c
+./cpu/armv7Scorpion/QSD8x50/timer.c
+
+./include/arch-QSD8x50/QSD8x50_reg.h
+./include/arch-QSD8x50/adm.h
+./include/arch-QSD8x50/mmc.h
+./include/arch-QSD8x50/smem.h
+
+./include/asm-armv7Scorpion/arm_mrcmcr.h
+./include/asm-armv7Scorpion/armv7Scorpion.h
+./include/asm-armv7Scorpion/mmu.h
+
+./include/configs/QSD8x50_surf.h
+
+./common/cmd_gettime.c
+./common/cmd_ramconfig.c	
+
+./drivers/usb/usb_ehci_qc.c	
+

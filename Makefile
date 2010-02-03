@@ -2242,6 +2242,23 @@ smdk6400_config	:	unconfig
 	@$(MKCONFIG) smdk6400 arm arm1176 smdk6400 samsung s3c64xx
 	@echo "CONFIG_NAND_U_BOOT = y" >> $(obj)include/config.mk
 
+
+#########################################################################
+## ARMv7 Scorpion Systems
+#########################################################################
+QSD8x50_surf_1024mb_config	\
+QSD8x50_surf_512mb_config	\
+QSD8x50_surf_256mb_config	\
+QSD8x50_surf_config	:	unconfig
+	@$(MKCONFIG) QSD8x50_surf arm armv7Scorpion QSD8x50_surf NULL QSD8x50
+	@if [ "$(findstring 512mb,$@)" ] ; then                      	        \
+		echo "#define CONFIG_SDRAM_512MB" >> $(obj)include/config.h;		\
+        elif [ "$(findstring 1024mb,$@)" ] ; then                             \
+		echo "#define CONFIG_SDRAM_1024MB" >> $(obj)include/config.h;		\
+	else										\
+		echo "#define CONFIG_SDRAM_256MB" >> $(obj)include/config.h;		\
+	fi
+
 #========================================================================
 # MIPS
 #========================================================================

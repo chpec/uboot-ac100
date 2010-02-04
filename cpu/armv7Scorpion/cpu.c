@@ -56,7 +56,7 @@
 int cleanup_platform_before_linux(void);
 void mmu_init(void);
 
-int cpu_init (void)
+int arch_cpu_init (void)
 {
     uint32_t reg;
 
@@ -66,15 +66,15 @@ int cpu_init (void)
     mmu_init();
 
     /*
-     * Enable I-cache (I), D-cache (C), MMU (M), and branch prediction (Z). 
+     * Enable I-cache (I), D-cache (C), MMU (M), and branch prediction (Z).
      */
     RCP15_SCTLR(reg);
     reg |= (C1_IC | C1_Z);        // Enable L1 I-cache and Branch prediction
-    reg |= C1_MMU;                // Enable MMU 
+    reg |= C1_MMU;                // Enable MMU
 #ifdef CONFIG_DCACHE
     reg |= C1_DC;                 // C bit will enable L1 D and L2 caches
 #endif
-    WCP15_SCTLR(reg);        
+    WCP15_SCTLR(reg);
 
 	/*
 	 * setup up stacks if necessary

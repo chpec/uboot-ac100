@@ -37,6 +37,7 @@ COBJS	+= pll.o
 COBJS	+= lcdc.o
 COBJS   += proc_comm.o
 COBJS   += proc_comm_clients.o
+COBJS	+= cmd_npart.o
 
 SOBJS	=
 

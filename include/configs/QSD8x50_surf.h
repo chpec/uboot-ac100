@@ -311,6 +311,8 @@
 /*-----------------------------------------------------------------------
  * NAND configuration
  */
+#define CONFIG_USE_ACCELERATED_PAGE_READ
+
 #define CONFIG_SYS_MAX_NAND_DEVICE  1
 #define CONFIG_SYS_NAND_BASE        0xF0000000  // not used, but defined to prevent compile error
 

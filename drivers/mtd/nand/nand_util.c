@@ -1,6 +1,8 @@
 /*
  * drivers/mtd/nand/nand_util.c
  *
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
+ *
  * Copyright (C) 2006 by Weiss-Electronic GmbH.
  * All rights reserved.
  *
@@ -534,6 +536,10 @@ int nand_write_skip_bad(nand_info_t *nand, loff_t offset, size_t *length,
 	return 0;
 }
 
+#if defined(CONFIG_USE_ACCELERATED_PAGE_READ)
+int nand_read_qc(nand_info_t *nand, off_t ofs, size_t *len, u_char *buf);
+#endif
+
 /**
  * nand_read_skip_bad:
  *
@@ -564,11 +570,16 @@ int nand_read_skip_bad(nand_info_t *nand, loff_t offset, size_t *length,
 	}
 
 	if (len_incl_bad == *length) {
+#if defined(CONFIG_USE_ACCELERATED_PAGE_READ)
+		rval = nand_read_qc (nand, offset, length, buffer);
+#else
 		rval = nand_read (nand, offset, length, buffer);
+#endif
 		if (!rval || rval == -EUCLEAN)
 			return 0;
 		printf ("NAND read from offset %llx failed %d\n",
 			offset, rval);
+
 		return rval;
 	}
 
@@ -590,7 +601,11 @@ int nand_read_skip_bad(nand_info_t *nand, loff_t offset, size_t *length,
 		else
 			read_length = nand->erasesize - block_offset;
 
+#if defined(CONFIG_USE_ACCELERATED_PAGE_READ)
+		rval = nand_read_qc (nand, offset, &read_length, p_buffer);
+#else
 		rval = nand_read (nand, offset, &read_length, p_buffer);
+#endif
 		if (rval && rval != -EUCLEAN) {
 			printf ("NAND read from offset %llx failed %d\n",
 				offset, rval);

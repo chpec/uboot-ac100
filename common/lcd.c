@@ -1,6 +1,8 @@
 /*
  * Common LCD routines for supported CPUs
  *
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
+ *
  * (C) Copyright 2001-2002
  * Wolfgang Denk, DENX Software Engineering -- wd@denx.de
  *
@@ -80,10 +82,17 @@ static int lcd_init (void *lcdbase);
 
 static int lcd_clear (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[]);
 static void *lcd_logo (void);
+int lcd_display_bitmap_24(ulong bmp_image, int x, int y);
 
 static int lcd_getbgcolor (void);
 static void lcd_setfgcolor (int color);
 static void lcd_setbgcolor (int color);
+
+#ifdef CONFIG_QSD8X50_LCDC
+extern void lcdc_drawchar (ushort x, ushort y, uchar c);
+extern void lcd_disable(void);
+extern void lcd_enable(void);
+#endif
 
 char lcd_is_enabled = 0;
 
@@ -210,9 +219,18 @@ void lcd_printf(const char *fmt, ...)
 
 static void lcd_drawchars (ushort x, ushort y, uchar *str, int count)
 {
+#if (LCD_BPP == LCD_COLOR24) && defined(CONFIG_QSD8X50_LCDC)
+	uchar temp;
+	int i=0;
+	for(i=0;i<count;i++) {
+		/* Overflow to next line is automatically handled by x increment*/
+		lcdc_drawchar(x + (i*VIDEO_FONT_WIDTH),y,(uchar)*(str+i));
+	}
+	temp = video_fontdata[0]; //resolve unused warning in 24bpp case.
+	return;
+#else
 	uchar *dest;
 	ushort off, row;
-
 	dest = (uchar *)(lcd_base + y * lcd_line_length + x * (1 << LCD_BPP) / 8);
 	off  = x * (1 << LCD_BPP) % 8;
 
@@ -259,6 +277,7 @@ static void lcd_drawchars (ushort x, ushort y, uchar *str, int count)
 		*d  = rest | (*d & ((1 << (8-off)) - 1));
 #endif
 	}
+#endif /* LCD_BPP==LCD_COLOR24 */
 }
 
 /*----------------------------------------------------------------------*/
@@ -284,7 +303,7 @@ static inline void lcd_putc_xy (ushort x, ushort y, uchar c)
 }
 
 /************************************************************************/
-/**  Small utility to check that you got the colours right		*/
+/* Small utility to check that you got the colours right, not for 24bpp */
 /************************************************************************/
 #ifdef LCD_TEST_PATTERN
 
@@ -332,7 +351,6 @@ int drv_lcd_init (void)
 	lcd_base = (void *)(gd->fb_base);
 
 	lcd_line_length = (panel_info.vl_col * NBITS (panel_info.vl_bpix)) / 8;
-
 	lcd_init (lcd_base);		/* LCD initialization */
 
 	/* Device initialization */
@@ -356,7 +374,7 @@ static int lcd_clear (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[]
 	/* Setting the palette */
 	lcd_initcolregs();
 
-#elif LCD_BPP == LCD_COLOR8
+#elif (LCD_BPP == LCD_COLOR8) || (LCD_BPP == LCD_COLOR24)
 	/* Setting the palette */
 	lcd_setcolreg  (CONSOLE_COLOR_BLACK,       0,    0,    0);
 	lcd_setcolreg  (CONSOLE_COLOR_RED,	0xFF,    0,    0);
@@ -411,8 +429,9 @@ static int lcd_init (void *lcdbase)
 	lcd_ctrl_init (lcdbase);
 	lcd_is_enabled = 1;
 	lcd_clear (NULL, 1, 1, NULL);	/* dummy args */
+#ifdef CONFIG_QSD8X50_LCDC
 	lcd_enable ();
-
+#endif
 	/* Initialize the console */
 	console_col = 0;
 #ifdef CONFIG_LCD_INFO_BELOW_LOGO
@@ -434,6 +453,7 @@ static int lcd_init (void *lcdbase)
  * Returns new address for monitor, after reserving LCD buffer memory
  *
  * Note that this is running from ROM, so no write access to global data.
+ * This never runs for QSD8x50_surf LCDC as gd->fb_base is set in board init.
  */
 ulong lcd_setmem (ulong addr)
 {
@@ -517,6 +537,7 @@ void bitmap_plot (int x, int y)
 	bmap = &bmp_logo_bitmap[0];
 	fb   = (uchar *)(lcd_base + y * lcd_line_length + x);
 
+	/* Remember: vl_bpix = 24 for 24 bits, for other bit shift needed */
 	if (NBITS(panel_info.vl_bpix) < 12) {
 		/* Leave room for default color map */
 #if defined CONFIG_PXA250 || defined CONFIG_PXA27X || defined CONFIG_CPU_MONAHANS
@@ -634,15 +655,27 @@ int lcd_display_bitmap(ulong bmp_image, int x, int y)
 	colors = 1 << bmp_bpix;
 	compression = le32_to_cpu (bmp->header.compression);
 
+	/* vl_bpix is used to fill LCD configuration registers
+	 * 1 = 2 bits per pixel
+	 * 2 = 4 bits per pixel
+	 * 3 = 8 bits per pixel
+	 * 4 = 16 bits per pixel
+	 * 5 = 32 bits per pixel
+	 * There these are powers of 2 hence 1<< can be used
+	 * but for 24 bits per pixel we cannot use that trick
+	 */
 	bpix = NBITS(panel_info.vl_bpix);
 
-	if ((bpix != 1) && (bpix != 8) && (bpix != 16)) {
+	if ((bpix != 1) && (bpix != 8) && (bpix != 16) && (bpix != 24)) {
 		printf ("Error: %d bit/pixel mode, but BMP has %d bit/pixel\n",
 			bpix, bmp_bpix);
 		return 1;
 	}
 
-	/* We support displaying 8bpp BMPs on 16bpp LCDs */
+	/* We support displaying 8bpp BMPs on 16bpp LCDs
+	 * QSD8x50 also supports 24bit, no support for 8bpp
+	 * or 16bpp on that yet
+	 */
 	if (bpix != bmp_bpix && (bmp_bpix != 8 || bpix != 16)) {
 		printf ("Error: %d bit/pixel mode, but BMP has %d bit/pixel\n",
 			bpix,
@@ -653,6 +686,10 @@ int lcd_display_bitmap(ulong bmp_image, int x, int y)
 	debug ("Display-bmp: %d x %d  with %d colors\n",
 		(int)width, (int)height, (int)colors);
 
+	if (bmp_bpix == 24) {
+		/* 24bit bitmaps dont contain color palette */
+		return lcd_display_bitmap_24(bmp_image, 0,0);
+	}
 #if !defined(CONFIG_MCC200)
 	/* MCC200 LCD doesn't need CMAP, supports 1bpp b&w only */
 	if (bmp_bpix == 8) {
@@ -788,6 +825,59 @@ int lcd_display_bitmap(ulong bmp_image, int x, int y)
 
 	return (0);
 }
+
+/* Do not call this function directly, must be called from
+ * lcd_display_bitmap.
+ * Checks on the params are in the parent lcd_display_bitmap
+ */
+
+int lcd_display_bitmap_24(ulong bmp_image, int x, int y)
+{
+	int num_rows;
+	/* 3 bytes per pixel = 24 bits */
+	ulong sizeof_screen = panel_info.vl_row * panel_info.vl_col * 3;
+	ulong sizeof_one_row = panel_info.vl_col * 3;
+	bmp_image_t *bmp=(bmp_image_t *)bmp_image;
+	/* Disable lcd until copy is done...
+	 * Alternative is to implement double buffering.
+	 */
+#ifdef CONFIG_QSD8X50_LCDC
+	lcd_disable();
+#endif
+	/* start copying from last row */
+	void *dest =(void *) gd->fb_base + sizeof_screen - sizeof_one_row;
+
+	/* read from bitmap after header. There is no color map */
+	void *src = (void *) bmp + le32_to_cpu (bmp->header.data_offset);
+
+	/* copy to framebuffer */
+	if(bmp->header.image_size > sizeof_screen ) {
+		printf("Warning: image is oversized\n");
+	}
+
+
+#ifdef CONFIG_HORZ_FLIPPED_BMP
+	/* It is more optimal to flip it before hand in image editor
+	 * Also, Dont copy if its already in-place.
+	 */
+	if(src != (void *)gd->fb_base) {
+		memcpy(gd->fb_base, src, sizeof_screen);
+	}
+#else
+
+	/* image needs to be flipped then copied to framebuffer */
+	for(num_rows = panel_info.vl_row-1; num_rows >=0; num_rows --) {
+		memcpy(dest, src, sizeof_one_row);
+		dest -= sizeof_one_row;
+		src += sizeof_one_row;
+	}
+#endif
+#ifdef CONFIG_QSD8X50_LCDC
+    lcd_enable();
+#endif
+	return 0;
+}
+
 #endif
 
 static void *lcd_logo (void)

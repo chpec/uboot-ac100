@@ -1,8 +1,10 @@
 /*
  * MPC823 and PXA LCD Controller
+ * Also supports QSD8x50 LCDC
  *
  * Modeled after video interface by Paolo Scaffardi
  *
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * (C) Copyright 2001
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
@@ -181,6 +183,31 @@ typedef struct vidinfo {
 	u_long	mmio;		/* Memory mapped registers */
 } vidinfo_t;
 
+#elif defined(CONFIG_QSD8X50_LCDC)
+
+typedef struct vidinfo {
+	uint	vl_col;		/* Number of columns (i.e. 640) */
+	uint	vl_row;		/* Number of rows (i.e. 480) */
+	uint	vl_sync_width;	/* Width of display area used for setting sync*/
+	uint	vl_sync_height;	/* Height of display area used for sync */
+	uint	vl_hbp;		/* Horizontal Back porch */
+	uint	vl_hfp;		/* Horizontal Front porch */
+	uint	vl_vbp;		/* Vertical  Back porch */
+	uint	vl_vfp;		/* Vertical Front porch */
+	uint    vl_hsync_width; /* Horizontal Sync width */
+	u_char	vl_bpix;	/* Bits per pixel,CUSTOMISE!! */
+	ushort	*cmap;		/* Pointer to colormap, not needed in 24bpp */
+        void   *vl_palette_base; /*Pointer to palette*/
+} vidinfo_t;
+
+struct pixel_24bpp {
+    uchar blue;
+    uchar green;
+    uchar red;
+} __attribute__((__packed__));
+
+typedef struct pixel_24bpp pixel_24bpp_t;
+
 #else
 
 typedef struct vidinfo {
@@ -234,6 +261,7 @@ void lcd_show_board_info(void);
 #define LCD_COLOR4	2
 #define LCD_COLOR8	3
 #define LCD_COLOR16	4
+#define LCD_COLOR24	24
 
 /*----------------------------------------------------------------------*/
 #if defined(CONFIG_LCD_INFO_BELOW_LOGO)
@@ -256,7 +284,7 @@ void lcd_show_board_info(void);
 #endif
 
 /* Calculate nr. of bits per pixel  and nr. of colors */
-#define NBITS(bit_code)		(1 << (bit_code))
+#define NBITS(bit_code)		(((bit_code) == 24) ? 24 : (1 << (bit_code)))
 #define NCOLORS(bit_code)	(1 << NBITS(bit_code))
 
 /************************************************************************/
@@ -284,6 +312,21 @@ void lcd_show_board_info(void);
 # define CONSOLE_COLOR_CYAN	6
 # define CONSOLE_COLOR_GREY	14
 # define CONSOLE_COLOR_WHITE	15	/* Must remain last / highest	*/
+
+#elif LCD_BPP == LCD_COLOR24
+
+/*
+ * 24bpp color definitions
+ */
+# define CONSOLE_COLOR_BLACK	0
+# define CONSOLE_COLOR_RED	CONSOLE_COLOR_BLACK   + 3
+# define CONSOLE_COLOR_GREEN	CONSOLE_COLOR_RED     + 3
+# define CONSOLE_COLOR_YELLOW	CONSOLE_COLOR_GREEN   + 3
+# define CONSOLE_COLOR_BLUE	CONSOLE_COLOR_YELLOW  + 3
+# define CONSOLE_COLOR_MAGENTA	CONSOLE_COLOR_BLUE    + 3
+# define CONSOLE_COLOR_CYAN	CONSOLE_COLOR_MAGENTA + 3
+# define CONSOLE_COLOR_GREY	CONSOLE_COLOR_CYAN    + 3
+# define CONSOLE_COLOR_WHITE	CONSOLE_COLOR_GREY    + 3
 
 #else
 
@@ -322,7 +365,7 @@ void lcd_show_board_info(void);
 #if LCD_BPP == LCD_MONOCHROME
 # define COLOR_MASK(c)		((c)	  | (c) << 1 | (c) << 2 | (c) << 3 | \
 				 (c) << 4 | (c) << 5 | (c) << 6 | (c) << 7)
-#elif (LCD_BPP == LCD_COLOR8) || (LCD_BPP == LCD_COLOR16)
+#elif (LCD_BPP == LCD_COLOR8) || (LCD_BPP == LCD_COLOR16) || (LCD_BPP == LCD_COLOR24)
 # define COLOR_MASK(c)		(c)
 #else
 # error Unsupported LCD BPP.

@@ -136,6 +136,13 @@
 #define CONFIG_CMD_MMC
 #define CONFIG_CMD_FAT
 #define CONFIG_CMD_EXT2
+#define CONFIG_CMD_BMP
+#undef  CONFIG_HORZ_FLIPPED_BMP
+                       // Bitmap assumed horzontally flipped when defined.
+                       // Pre-flipping in a image editor saves boot time,
+                       // especially when dcache is off
+#define CONFIG_LCD_TESTPATTERN
+                       // Show Test pattern on LCD init.
 #define CONFIG_CMD_NAND
 #define CONFIG_CMD_RAMCONFIG
 #define CONFIG_CMD_GETTIME
@@ -236,6 +243,23 @@
 #endif /*CONFIG_SDRAM_256MB*/
 
 #endif /*CONFIG_NEW_MEM_MAP*/
+
+/*
+ *  LCDC configuration
+ */
+
+/* LCDC framebuffer is at MM HEAP1 in SMI
+ * Note: Update as memory map changes
+ */
+#define CONFIG_LCD
+#define	LCD_BPP		LCD_COLOR24
+#define CONFIG_QSD8X50_LCDC
+#define CONFIG_LCDC_800x480
+
+#ifdef CONFIG_QSD8X50_LCDC
+#   define LCDC_FB_ADDR 0x02B00000
+#   define LCDC_FB_SIZE 0x00300000
+#endif
 
 #define CONFIG_SERIAL_CONSOLE
 #define CONFIG_SYS_WHITE_ON_BLACK       /*Console colors*/

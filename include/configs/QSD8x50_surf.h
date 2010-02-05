@@ -110,14 +110,6 @@
 #define CONFIG_SYS_MAX_STACK_SPACE (CONFIG_STACKSIZE + \
 		                    CONFIG_SYS_GBL_DATA_SIZE + 12)
 
-/*
- * Ethernet driver (LAN91C111 controller)
- */
-#define CONFIG_DRIVER_SMC91111
-#undef  CONFIG_SMC_USE_32_BIT
-#define CONFIG_SMC91111_BASE    (EBI2CS7_BASE + 0x0300)
-#undef  CONFIG_SMC91111_EXT_PHY
-
 #define HAPPY_LED_BASE_BANK1          (EBI2CS7_BASE + 0x0282)
 #define HAPPY_LED_BASE_BANK2          (EBI2CS7_BASE + 0x0284)
 
@@ -137,10 +129,10 @@
  */
 #include <config_cmd_default.h>
 
-#define	CONFIG_CMD_DHCP
-#define	CONFIG_CMD_PING
 #undef  CONFIG_CMD_FLASH     // no flash support
 #undef  CONFIG_CMD_IMLS
+#undef  CONFIG_CMD_NET
+#undef  CONFIG_CMD_NFS
 #define CONFIG_CMD_MMC
 #define CONFIG_CMD_FAT
 #define CONFIG_CMD_EXT2

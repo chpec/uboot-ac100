@@ -2259,6 +2259,15 @@ QSD8x50_surf_config	:	unconfig
 		echo "#define CONFIG_SDRAM_256MB" >> $(obj)include/config.h;		\
 	fi
 
+chromeos_st1q_stub_config	:	unconfig
+	@$(MKCONFIG) chromeos/st1q/stub arm armv7Scorpion chromeos_st1q NULL QSD8x50
+
+chromeos_st1q_fast_config	:	unconfig
+	@$(MKCONFIG) chromeos/st1q/fast arm armv7Scorpion chromeos_st1q NULL QSD8x50
+
+chromeos_st1q_recovery_config	:	unconfig
+	@$(MKCONFIG) chromeos/st1q/recovery arm armv7Scorpion chromeos_st1q NULL QSD8x50
+
 #========================================================================
 # MIPS
 #========================================================================

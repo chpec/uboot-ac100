@@ -65,18 +65,18 @@ void show_boot_progress(int progress)
 
 int board_init (void)
 {
-	DECLARE_GLOBAL_DATA_PTR;
+    DECLARE_GLOBAL_DATA_PTR;
 
-	/* arch number of Qualcomm MSM */
-	gd->bd->bi_arch_number = LINUX_MACH_TYPE;
+    /* arch number of Qualcomm MSM */
+    gd->bd->bi_arch_number = LINUX_MACH_TYPE;
 
-	/* address of boot parameters */
-	gd->bd->bi_boot_params = CFG_QC_BOOT_PARAM_ADDR;
+    /* address of boot parameters */
+    gd->bd->bi_boot_params = CFG_QC_BOOT_PARAM_ADDR;
 
-	gd->flags = 0;
+    gd->flags = 0;
 
     // Write to the SURF LEDs
-    IO_WRITE16(HAPPY_LED_BASE_BANK2, 0x000F);
+    IO_WRITE16(HAPPY_LED_BASE_BANK2, 0x0001);
 
     /* Initialize GPT timer support */
     timer_init();
@@ -106,10 +106,7 @@ int board_init (void)
 #endif
 
     // Write to the SURF LEDs
-    IO_WRITE16(HAPPY_LED_BASE_BANK2, get_timer(0)/CONFIG_SYS_HZ);
-
-//uncomment following to see time till now in seconds on the SURF LEDs
-//    IO_WRITE16(HAPPY_LED_BASE_BANK2, get_timer(0)/CONFIG_SYS_HZ);
+    IO_WRITE16(HAPPY_LED_BASE_BANK2, 0x0002);
 
     return 0;
 }
@@ -172,7 +169,7 @@ int cleanup_platform_before_linux(void)
 #endif
 
     // Write to the SURF LEDs
-    IO_WRITE16(HAPPY_LED_BASE_BANK2, 0x0FFF);
+    IO_WRITE16(HAPPY_LED_BASE_BANK2, 0x0004);
 
     /* Just about to boot the kernel, next power collapse should warm boot
      * on wakeup.

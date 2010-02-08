@@ -169,3 +169,25 @@ int cleanup_platform_before_linux(void)
 
     return(0);
 }
+
+void board_lcd_enable(void)
+{
+    const uint	GPIO_BANK1 = 0xa9100c00;
+    const uint	GPIO_BANK2 = 0xa9000804;
+
+    uint	value = IO_READ32(GPIO_BANK1);
+
+    value |= (1 << 4) | (1 << 16);
+
+    IO_WRITE32(GPIO_BANK1, value);
+
+    value = IO_READ32(GPIO_BANK2);
+
+    value |= (1 << 18);
+
+    IO_WRITE32(GPIO_BANK2, value);
+}
+
+void board_lcd_disble(void)
+{
+}

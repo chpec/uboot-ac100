@@ -42,11 +42,28 @@
  * Note: Update as memory map changes
  */
 #define CONFIG_LCD
-#define LCD_BPP		LCD_COLOR24
 #define CONFIG_QSD8X50_LCDC
-#define CONFIG_LCDC_1280x720
-#define LCDC_FB_ADDR 0x2C600000
-#define LCDC_FB_SIZE 0x00300000
+#define LCD_BPP		LCD_COLOR24
+
+#ifdef CONFIG_QSD8X50_LCDC
+#   define LCDC_FB_ADDR		0x2C600000
+#   define LCDC_FB_SIZE		0x00300000
+
+/* 1280x720x24 @ 60 Hz */
+#   define LCDC_vl_col		1280
+#   define LCDC_vl_row		720
+#   define LCDC_vl_sync_width	1280
+#   define LCDC_vl_sync_height	720
+#   define LCDC_vl_hbp		160
+#   define LCDC_vl_hfp		24
+#   define LCDC_vl_vbp		29
+#   define LCDC_vl_vfp		3
+#   define LCDC_vl_hsync_width	136
+
+#   define LCD_MD_VAL_MHZ	0x1CF969FF //74.17 MHZ
+#   define LCD_NS_VAL_MHZ	0x86F81B49 //74.17 MHZ
+#   define LCD_CLK_PCOM_MHZ	74250000
+#endif
 
 /*
  * MMC/SD card

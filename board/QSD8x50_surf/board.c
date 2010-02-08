@@ -180,3 +180,11 @@ int cleanup_platform_before_linux(void)
     printf("Time Elapsed since timer start:%lu s\n", get_timer(0) / CONFIG_SYS_HZ);
     return(0);
 }
+
+void board_lcd_enable(void)
+{
+}
+
+void board_lcd_disble(void)
+{
+}

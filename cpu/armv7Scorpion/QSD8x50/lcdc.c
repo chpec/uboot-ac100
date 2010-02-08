@@ -42,62 +42,27 @@ void *lcd_console_address;		/* Start of console buffer	*/
 short console_col;
 short console_row;
 
-#if !defined(CONFIG_LCDC_800x480) && !defined(CONFIG_LCDC_1280x720)
-#error Choose either CONFIG_LCDC_800x480 or CONFIG_LCDC_1280x720 in board header
-#endif
-
-#define LCD_BPP	    LCD_COLOR24
-
-
-#if defined(CONFIG_LCDC_800x480) && !defined(CONFIG_LCDC_1280x720)
-
-/* 800x480x24 @ 60 Hz */
 vidinfo_t panel_info = {
-	vl_col:		800,
-	vl_row:		480,
-	vl_sync_width:	800,
-	vl_sync_height:	600,
-	vl_hbp:		216,
-	vl_hfp:		40,
-	vl_vbp:		27,
-	vl_vfp:		1,
-	vl_hsync_width: 136,
+	vl_col:		LCDC_vl_col,
+	vl_row:		LCDC_vl_row,
+	vl_sync_width:  LCDC_vl_sync_width,
+	vl_sync_height:	LCDC_vl_sync_height,
+	vl_hbp:		LCDC_vl_hbp,
+	vl_hfp:		LCDC_vl_hfp,
+	vl_vbp:		LCDC_vl_vbp,
+	vl_vfp:		LCDC_vl_vfp,
+	vl_hsync_width:	LCDC_vl_hsync_width,
 	vl_bpix:	LCD_BPP
 };
-
-#define LCD_MD_VAL_MHZ 0x0005FFCF  //40 Mhz
-#define LCD_NS_VAL_MHZ 0xFFD41B49  //40 Mhz
-#define LCD_CLK_PCOM_MHZ 40000000
-
-#endif /* CONFIG_LCDC_800x480*/
-
-
-#if defined(CONFIG_LCDC_1280x720) && !defined(CONFIG_LCDC_800x480)
-/* 1280x720x24 @ 60 Hz */
-vidinfo_t panel_info = {
-	vl_col:		1280,
-	vl_row:		720,
-	vl_sync_width:	1280,
-	vl_sync_height:	720,
-	vl_hbp:		260,
-	vl_hfp:		110,
-	vl_vbp:		25,
-	vl_vfp:		5,
-	vl_hsync_width:	136,
-	vl_bpix:	LCD_BPP
-};
-
-#define LCD_MD_VAL_MHZ 0x1CF969FF  //74.17 MHZ
-#define LCD_NS_VAL_MHZ 0x86F81B49 //74.17 MHZ
-#define LCD_CLK_PCOM_MHZ 74170000
-
-#endif /* CONFIG_LCDC_1280x720*/
 
 void lcd_disable (void);
 void lcd_enable (void);
 void lcdc_init (void);
 void lcdc_initpalette (void);
 pixel_24bpp_t lcdc_getcolor (ushort regno);
+
+extern void board_lcd_enable (void);
+extern void board_lcd_disble (void);
 
 /*
  *  Print test pattern if CONFIG_LCD_TESTPATTERN is defined.
@@ -113,7 +78,7 @@ static void lcdc_test_pattern(void)
 }
 
 /*
- *  Main init function called by lcd driver                                                     .
+ *  Main init function called by lcd driver.
  *  Inits and then prints test pattern if required.
  */
 
@@ -228,18 +193,18 @@ void lcdc_init(void)
 /*
  * Enables the LCDC by using MDP_LCDC_EN
  */
-
 void lcd_enable (void)
 {
     IO_WRITE32(MDP_LCDC_EN, 0x00000001);
+    board_lcd_enable();
 }
 
 /*
  * Disables the LCDC by using MDP_LCDC_EN
  */
-
 void lcd_disable (void)
 {
+    board_lcd_disble();
     IO_WRITE32(MDP_LCDC_EN, 0x00000000);
 }
 

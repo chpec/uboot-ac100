@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2009, Code Aurora Forum. All rights reserved.
+ * Copyright (c) 2007-2010, Code Aurora Forum. All rights reserved.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -32,6 +32,7 @@ extern uint32_t proc_comm_get_uart_clk(int uart_base_addr);
 
 /*SDC related*/
 extern void proc_comm_sdcard_gpio_config(int instance);
+extern void proc_comm_vreg_control(int vreg, int level, int state);
 extern void proc_comm_sdcard_power(int state);
 extern void proc_comm_set_sdcard_clk(int instance, int rate);
 extern uint32_t proc_comm_get_sdcard_clk(int instance);

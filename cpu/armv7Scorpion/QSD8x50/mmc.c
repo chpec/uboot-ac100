@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
+ * Copyright (c) 2009-2010, Code Aurora Forum. All rights reserved.
  *
  * (C) Copyright 2003
  * Kyle Harris, Nexus Technologies, Inc. kharris@nexus-tech.net
@@ -24,6 +24,9 @@
  */
 
 #include <common.h>
+
+#ifndef CONFIG_GENERIC_MMC
+
 #include <mmc.h>
 #include <part.h>
 #include <fat.h>
@@ -1695,3 +1698,4 @@ static void sdcard_gpio_config(int instance)
 } /*sdcard_gpio_config()*/
 
 #endif /* CONFIG_MMC */
+#endif /* CONFIG_GENERIC_MMC */

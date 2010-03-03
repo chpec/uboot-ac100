@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
+ * Copyright (c) 2009-2010 Code Aurora Forum. All rights reserved.
  *
  * (C) Copyright 2002
  * Sysgo Real-Time Solutions, GmbH <www.elinos.com>
@@ -42,8 +42,26 @@
 #endif
 #ifdef USE_PROC_COMM
 #include <asm/arch/proc_comm.h>
+#include <asm/arch/proc_comm_clients.h>
 #endif
 #include <asm/arch/memtypes.h>
+
+#ifdef CONFIG_GENERIC_MMC
+#include <mmc.h>
+#endif
+
+#ifdef CONFIG_QSD_SDCC
+#include <qsd_sdcc.h>
+#include <asm/arch/adm.h>
+
+static struct mmc mmc_1;
+static struct mmc mmc_2;
+static sdcc_params_t sdcc_1;
+static sdcc_params_t sdcc_3;
+
+#define SDCC_1_VOLTAGE_SUPPORTED 0x00FF8000;
+#define SDCC_3_VOLTAGE_SUPPORTED 0x00FF8080;
+#endif
 
 extern int timer_init(void);
 extern void scorpion_pll_init (void);
@@ -96,6 +114,10 @@ int board_init (void)
 #else
 
     udelay(5000000);
+#endif
+
+#ifdef CONFIG_GENERIC_MMC
+     mmc_initialize(gd->bd);
 #endif
 
 #ifdef CONFIG_QSD8X50_LCDC
@@ -158,8 +180,10 @@ int cleanup_platform_before_linux(void)
     /* Defined in start.S, global to track warm booting */
     extern ulong _warmboot;
 #ifdef CONFIG_MMC
+#ifndef CONFIG_GENERIC_MMC
     // Cleanup SD resources if they were used
     SDCn_deinit(SDC_INSTANCE);
+#endif
 #endif
 
     /* Just about to boot the kernel, next power collapse should warm boot
@@ -191,3 +215,87 @@ void board_lcd_enable(void)
 void board_lcd_disble(void)
 {
 }
+
+#ifdef CONFIG_QSD_SDCC
+int board_mmc_init(bd_t *bis)
+{
+    /* populate sdcc_1 struct with base addresses and other info */
+    sdcc_1.instance             = 1;
+    sdcc_1.base                 = SDC1_BASE;
+    sdcc_1.ns_addr              = SDC1_NS_REG;
+    sdcc_1.md_addr              = SDC1_MD_REG;
+    sdcc_1.row_reset_mask       = ROW_RESET__SDC1___M;
+    sdcc_1.glbl_clk_ena_mask    = GLBL_CLK_ENA__SDC1_H_CLK_ENA___M;
+    sdcc_1.adm_crci_num         = ADM_CRCI_SDC1;
+
+    /* GPIO config */
+	proc_comm_sdcard_gpio_config(1);
+
+    mmc_1.priv      = &sdcc_1;
+    mmc_1.send_cmd  = sdcc_send_cmd;
+    mmc_1.set_ios   = sdcc_set_ios;
+    mmc_1.init      = sdcc_init;
+    mmc_1.voltages  = SDCC_1_VOLTAGE_SUPPORTED ;
+    mmc_1.host_caps = MMC_MODE_4BIT | MMC_MODE_HS | MMC_MODE_HS_52MHz;
+    mmc_1.f_min     = 400000;
+    mmc_1.f_max     = MCLK_48MHz;
+    sprintf(mmc_1.name, "External_Card");
+
+
+    /* populate sdcc_3 struct with base addresses and other info */
+    sdcc_3.instance             = 3;
+    sdcc_3.base                 = SDC3_BASE;
+    sdcc_3.ns_addr              = SDC3_NS_REG;
+    sdcc_3.md_addr              = SDC3_MD_REG;
+    sdcc_3.row_reset_mask       = ROW_RESET__SDC3___M;
+    sdcc_3.glbl_clk_ena_mask    = GLBL_CLK_ENA__SDC3_H_CLK_ENA___M;
+    sdcc_3.adm_crci_num         = ADM_CRCI_SDC3;
+
+    /* GPIO config */
+    proc_comm_sdcard_gpio_config(3);
+
+    mmc_2.priv      = &sdcc_3;
+    mmc_2.send_cmd  = sdcc_send_cmd;
+    mmc_2.set_ios   = sdcc_set_ios;
+    mmc_2.init      = sdcc_init;
+    mmc_2.voltages  = SDCC_3_VOLTAGE_SUPPORTED;
+    mmc_2.host_caps = MMC_MODE_4BIT | MMC_MODE_8BIT | MMC_MODE_HS | MMC_MODE_HS_52MHz;
+    mmc_2.f_min     = 400000;
+    mmc_2.f_max     = MCLK_48MHz;
+    sprintf(mmc_2.name, "Embedded_MMC");
+
+
+    /* register our available mmc interfaces with mmc framework */
+    mmc_register(&mmc_1);
+    mmc_register(&mmc_2);
+
+    return 0;
+}
+
+int board_sdcc_init(sdcc_params_t *sd)
+{
+    if(sd->instance == 1)
+    {
+        /* Power cycle the card. */
+        proc_comm_vreg_control(PM_VREG_GP6_ID, 2850, 0);
+        udelay(1000);
+        proc_comm_vreg_control(PM_VREG_GP6_ID, 2850, 1);
+    }
+    else if(sd->instance == 3)
+    {
+        /* Power cycle the card. */
+        proc_comm_vreg_control(PM_VREG_GP6_ID, 2850, 0);
+        proc_comm_vreg_control(PM_VREG_WLAN_ID, 2850, 0);
+        udelay(1000);
+        proc_comm_vreg_control(PM_VREG_GP6_ID, 2850, 1);
+        proc_comm_vreg_control(PM_VREG_WLAN_ID, 2850, 1);
+    }
+    else
+    {
+        /* this board does not have an sd/mmc card on this interface. */
+        return -1;
+    }
+
+    return 0;
+}
+#endif

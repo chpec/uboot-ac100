@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2009, Code Aurora Forum. All rights reserved.
+ * Copyright (c) 2007-2010, Code Aurora Forum. All rights reserved.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -31,6 +31,34 @@ extern uint32_t proc_comm_clk_enable(uint32_t clk);
 extern uint32_t proc_comm_clk_disable(uint32_t clk);
 extern uint32_t proc_comm_is_clk_enabled(uint32_t clk);
 
+void proc_comm_vreg_control(int vreg, int level, int state)
+{
+    proc_comm_t pc_pkt;
+
+    /* If turning it ON, set the level first. */
+    if(state)
+    {
+        pc_pkt.command = PROC_COMM_VREG_SET_LEVEL;
+        pc_pkt.data1   = vreg;
+        pc_pkt.data2   = level;
+        pc_pkt.status  = PROC_COMM_INVALID_STATUS;
+
+        do
+        {
+            msm_proc_comm((proc_comm_t *)&pc_pkt);
+        }while(PROC_COMM_CMD_SUCCESS != pc_pkt.status);
+    }
+
+
+    pc_pkt.command = PROC_COMM_VREG_SWITCH;
+    pc_pkt.data1 = vreg;
+    pc_pkt.data2 = state ? PROC_COMM_ENABLE : PROC_COMM_DISABLE;
+    pc_pkt.status  = PROC_COMM_INVALID_STATUS;
+
+    do{
+        msm_proc_comm((proc_comm_t *)&pc_pkt);
+    }while(PROC_COMM_CMD_SUCCESS != pc_pkt.status);
+}
 
 void proc_comm_sdcard_power(int state)
 {
@@ -88,7 +116,6 @@ case 2:
 	break;
 
 case 3:
-	//not tested
 	gpio_tlmm_config(88, 1, GPIO_OUTPUT, GPIO_NO_PULL, GPIO_8MA,
 			GPIO_ENABLE);
         gpio_tlmm_config(89, 1, GPIO_OUTPUT, GPIO_PULL_UP, GPIO_8MA,
@@ -101,7 +128,14 @@ case 3:
 			GPIO_ENABLE);
         gpio_tlmm_config(93, 1, GPIO_OUTPUT, GPIO_PULL_UP, GPIO_8MA,
 			GPIO_ENABLE);
-
+        gpio_tlmm_config(158, 1, GPIO_OUTPUT, GPIO_PULL_UP, GPIO_8MA,
+			GPIO_ENABLE);
+        gpio_tlmm_config(159, 1, GPIO_OUTPUT, GPIO_PULL_UP, GPIO_8MA,
+			GPIO_ENABLE);
+        gpio_tlmm_config(160, 1, GPIO_OUTPUT, GPIO_PULL_UP, GPIO_8MA,
+			GPIO_ENABLE);
+        gpio_tlmm_config(161, 1, GPIO_OUTPUT, GPIO_PULL_UP, GPIO_8MA,
+			GPIO_ENABLE);
 	break;
 
 case 4:

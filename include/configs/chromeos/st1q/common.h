@@ -121,7 +121,7 @@
 #define CONFIG_BOOTP_MASK		CONFIG_BOOTP_DEFAULT
 
 #define CONFIG_BOOTDELAY		0
-#define CONFIG_BOOTARGS			"quiet root=/dev/mmcblk0p3 rootwait noresume noswap ro loglevel=1"
+#define CONFIG_BOOTARGS			"root=/dev/mmcblk0p3 rootwait noresume noswap ro console=ttyMSM2,115200"
 #define CONFIG_BOOTCOMMAND		"if mmc init; then ext2load mmc 0:3 0x20007fc0 boot/vmlinux.uimg; bootm 0x20007fc0; fi;"
 
 /*

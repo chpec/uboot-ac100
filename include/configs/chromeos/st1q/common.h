@@ -207,8 +207,8 @@
 #define CONFIG_ENV_IS_NOWHERE
 #define CONFIG_ENV_SIZE         0x2000
 
-/* Boot parameter address */
-#define CFG_QC_BOOT_PARAM_ADDR    PHYS_SDRAM_1
+/* Boot parameter address - offset of 0x100 from base of first sdram region */
+#define CFG_QC_BOOT_PARAM_ADDR    (PHYS_SDRAM_1 + 0x100)
 
 /*-----------------------------------------------------------------------
  * The qc_serial driver uses the register names below. Set UART_BASE

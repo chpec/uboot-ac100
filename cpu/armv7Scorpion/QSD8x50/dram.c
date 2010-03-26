@@ -61,14 +61,6 @@ int dram_reinit (uint32_t start_addr, uint32_t size, int bank_num)
                    bd->bi_dram[bank_num].size,
                    MEM_TYPE_KERNEL);
 
-    /*
-     * ATAGs are always at the base of the first sd ram region.
-     * If that is changing, update the resulting ATAG address
-     */
-    if (0 == bank_num) {
-        bd->bi_boot_params = start_addr;
-    }
-
     return 0;
 }
 

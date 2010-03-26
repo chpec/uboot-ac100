@@ -116,10 +116,6 @@ int board_init (void)
     udelay(5000000);
 #endif
 
-#ifdef CONFIG_GENERIC_MMC
-     mmc_initialize(gd->bd);
-#endif
-
 #ifdef CONFIG_QSD8X50_LCDC
     gd->fb_base = LCDC_FB_ADDR;
 #endif

@@ -13,7 +13,6 @@
  */
 
 #include <common.h>
-#include <asm/arch/QSD8x50_reg.h>
 
 #ifdef USE_PROC_COMM
 
@@ -60,6 +59,7 @@ void proc_comm_vreg_control(int vreg, int level, int state)
     }while(PROC_COMM_CMD_SUCCESS != pc_pkt.status);
 }
 
+#ifndef CONFIG_GENERIC_MMC
 void proc_comm_sdcard_power(int state)
 {
     volatile proc_comm_t pc_pkt;
@@ -79,6 +79,7 @@ void proc_comm_sdcard_power(int state)
       }
 
 }
+#endif
 
 void proc_comm_sdcard_gpio_config(int instance)
 {

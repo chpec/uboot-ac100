@@ -183,9 +183,8 @@ static int sdcc_mclk_set(int instance, enum SD_MCLK_speed speed)
 #ifndef USE_PROC_COMM
     #error "use proc_comm"
 #else
-    /* SDCn_NS_REG clk enable bits are turned on automatically as part of */
-    /* setting clk speed. No need to enable sdcard clk explicitely */
     proc_comm_set_sdcard_clk(instance, speed);
+    proc_comm_enable_sdcard_clk(instance);
 #endif /*USE_PROC_COMM*/
 
    return 0;
@@ -497,6 +496,8 @@ int sdcc_init(struct mmc *mmc)
 
     /* Set the interface clock */
     proc_comm_set_sdcard_clk(sd->instance, MCLK_400KHz);
+    proc_comm_enable_sdcard_clk(sd->instance);
+
 
     /* Initialize controller */
     sdcc_controller_init(sd);

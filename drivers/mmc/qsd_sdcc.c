@@ -155,13 +155,22 @@ int sdcc_read_data(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
     }
     else
     {
-        while( (status = IO_READ32(base + MCI_STATUS)) & MCI_STATUS_READ_DATA_MASK)
+        int read_len = (data->blocks) * (data->blocksize);
+
+        while((status = IO_READ32(base + MCI_STATUS)) & MCI_STATUS_READ_DATA_MASK)
         {
-            if(status & MCI_STATUS__RXDATA_AVLBL___M)
+            /* rx data available bit is not cleared immidiately.
+             * read only the requested amount of data and wait for
+             * the bit to be cleared.
+             */
+            if(byte_count < read_len)
             {
-                *dest_ptr = IO_READ32(base + MCI_FIFO);
-                dest_ptr++;
-                byte_count += 4;
+                if(status & MCI_STATUS__RXDATA_AVLBL___M)
+                {
+                    *dest_ptr = IO_READ32(base + MCI_FIFO);
+                    dest_ptr++;
+                    byte_count += 4;
+                }
             }
         }
     }

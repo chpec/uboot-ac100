@@ -122,7 +122,7 @@
 
 #define CONFIG_BOOTDELAY		0
 #define CONFIG_BOOTARGS			"root=/dev/mmcblk0p3 rootwait noresume noswap ro console=ttyMSM2,115200"
-#define CONFIG_BOOTCOMMAND		"if mmc init; then ext2load mmc 0:3 0x20007fc0 boot/vmlinux.uimg; bootm 0x20007fc0; fi;"
+#define CONFIG_BOOTCOMMAND		"if mmcinfo 0; then ext2load mmc 0:3 0x20007fc0 boot/vmlinux.uimg; bootm 0x20007fc0; fi;"
 
 /*
  * Miscellaneous configurable options
@@ -216,6 +216,16 @@
  */
 #define UART_BASE     UART3_BASE
 
+#define CONFIG_GENERIC_MMC
+#define CONFIG_QSD_SDCC
+
+
+#ifndef CONFIG_GENERIC_MMC
+/* This section regarding legacy mmc will be removed once the new
+ * mmc framework has been verified/tested sufficiently. If there are
+ * any major issues, you could go back to the legacy mmc by undefining
+ * the generic mmc code.
+ */
 
 /*-----------------------------------------------------------------------
  * Choose the SD controller to use. SDC1, 2, 3, or 4.
@@ -226,6 +236,7 @@
 #define USE_4_BIT_BUS_MODE
 #define CONFIG_SYS_MMC_BASE		0xF0000000    // not used, but defined to prevent compile error
 #define PROC_COMM_VREG_SDC  PM_VREG_GP6_ID
+#endif
 
 /*-----------------------------------------------------------------------
  * NAND configuration

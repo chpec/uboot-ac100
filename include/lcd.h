@@ -4,7 +4,7 @@
  *
  * Modeled after video interface by Paolo Scaffardi
  *
- * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
+ * Copyright (c) 2009-2010, Code Aurora Forum. All rights reserved.
  *
  * (C) Copyright 2001
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
@@ -195,6 +195,7 @@ typedef struct vidinfo {
 	uint	vl_vbp;		/* Vertical  Back porch */
 	uint	vl_vfp;		/* Vertical Front porch */
 	uint    vl_hsync_width; /* Horizontal Sync width */
+	uint    vl_vsync_width; /* Vertical Sync width */
 	u_char	vl_bpix;	/* Bits per pixel,CUSTOMISE!! */
 	ushort	*cmap;		/* Pointer to colormap, not needed in 24bpp */
         void   *vl_palette_base; /*Pointer to palette*/

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
+ * Copyright (c) 2009-2010, Code Aurora Forum. All rights reserved.
  *
  * (C) Copyright 2002
  * Sysgo Real-Time Solutions, GmbH <www.elinos.com>
@@ -43,6 +43,33 @@
 ******************************/
 void scorpion_pll_init (void)
 {
+#ifdef CPU_IS_QSD8x50A
+    // PLL to standby
+    IO_WRITE32(PLL_CTL, PLL_CTL__PLL_MODE__STAND_BY);
+    udelay(10);
+
+    // Calibrate for 384-1497 MHz
+    IO_WRITE32(PLL_CAL, 0x270A0000);
+    IO_WRITE32(PLL_CTL, PLL_CTL__PLL_MODE__FULL_CALIBRATION);
+    udelay(10);
+
+    // Wait for CAL_ALL_DONE_N to go from 1 to 0
+    while((IO_READ32(PLL_STATUS) & PLL_STATUS__CAL_ALL_DONE_N___M) != 0);
+
+    // SHOT to start PLL at 1190.4MHz (31 * 38.4MHz)
+    IO_WRITE32(PLL_FSM_CTL_EXT, PLL_FSM_CTL_EXT__STATIC_BITS |
+                                PLL_FSM_CTL_EXT__FRESWI_MODE__SHOT |
+                                (31 << PLL_FSM_CTL_EXT__TARG_L_VAL___S));
+    IO_WRITE32(PLL_CTL, PLL_CTL__PLL_MODE__NORMAL_OPERATION);
+    udelay(10);
+
+    // Wait for all bits in SWITCH_IN_PROGRESS_N to go from 1 to 0
+    while((IO_READ32(PLL_STATUS) & PLL_STATUS__SWITCH_IN_PROGRESS_N___M) != 0);
+
+    // Switch Scorpion clocks source from AXI clock to Scorpion PLL
+    IO_WRITE32(SPSS_CLK_SEL, 2);
+
+#else /* CPU_IS_QSD8x50A */
     uint32_t spare2;
     int target_L_val;
 
@@ -130,5 +157,6 @@ void scorpion_pll_init (void)
     // Switch Scorpion clocks source from AXI clock to Scorpion PLL
     IO_WRITE32(SPSS_CLK_SEL, 2);
 
+#endif /* CPU_IS_QSD8x50A */
 }
 

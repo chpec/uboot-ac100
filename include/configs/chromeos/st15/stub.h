@@ -33,46 +33,10 @@
  * Software Foundation.
  */
 
-#ifndef __CONFIGS_CHROMEOS_ST1Q_RECOVERY_H
-#define __CONFIGS_CHROMEOS_ST1Q_RECOVERY_H
+#ifndef __CONFIGS_CHROMEOS_ST15_STUB_H
+#define __CONFIGS_CHROMEOS_ST15_STUB_H
 
-/*
- * Configure the LCD for recovery mode.
- * LCDC framebuffer is at MM HEAP1 in SMI
- * Note: Update as memory map changes
- */
-#define CONFIG_LCD
-#define CONFIG_QSD8X50_LCDC
-#define LCD_BPP		LCD_COLOR24
-
-#ifdef CONFIG_QSD8X50_LCDC
-#   define LCDC_FB_ADDR		0x2C600000
-#   define LCDC_FB_SIZE		0x00300000
-
-/* 1280x720x24 @ 60 Hz */
-#   define LCDC_vl_col		1280
-#   define LCDC_vl_row		720
-#   define LCDC_vl_sync_width	1280
-#   define LCDC_vl_sync_height	720
-#   define LCDC_vl_hbp		160
-#   define LCDC_vl_hfp		24
-#   define LCDC_vl_vbp		29
-#   define LCDC_vl_vfp		3
-#   define LCDC_vl_hsync_width	136
-#   define LCDC_vl_vsync_width	6
-
-#   define LCD_MD_VAL_MHZ	0x1CF969FF //74.17 MHZ
-#   define LCD_NS_VAL_MHZ	0x86F81B49 //74.17 MHZ
-#   define LCD_CLK_PCOM_MHZ	74250000
-#endif
-
-/*
- * MMC/SD card
- */
-#define CONFIG_MMC
-#define CONFIG_DOS_PARTITION
-
-#include <configs/chromeos/st1q/common.h>
+#include <configs/chromeos/st15/common.h>
 
 /*
  * What monitor functions should be included
@@ -93,17 +57,8 @@
 #define CONFIG_CMD_RUN		/* run command in env variable	*/
 #define CONFIG_CMD_SETGETDCR	/* DCR support on 4xx		*/
 #define CONFIG_CMD_XIMG		/* Load part of Multi Image	*/
-#define	CONFIG_CMD_DHCP
-#define	CONFIG_CMD_PING
-#define CONFIG_CMD_MMC
-#define CONFIG_CMD_FAT
-#define CONFIG_CMD_EXT2
-#define CONFIG_CMD_BMP
 #define CONFIG_CMD_NAND
 #define CONFIG_CMD_RAMCONFIG
 #define CONFIG_CMD_GETTIME
-#define CONFIG_CMD_NPART
 
-#define CONFIG_DYNAMIC_INODE_SIZE
-
-#endif //__CONFIGS_CHROMEOS_ST1Q_RECOVERY_H
+#endif //__CONFIGS_CHROMEOS_ST15_STUB_H

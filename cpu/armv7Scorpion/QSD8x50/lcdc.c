@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
+ * Copyright (c) 2009-2010, Code Aurora Forum. All rights reserved.
  *
  * (C) Copyright 2001-2002
  * Wolfgang Denk, DENX Software Engineering -- wd@denx.de
@@ -52,6 +52,7 @@ vidinfo_t panel_info = {
 	vl_vbp:		LCDC_vl_vbp,
 	vl_vfp:		LCDC_vl_vfp,
 	vl_hsync_width:	LCDC_vl_hsync_width,
+	vl_vsync_width:	LCDC_vl_vsync_width,
 	vl_bpix:	LCD_BPP
 };
 
@@ -129,7 +130,7 @@ void lcdc_init(void)
    hsync_period = panel_info.vl_sync_width + panel_info.vl_hfp + panel_info.vl_hbp;
    vsync_period = panel_info.vl_sync_height + panel_info.vl_vfp + panel_info.vl_vbp;
    hsync_width  = panel_info.vl_hsync_width;
-   vsync_width  = 6 * hsync_period;
+   vsync_width  = panel_info.vl_vsync_width * hsync_period;
    vsync_starty = panel_info.vl_vbp * hsync_period;
    vsync_endy   = (((panel_info.vl_vbp + panel_info.vl_sync_height) * hsync_period) - 1);
 

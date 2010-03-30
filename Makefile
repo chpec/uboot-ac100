@@ -1,4 +1,5 @@
 #
+# Copyright (c) 2010, Code Aurora Forum. All rights reserved.
 # (C) Copyright 2000-2010
 # Wolfgang Denk, DENX Software Engineering, wd@denx.de.
 #
@@ -2267,6 +2268,15 @@ chromeos_st1q_fast_config	:	unconfig
 
 chromeos_st1q_recovery_config	:	unconfig
 	@$(MKCONFIG) chromeos/st1q/recovery arm armv7Scorpion chromeos_st1q NULL QSD8x50
+
+chromeos_st15_stub_config	:	unconfig
+	@$(MKCONFIG) chromeos/st15/stub arm armv7Scorpion chromeos_st15 NULL QSD8x50
+
+chromeos_st15_fast_config	:	unconfig
+	@$(MKCONFIG) chromeos/st15/fast arm armv7Scorpion chromeos_st15 NULL QSD8x50
+
+chromeos_st15_recovery_config	:	unconfig
+	@$(MKCONFIG) chromeos/st15/recovery arm armv7Scorpion chromeos_st15 NULL QSD8x50
 
 #========================================================================
 # MIPS

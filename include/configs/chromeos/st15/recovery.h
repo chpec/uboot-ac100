@@ -77,7 +77,7 @@
  * MMC/SD card
  */
 #define CONFIG_MMC
-#define CONFIG_DOS_PARTITION
+#define CONFIG_EFI_PARTITION
 
 #include <configs/chromeos/st15/common.h>
 

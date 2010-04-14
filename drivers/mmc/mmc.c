@@ -217,6 +217,67 @@ free_buffer:
 
 static ulong mmc_bread(int dev_num, ulong start, lbaint_t blkcnt, void *dst)
 {
+#ifdef CONFIG_GENERIC_MMC_MULTI_BLOCK_READ
+	struct mmc_cmd cmd;
+	struct mmc_data data;
+	int err;
+	int stoperr = 0;
+	struct mmc *mmc = find_mmc_device(dev_num);
+	int blklen;
+
+	if (!mmc)
+		return 0;
+
+	blklen = mmc->read_bl_len;
+
+	/* We always do full block reads from the card */
+	err = mmc_set_blocklen(mmc, blklen);
+
+	if (err) {
+		printf("set read bl len failed err = %d\n\r", err);
+		return 0;
+	}
+
+	if (blkcnt > 1)
+		cmd.cmdidx = MMC_CMD_READ_MULTIPLE_BLOCK;
+	else
+		cmd.cmdidx = MMC_CMD_READ_SINGLE_BLOCK;
+
+	if (mmc->high_capacity)
+		cmd.cmdarg = start;
+	else
+		cmd.cmdarg = start * blklen;
+
+	cmd.resp_type = MMC_RSP_R1;
+	cmd.flags = 0;
+
+	data.dest = dst;
+	data.blocks = blkcnt;
+	data.blocksize = blklen;
+	data.flags = MMC_DATA_READ;
+
+	err = mmc_send_cmd(mmc, &cmd, &data);
+
+	if (err) {
+		printf("mmc read failed err= %d\n\r", err);
+		return 0;
+	}
+
+	if (blkcnt > 1) {
+		cmd.cmdidx = MMC_CMD_STOP_TRANSMISSION;
+		cmd.cmdarg = 0;
+		cmd.resp_type = MMC_RSP_R1;
+		cmd.flags = 0;
+		stoperr = mmc_send_cmd(mmc, &cmd, NULL);
+
+		if (stoperr) {
+			printf("mmc stop read failed err = %d\n\r",stoperr);
+			return 0;
+		}
+	}
+
+	return blkcnt;
+#else /* CONFIG_GENERIC_MMC_MULTI_BLOCK_READ */
 	int err;
 	int i;
 	struct mmc *mmc = find_mmc_device(dev_num);
@@ -246,6 +307,7 @@ static ulong mmc_bread(int dev_num, ulong start, lbaint_t blkcnt, void *dst)
 	}
 
 	return blkcnt;
+#endif
 }
 
 int mmc_go_idle(struct mmc* mmc)

@@ -64,15 +64,17 @@ enum SD_MCLK_speed
 #endif /*USE_PROC_COMM */
 
 
-#define SDCC_ERR_CRC_FAIL       -1
-#define SDCC_ERR_DATA_WRITE     -2
-#define SDCC_ERR_BLOCK_NUM      -3
-#define SDCC_ERR_RX_OVERRUN     -4
-#define SDCC_ERR_DATA_TIMEOUT   -5
-#define SDCC_ERR_DATA_CRC_FAIL  -6
-#define SDCC_ERR_DATA_ADM_ERR   -7
-#define SDCC_ERR_DATA_START_BIT -8
-#define SDCC_ERR_TIMEOUT        -19
+#define SDCC_ERR_GENERIC        -1
+#define SDCC_ERR_CRC_FAIL       -2
+#define SDCC_ERR_DATA_WRITE     -3
+#define SDCC_ERR_BLOCK_NUM      -4
+#define SDCC_ERR_RX_OVERRUN     -5
+#define SDCC_ERR_DATA_TIMEOUT   -6
+#define SDCC_ERR_DATA_CRC_FAIL  -7
+#define SDCC_ERR_DATA_ADM_ERR   -8
+#define SDCC_ERR_DATA_START_BIT -9
+#define SDCC_ERR_INVALID_STATUS -10
+#define SDCC_ERR_TIMEOUT        -19 /* Must match with the time out error value defined in mmc.h of mmc framework. */
 #define SDCC_ERR_NOT_IMPLEMENTED   -111
 
 int  sdcc_init(struct mmc *mmc);

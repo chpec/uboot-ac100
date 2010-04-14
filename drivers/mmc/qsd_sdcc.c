@@ -30,7 +30,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #include <asm/arch/proc_comm.h>
 #endif /*USE_PROC_COMM */
 
-
 #ifdef SDCC_CMD_DEBUG
 #define sdcc_cmd_debug(fmt,args...) printf(fmt, ##args)
 #else
@@ -100,7 +99,7 @@ int sdcc_read_data_cleanup(struct mmc *mmc)
     else
     {
         /* Wait for the blk status bits to be set. */
-        while (!(IO_READ32(base + MCI_STATUS) & MCI_STATUS_BLK_END_MASK));
+        while (!(IO_READ32(base + MCI_STATUS) & MCI_STATUS__DATAEND___M));
     }
 
     /* Clear the status bits. */
@@ -332,11 +331,12 @@ int sdcc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
     uint32_t status;
     uint32_t base = ((sdcc_params_t*)(mmc->priv))->base;
 
-    if(IO_READ32(base + MCI_STATUS))
+    if((status = IO_READ32(base + MCI_STATUS)))
     {
         /* Some implementation error. */
         /* must always start with all status bits cleared. */
-        return -1;
+        sdcc_debug("\n Invalid status while entering: status = %x, cmd = %d", status, cmd->cmdidx);
+        return SDCC_ERR_INVALID_STATUS;
     }
 
     if(data)
@@ -345,12 +345,6 @@ int sdcc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
         {
             /* write not yet implemented. */
             return SDCC_ERR_DATA_WRITE;
-        }
-
-        if(data->blocks != 1)
-        {
-            /* We support only reading one block at a time. */
-            return SDCC_ERR_BLOCK_NUM;
         }
 
         sdcc_start_data(mmc, cmd, data);
@@ -434,13 +428,21 @@ int sdcc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
         }
     }
 
-    /* read status bits to verify any condition that was not handled. */
-    status = IO_READ32(base + MCI_STATUS);
-    if(status)
+    /* read status bits to verify any condition that was not handled.
+     * SDIO_INTR bit is set on D0 line status and is valid only in
+     * case of SDIO interface. So it can be safely ignored.
+     */
+    if(IO_READ32(base + MCI_STATUS) & MCI_STATUS__SDIO_INTR___M)
+    {
+        MCI_CLEAR_STATUS(base, MCI_CLEAR__SDIO_INTR_CLR___M);
+    }
+
+    if((status = IO_READ32(base + MCI_STATUS)))
     {
         /* Some implementation error. */
-        /* must always end with all status bits cleared. */
-        return -1;
+        /* must always exit with all status bits cleared. */
+        sdcc_debug("\n Invalid status while exiting: status = %x, cmd = %d", status, cmd->cmdidx);
+        return SDCC_ERR_INVALID_STATUS;
     }
 
     sdcc_cmd_debug("\nsdcc_send_cmd: cmd = %d response = 0x%x", cmd->cmdidx, cmd->response[0]);
@@ -488,7 +490,7 @@ int sdcc_init(struct mmc *mmc)
     if(board_sdcc_init(sd))
     {
         /* error */
-        return -1;
+        return SDCC_ERR_GENERIC;
     }
 
     /* Enable clock */

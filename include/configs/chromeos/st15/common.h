@@ -220,6 +220,7 @@
 
 /* MMC interface */
 #define CONFIG_GENERIC_MMC
+#define CONFIG_GENERIC_MMC_MULTI_BLOCK_READ
 #define CONFIG_QSD_SDCC
 
 

@@ -113,6 +113,7 @@ int do_mmcinfo (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	struct mmc *mmc;
 	int dev_num;
+	int err;
 
 	if (argc < 2)
 		dev_num = 0;
@@ -121,9 +122,17 @@ int do_mmcinfo (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 	mmc = find_mmc_device(dev_num);
 
-	if (mmc) {
-		mmc_init(mmc);
+	if (!mmc) {
+		printf("mmcinfo: no mmc device found for dev_num = %d\n",
+			dev_num);
+		return 1;
+	}
 
+	err = mmc_init(mmc);
+	if (err) {
+		printf("mmcinfo: mmc_init() failed. err = %d\n", err);
+		return 1;
+	} else {
 		print_mmcinfo(mmc);
 	}
 

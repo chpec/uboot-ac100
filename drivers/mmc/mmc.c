@@ -689,6 +689,8 @@ int mmc_startup(struct mmc *mmc)
 	uint mult, freq;
 	u64 cmult, csize;
 	struct mmc_cmd cmd;
+	char ext_csd[512];
+	u32 sec_count;
 
 	/* Put the Card in Identify Mode */
 	cmd.cmdidx = MMC_CMD_ALL_SEND_CID;
@@ -775,25 +777,6 @@ int mmc_startup(struct mmc *mmc)
 	else
 		mmc->write_bl_len = 1 << ((cmd.response[3] >> 22) & 0xf);
 
-	if (mmc->high_capacity) {
-		csize = (mmc->csd[1] & 0x3f) << 16
-			| (mmc->csd[2] & 0xffff0000) >> 16;
-		cmult = 8;
-	} else {
-		csize = (mmc->csd[1] & 0x3ff) << 2
-			| (mmc->csd[2] & 0xc0000000) >> 30;
-		cmult = (mmc->csd[2] & 0x00038000) >> 15;
-	}
-
-	mmc->capacity = (csize + 1) << (cmult + 2);
-	mmc->capacity *= mmc->read_bl_len;
-
-	if (mmc->read_bl_len > 512)
-		mmc->read_bl_len = 512;
-
-	if (mmc->write_bl_len > 512)
-		mmc->write_bl_len = 512;
-
 	/* Select the card, and put it into Transfer Mode */
 	cmd.cmdidx = MMC_CMD_SELECT_CARD;
 	cmd.resp_type = MMC_RSP_R1b;
@@ -803,6 +786,55 @@ int mmc_startup(struct mmc *mmc)
 
 	if (err)
 		return err;
+
+	if(IS_SD(mmc))
+	{
+		if (mmc->high_capacity) {
+			csize = (mmc->csd[1] & 0x3f) << 16
+				| (mmc->csd[2] & 0xffff0000) >> 16;
+			cmult = 8;
+		} else {
+			csize = (mmc->csd[1] & 0x3ff) << 2
+				| (mmc->csd[2] & 0xc0000000) >> 30;
+			cmult = (mmc->csd[2] & 0x00038000) >> 15;
+		}
+		mmc->capacity = (csize + 1) << (cmult + 2);
+		mmc->capacity *= mmc->read_bl_len;
+	}
+	else
+	{
+		csize = (mmc->csd[1] & 0x3ff) << 2
+			| (mmc->csd[2] & 0xc0000000) >> 30;
+
+		if (csize == 0xFFF) {
+			/* Card capacity is > 2GB. Use SEC_COUNT
+			 * to find capacity.
+			 */
+			err = mmc_send_ext_csd(mmc, ext_csd);
+			if (err)
+				return err;
+
+			sec_count = (ext_csd[215] << 24) |
+				    (ext_csd[214] << 16) |
+				    (ext_csd[213] << 8)  |
+				    ext_csd[212];
+
+			mmc->capacity = sec_count * 512;
+		} else {
+			/* Card capacity is <= 2GB.
+			 * Use csize and cmult to find capacity.
+			 */
+			cmult = (mmc->csd[2] & 0x00038000) >> 15;
+			mmc->capacity = (csize + 1) << (cmult + 2);
+			mmc->capacity *= mmc->read_bl_len;
+		}
+	}
+
+	if (mmc->read_bl_len > 512)
+		mmc->read_bl_len = 512;
+
+	if (mmc->write_bl_len > 512)
+		mmc->write_bl_len = 512;
 
 	if (IS_SD(mmc))
 		err = sd_change_freq(mmc);

@@ -122,9 +122,25 @@
 
 #define CONFIG_BOOTP_MASK		CONFIG_BOOTP_DEFAULT
 
+#define CONFIG_CMD_SOURCE
+
 #define CONFIG_BOOTDELAY		0
 #define CONFIG_BOOTARGS			"quiet root=/dev/mmcblk0p3 rootwait noresume noswap ro loglevel=1 pmem_kernel_ebi1_size=32M pmem_gpu1_size=0 vmalloc=224M"
-#define CONFIG_BOOTCOMMAND		"if mmcinfo 0; then ext2load mmc 0:3 0x00007fc0 boot/vmlinux.uimg; bootm 0x00007fc0; fi;"
+
+#define CONFIG_BOOTCOMMAND                                              \
+        "if mmcinfo 0; then "                                           \
+           "if ext2load mmc 0:3 0x00000000 boot/boot_script.uimg; then "\
+              "source 0x00000000; "                                     \
+           "elif ext2load mmc 0:3 0x00007fc0 boot/vmlinux.uimg; then "  \
+                "bootm 0x00007fc0; "                                    \
+           "fi; "                                                       \
+        "elif mmcinfo 1; then "                                         \
+           "if ext2load mmc 1:3 0x00000000 boot/boot_script.uimg; then "\
+              "source 0x00000000; "                                     \
+           "elif ext2load mmc 1:3 0x00007fc0 boot/vmlinux.uimg; then "  \
+              "bootm 0x00007fc0; "                                      \
+           "fi; "                                                       \
+        "fi;"
 
 /*
  * Miscellaneous configurable options

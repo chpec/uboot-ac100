@@ -335,7 +335,9 @@ int sdcc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
     {
         /* Some implementation error. */
         /* must always start with all status bits cleared. */
-        sdcc_debug("\n Invalid status while entering: status = %x, cmd = %d", status, cmd->cmdidx);
+        printf("%s: Invalid status on entry: status = 0x%x, cmd = %d\n",
+                 __FUNCTION__, status, cmd->cmdidx);
+
         return SDCC_ERR_INVALID_STATUS;
     }
 
@@ -441,7 +443,9 @@ int sdcc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
     {
         /* Some implementation error. */
         /* must always exit with all status bits cleared. */
-        sdcc_debug("\n Invalid status while exiting: status = %x, cmd = %d", status, cmd->cmdidx);
+        printf("%s: Invalid status on exit: "
+                "status = 0x%x, cmd = %d\n", __FUNCTION__, status, cmd->cmdidx);
+
         return SDCC_ERR_INVALID_STATUS;
     }
 
@@ -449,12 +453,13 @@ int sdcc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 
     if(err)
     {
-        sdcc_debug("\nsdcc_send_cmd: err = %d, cmd = %d", err, cmd->cmdidx);
+        printf("%s: err = %d, cmd = %d\n", __FUNCTION__, err, cmd->cmdidx);
+
         if(data)
-            sdcc_debug(", blocksize = %d\n", data->blocksize);
-        else
-            sdcc_debug("\n");
+            printf("%s: blocksize = %d blocks = %d\n",
+                        __FUNCTION__, data->blocksize, data->blocks);
     }
+
     return err;
 }
 

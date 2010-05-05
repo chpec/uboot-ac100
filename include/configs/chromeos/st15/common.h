@@ -125,8 +125,8 @@
 #define CONFIG_CMD_SOURCE
 
 #define CONFIG_BOOTDELAY		0
-#define CONFIG_BOOTARGS			"quiet root=/dev/mmcblk0p3 rootwait noresume noswap ro loglevel=1 pmem_kernel_ebi1_size=32M pmem_gpu1_size=0 vmalloc=224M"
 
+#define CONFIG_BOOTARGS			"quiet root=/dev/mmcblk0p3 rootwait noresume noswap ro loglevel=1 pmem_kernel_ebi1_size=96M pmem_adsp_size=34200K"
 #define CONFIG_BOOTCOMMAND                                              \
         "if mmcinfo 0; then "                                           \
            "if ext2load mmc 0:3 0x00000000 boot/boot_script.uimg; then "\

@@ -87,18 +87,21 @@ void proc_comm_sdcard_gpio_config(int instance)
 //Note: GPIO_NO_PULL is for clock lines.
 switch (instance) {
 case 1:
+        /* Some cards had crc erorrs on multiblock reads.
+         * Increasing drive strength from 8 to 16 fixed that.
+         */
 	gpio_tlmm_config(51, 1, GPIO_OUTPUT, GPIO_PULL_UP,
-			 GPIO_8MA, GPIO_ENABLE);
+			 GPIO_16MA, GPIO_ENABLE);
 	gpio_tlmm_config(52, 1, GPIO_OUTPUT, GPIO_PULL_UP,
-			 GPIO_8MA, GPIO_ENABLE);
+			 GPIO_16MA, GPIO_ENABLE);
 	gpio_tlmm_config(53, 1, GPIO_OUTPUT, GPIO_PULL_UP,
-			 GPIO_8MA, GPIO_ENABLE);
+			 GPIO_16MA, GPIO_ENABLE);
 	gpio_tlmm_config(54, 1, GPIO_OUTPUT, GPIO_PULL_UP,
-			 GPIO_8MA, GPIO_ENABLE);
+			 GPIO_16MA, GPIO_ENABLE);
 	gpio_tlmm_config(55, 1, GPIO_OUTPUT, GPIO_PULL_UP,
-			 GPIO_8MA, GPIO_ENABLE);
+			 GPIO_16MA, GPIO_ENABLE);
 	gpio_tlmm_config(56, 1, GPIO_OUTPUT, GPIO_NO_PULL,
-			 GPIO_8MA, GPIO_ENABLE);
+			 GPIO_16MA, GPIO_ENABLE);
 	break;
 
 case 2:

@@ -616,6 +616,10 @@ retry_scr:
 	if (!(__be32_to_cpu(switch_status[3]) & SD_HIGHSPEED_SUPPORTED))
 		return 0;
 
+	/* If host does not support high-speed, we return */
+	if(!(mmc->host_caps & MMC_MODE_HS))
+		return 0;
+
 	err = sd_switch(mmc, SD_SWITCH_SWITCH, 0, 1, (u8 *)&switch_status);
 
 	if (err)

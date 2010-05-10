@@ -73,6 +73,12 @@ static uint32_t sd_box_mode_entry[8]   __attribute__ ((aligned(8))); /*  Must al
                                              MCI_STATUS__RXACTIVE___M)
 
 
+/* Writes to MCI port are not effective for 3 ticks of PCLK.
+   The min pclk is 144KHz which gives 6.94 us/tick.
+   Thus 21us == 3 ticks.
+   */
+#define PORT_RUSH_TIMEOUT (21)
+
 /* verify if data read was successful and clear up status bits */
 int sdcc_read_data_cleanup(struct mmc *mmc)
 {
@@ -212,22 +218,25 @@ void sdcc_set_ios(struct mmc *mmc)
         IO_WRITE32(base + MCI_CLK, (clk_reg | (BUS_WIDTH_8 << MCI_CLK__WIDEBUS___S)));
     }
 
-    if(mmc->clock == MCLK_400KHz)
+    if((mmc->clock == MCLK_144KHz) ||
+       (mmc->clock == MCLK_400KHz) ||
+       (mmc->clock == MCLK_25MHz))
     {
         uint32_t temp32;
 
-        sdcc_mclk_set(instance, MCLK_400KHz);
+        sdcc_mclk_set(instance, mmc->clock);
 
         /* Latch data on falling edge */
         temp32 = IO_READ32(base + MCI_CLK) & ~MCI_CLK__SELECT_IN___M;
         temp32 |= (MCI_CLK__SELECT_IN__ON_THE_FALLING_EDGE_OF_MCICLOCK << MCI_CLK__SELECT_IN___S);
         IO_WRITE32(base + MCI_CLK, temp32);
     }
-    else if(mmc->clock == MCLK_48MHz)
+    else if((mmc->clock == MCLK_40MHz) ||
+            (mmc->clock == MCLK_48MHz))
     {
         uint32_t temp32;
 
-        sdcc_mclk_set(instance, MCLK_48MHz);
+        sdcc_mclk_set(instance, mmc->clock);
 
         /* Card is in high speed mode, use feedback clock. */
         temp32 = IO_READ32(base + MCI_CLK);
@@ -268,7 +277,11 @@ void sdcc_start_data(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data
     IO_WRITE32(base + MCI_DATA_TIMER,  RD_DATA_TIMEOUT);
     IO_WRITE32(base + MCI_DATA_LENGTH, xfer_size);
 
+    /* Delay for previous param to be applied. */
+    udelay(PORT_RUSH_TIMEOUT);
     IO_WRITE32(base + MCI_DATA_CTL, data_ctrl);
+    /* Delay before adm */
+    udelay(PORT_RUSH_TIMEOUT);
 }
 
 /* Set proper bit for the cmd register value */
@@ -321,7 +334,9 @@ void sdcc_start_command(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *d
     sdcc_get_cmd_reg_value(cmd, data, &creg);
 
     IO_WRITE32(base + MCI_ARGUMENT, cmd->cmdarg);
+    udelay(PORT_RUSH_TIMEOUT);
     IO_WRITE32(base + MCI_CMD, creg);
+    udelay(PORT_RUSH_TIMEOUT);
 }
 
 /* Send command as well as send/receive data */
@@ -413,6 +428,7 @@ int sdcc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
         {
             /* there was some error while sending the cmd. cancel the data operation. */
             IO_WRITE32(base + MCI_DATA_CTL, 0x0);
+            udelay(PORT_RUSH_TIMEOUT);
         }
         else
         {
@@ -428,6 +444,18 @@ int sdcc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
                 while(1);
             }
         }
+    }
+
+    if(err)
+    {
+        status = IO_READ32(base + MCI_STATUS);
+        printf("%s: cmd = %d, err = %d status = 0x%x, response = 0x%x\n",
+               __FUNCTION__, cmd->cmdidx, err, status, cmd->response[0]);
+
+        if(data)
+            printf("%s: blocksize = %d blocks = %d\n",
+                        __FUNCTION__, data->blocksize, data->blocks);
+        return err;
     }
 
     /* read status bits to verify any condition that was not handled.
@@ -451,15 +479,6 @@ int sdcc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 
     sdcc_cmd_debug("\nsdcc_send_cmd: cmd = %d response = 0x%x", cmd->cmdidx, cmd->response[0]);
 
-    if(err)
-    {
-        printf("%s: err = %d, cmd = %d\n", __FUNCTION__, err, cmd->cmdidx);
-
-        if(data)
-            printf("%s: blocksize = %d blocks = %d\n",
-                        __FUNCTION__, data->blocksize, data->blocks);
-    }
-
     return err;
 }
 
@@ -474,6 +493,7 @@ void sdcc_controller_init(sdcc_params_t *sd)
 
     /*  Clear all status bits */
     IO_WRITE32(sd->base + MCI_CLEAR, 0x07FFFFFF);
+    udelay(PORT_RUSH_TIMEOUT);
 
     /*  Power control to the card, enable MCICLK with power save mode */
     /*  disabled, otherwise the initialization clock cycles will be */

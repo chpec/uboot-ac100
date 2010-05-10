@@ -246,9 +246,15 @@ int board_mmc_init(bd_t *bis)
     mmc_1.send_cmd  = sdcc_send_cmd;
     mmc_1.set_ios   = sdcc_set_ios;
     mmc_1.init      = sdcc_init;
-    mmc_1.voltages  = SDCC_1_VOLTAGE_SUPPORTED ;
-    mmc_1.host_caps = MMC_MODE_4BIT | MMC_MODE_HS | MMC_MODE_HS_52MHz;
-    mmc_1.f_min     = 400000;
+    mmc_1.voltages  = SDCC_1_VOLTAGE_SUPPORTED;
+    /* Some cards had communication errors at high-speed (25-50MHz range).
+     * Limiting the host capabilities to low-speed (25MHz).
+     */
+    mmc_1.host_caps = MMC_MODE_4BIT;
+    /* Some cards had communication errors on ST1.5 at 400KHz.
+     * Reduced speed to 144KHz to support wider range of SD cards.
+     */
+    mmc_1.f_min     = MCLK_144KHz;
     mmc_1.f_max     = MCLK_48MHz;
     sprintf(mmc_1.name, "External_Card");
 
@@ -271,7 +277,7 @@ int board_mmc_init(bd_t *bis)
     mmc_2.init      = sdcc_init;
     mmc_2.voltages  = SDCC_3_VOLTAGE_SUPPORTED;
     mmc_2.host_caps = MMC_MODE_4BIT | MMC_MODE_8BIT | MMC_MODE_HS | MMC_MODE_HS_52MHz;
-    mmc_2.f_min     = 400000;
+    mmc_2.f_min     = MCLK_400KHz;
     mmc_2.f_max     = MCLK_48MHz;
     sprintf(mmc_2.name, "Embedded_MMC");
 
@@ -291,6 +297,7 @@ int board_sdcc_init(sdcc_params_t *sd)
         proc_comm_vreg_control(PM_VREG_WLAN_ID, 2850, 0);
         udelay(1000);
         proc_comm_vreg_control(PM_VREG_WLAN_ID, 2850, 1);
+        udelay(1000);
     }
     else if(sd->instance == 3)
     {
@@ -298,6 +305,7 @@ int board_sdcc_init(sdcc_params_t *sd)
         proc_comm_vreg_control(PM_VREG_WLAN_ID, 2850, 0);
         udelay(1000);
         proc_comm_vreg_control(PM_VREG_WLAN_ID, 2850, 1);
+        udelay(1000);
     }
     else
     {

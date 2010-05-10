@@ -47,6 +47,7 @@ enum SD_MCLK_speed
 {	MCLK_144KHz = 144000,
 	MCLK_400KHz = 400000,
 	MCLK_25MHz = 25000000,
+        MCLK_40MHz = 40000000,
 	MCLK_48MHz = 49152000, /* true 48Mhz not supported, use next highest */
 	MCLK_49MHz = 49152000,
 	MCLK_50MHz = 50000000,

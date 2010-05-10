@@ -100,8 +100,6 @@ void lcd_ctrl_init (void *lcdbase)
 /*
  *  LCDC init routine, called by the lcd_ctrl_init
  */
-
-#if 1
 void lcdc_init(void)
 {
    unsigned int X = 0;
@@ -189,7 +187,6 @@ void lcdc_init(void)
    IO_WRITE32(MDP_DMA_P_IBUF_Y_STRIDE, width*3);
    IO_WRITE32(MDP_DMA_P_OUT_XY,        0x0);         // This must be 0
 }
-#endif
 
 /*
  * Enables the LCDC by using MDP_LCDC_EN

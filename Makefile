@@ -2112,6 +2112,9 @@ spear320_config :	unconfig
 spear600_config :	unconfig
 	@$(MKCONFIG) -n $@ -t $@ spear6xx arm arm926ejs $(@:_config=) spear spear
 
+voguev210_config :	unconfig
+	@$(MKCONFIG) $(@:_config=) arm s5pv21x voguev210 samsung s5pv210
+
 SX1_stdout_serial_config \
 SX1_config:		unconfig
 	@mkdir -p $(obj)include

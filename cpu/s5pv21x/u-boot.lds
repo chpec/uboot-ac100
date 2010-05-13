@@ -35,7 +35,6 @@ SECTIONS
 	  cpu/s5pv21x/start.o	(.text)
 	  cpu/s5pv21x/s5pv210/cpu_init.o	(.text)
 	  board/samsung/voguev210/lowlevel_init.o	(.text)
-	  cpu/s5pv21x/movi.o (.text)
           board/samsung/voguev210/flash.o (.text) 
 	  *(.text)
 	}

@@ -40,8 +40,6 @@
 
 void serial_setbrg(void)
 {
-	DECLARE_GLOBAL_DATA_PTR;
-
 	int i;
 	for (i = 0; i < 100; i++);
 }

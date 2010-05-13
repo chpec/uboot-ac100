@@ -372,7 +372,7 @@ mmcsd_boot:
         sub     sp, sp, #12
         mov     fp, #0
 #endif
-	bl      movi_bl2_copy
+#	bl      movi_bl2_copy
 	b       after_copy
 
 nor_boot:

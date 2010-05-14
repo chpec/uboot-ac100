@@ -702,7 +702,7 @@ int mmc_startup(struct mmc *mmc)
 	u64 cmult, csize;
 	struct mmc_cmd cmd;
 	char ext_csd[512];
-	u32 sec_count;
+	u64 sec_count;
 
 	/* Put the Card in Identify Mode */
 	cmd.cmdidx = MMC_CMD_ALL_SEND_CID;

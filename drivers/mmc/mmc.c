@@ -472,7 +472,15 @@ int mmc_change_freq(struct mmc *mmc)
 	if (mmc->version < MMC_VERSION_4)
 		return 0;
 
-	mmc->card_caps |= MMC_MODE_4BIT;
+	/*
+	 * Version 4 and above MMC cards will always support the 8bit
+	 * Its the Host controller who decides between the 4bit and 8bit
+	 */
+
+	if(mmc->host_caps & MMC_MODE_8BIT)
+		mmc->card_caps |= MMC_MODE_8BIT;
+	else
+		mmc->card_caps |= MMC_MODE_4BIT;
 
 	err = mmc_send_ext_csd(mmc, ext_csd);
 

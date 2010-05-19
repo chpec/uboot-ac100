@@ -42,14 +42,18 @@
  * LCDC framebuffer is at MM HEAP1 in SMI
  * Note: Update as memory map changes
  */
+/* Commented out. LCD not working on ST1.5.
+ * Enable it once working.
+ */
+#if 0
 #define CONFIG_LCD
-#define CONFIG_SYS_WHITE_ON_BLACK
 #define CONFIG_QSD8X50_LCDC
+#endif
 
 #define LCD_BPP		LCD_COLOR24
 
 #ifdef CONFIG_QSD8X50_LCDC
-#   define LCDC_FB_ADDR		0x02b00000
+#   define LCDC_FB_ADDR		0x02a00000
 #   define LCDC_FB_SIZE		0x00400000
 
 /* 1366x768x24 @ 60 Hz */
@@ -61,7 +65,7 @@
 #   define LCDC_vl_hfp		20
 #   define LCDC_vl_vbp		22
 #   define LCDC_vl_vfp		1
-#   define LCDC_vl_hsync_width	40
+#   define LCDC_vl_hsync_width	60
 #   define LCDC_vl_vsync_width	3
 
 #   define LCD_MD_VAL_MHZ	0x1CF969FF //74.17 MHZ
@@ -102,7 +106,12 @@
 #define CONFIG_CMD_FAT
 #define CONFIG_CMD_EXT2
 
+/* Commented out. BMP needs LCD. LCD is not working.
+ * Enable once LCD is working.
+ */
+#if 0
 #define CONFIG_CMD_BMP
+#endif
 
 #define CONFIG_CMD_NAND
 #define CONFIG_CMD_RAMCONFIG

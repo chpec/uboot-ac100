@@ -255,37 +255,21 @@ void board_lcd_enable(void)
     const uint	GPIO_BANK1 = 0xa9100c00;
     const uint	GPIO_BANK7 = 0xa9000818;
 
-    uint value = IO_READ32(GPIO_BANK1);
+    uint	value = IO_READ32(GPIO_BANK1);
 
-    /* GPIO-20 --> LCD power
-     * GPIO-32 --> LVDS power
-     * GPIO 20 and 32 are on GPIO group 2.
-     * Bit_4  --> GPIO-20
-     * Bit_16 --> GPIO-32
-     */
     value |= (1 << 4) | (1 << 16);
 
-    /* Power ON LCD and LVDS */
     IO_WRITE32(GPIO_BANK1, value);
+
+    value = IO_READ32(GPIO_BANK7);
+
+    value |= (1 << 2);
+
+    IO_WRITE32(GPIO_BANK7, value);
 }
 
 void board_lcd_disble(void)
 {
-    const uint	GPIO_BANK1 = 0xa9100c00;
-    const uint	GPIO_BANK7 = 0xa9000818;
-
-    uint value = IO_READ32(GPIO_BANK1);
-
-    /* GPIO-20 --> LCD power
-     * GPIO-32 --> LVDS power
-     * GPIO 20 and 32 are on GPIO group 2.
-     * Bit_4  --> GPIO-20
-     * Bit_16 --> GPIO-32
-     */
-    value &= ~((1 << 4) | (1 << 16));
-
-    /* Power OFF LCD and LVDS */
-    IO_WRITE32(GPIO_BANK1, value);
 }
 
 #ifdef CONFIG_QSD_SDCC

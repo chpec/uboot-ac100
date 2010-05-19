@@ -451,4 +451,13 @@ uint32_t proc_comm_get_lcdc_clk(void)
         return proc_comm_get_clk_rate(PROC_COMM_MDP_LCDC_PCLK_CLK);
 }
 
+void proc_comm_end_cmds(void)
+{
+	volatile proc_comm_t pc_pkt;
+	pc_pkt.data1 = 0;
+	pc_pkt.data2 = 0;
+	pc_pkt.command = PROC_COMM_END_CMDS;
+	msm_proc_comm((proc_comm_t *)&pc_pkt);
+	debug("PROC_COMM_END_CMDS  sent\n");
+}
 #endif /*USE_PROC_COMM*/

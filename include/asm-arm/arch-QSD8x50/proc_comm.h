@@ -139,6 +139,11 @@ enum {
 	PROC_COMM_CLK_REGIME_SEC_SET_PCLK_AXI_POLICY,
 	PROC_COMM_NUM_CMDS,
 };
+/*
+ * The following command marks the end of PROC COMM commands for Modem side
+ */
+#define PROC_COMM_END_CMDS 0xFFFF
+
 
 /*proc_comm status */
 enum {

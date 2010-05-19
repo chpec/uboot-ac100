@@ -72,10 +72,10 @@ int msm_proc_comm(proc_comm_t *cmd_pkt)
 	}
 	proc_comm_wait_for_modem_ready();
 
-	app_proc_comm->command = cmd_pkt->command;
 	app_proc_comm->status = PROC_COMM_INVALID_STATUS; //cleanup last cmd status
 	app_proc_comm->data1 = cmd_pkt->data1;
 	app_proc_comm->data2 = cmd_pkt->data2;
+	app_proc_comm->command = cmd_pkt->command;
 
         debug("SET:app_proc_comm->command=%d\n", app_proc_comm->command);
 	debug("SET:app_proc_comm->status=%d\n", app_proc_comm->status);

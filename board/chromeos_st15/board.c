@@ -42,6 +42,7 @@
 #endif
 #ifdef USE_PROC_COMM
 #include <asm/arch/proc_comm.h>
+#include <asm/arch/proc_comm_clients.h>
 #endif
 #include <asm/arch/memtypes.h>
 
@@ -185,6 +186,10 @@ int cleanup_platform_before_linux(void)
      * on wakeup.
      */
     _warmboot = CONFIG_WARMBOOT_TRUE;
+
+    /* Indicate the end of PROC COMM Commands to Modem OSBL
+     */
+    proc_comm_end_cmds();
 
     return(0);
 }

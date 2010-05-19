@@ -43,4 +43,7 @@ extern void proc_comm_enable_sdcard_pclk(int instance);
 extern void proc_comm_disable_sdcard_pclk(int instance);
 extern uint32_t proc_comm_is_sdcard_pclk_enabled(int instance);
 
+/* Other */
+extern void proc_comm_end_cmds(void);
+
 #endif /*_PROC_COMM_CLIENTS_H*/

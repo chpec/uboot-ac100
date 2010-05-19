@@ -1,7 +1,7 @@
 /*
  *  nand_qc.c - NAND functions using NAND controller and Application Data Mover
  *
- * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
+ * Copyright (c) 2009-10, Code Aurora Forum. All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -669,10 +669,10 @@ int board_nand_init(struct nand_chip *nand)
     // Get and save information for the 0:APPS partition in the table.
     for (i=0; i<parttbl->num_partitions; i++)
     {
-        if (strcmp(parttbl->paritition[i].name, "0:APPS") == 0)
+        if (strcmp(parttbl->partition[i].name, "0:APPS") == 0)
         {
-            apps_part_start_blk = parttbl->paritition[i].start_blk;
-            apps_part_numblocks = parttbl->paritition[i].numblocks;
+            apps_part_start_blk = parttbl->partition[i].start_blk;
+            apps_part_numblocks = parttbl->partition[i].numblocks;
         }
         
     }

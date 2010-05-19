@@ -45,6 +45,7 @@
 #include <asm/arch/proc_comm_clients.h>
 #endif
 #include <asm/arch/memtypes.h>
+#include <asm/arch/smem.h>
 
 #ifdef CONFIG_GENERIC_MMC
 #include <mmc.h>
@@ -66,6 +67,9 @@ static sdcc_params_t sdcc_3;
 extern int timer_init(void);
 extern void scorpion_pll_init (void);
 extern void SDCn_deinit(uint32_t instance);
+
+#define SUCCESS     0
+#define ERROR       -1
 
 /*
  * Optional boot progress function.
@@ -120,7 +124,13 @@ int board_init (void)
     gd->fb_base = LCDC_FB_ADDR;
 #endif
 
-    return 0;
+    if(smem_init())
+        return ERROR;
+
+    if(smem_ptable_init())
+        return ERROR;
+
+    return SUCCESS;
 }
 
 #ifdef CONFIG_SYS_CONSOLE_OVERWRITE_ROUTINE
@@ -160,11 +170,57 @@ int overwrite_console(void)
 
 int misc_init_r (void)
 {
+#define MAX_MTDARG_LEN  100
+#define MAX_BOOTARG_LEN 300
+
+    static char mtd_arg[MAX_MTDARG_LEN];
+    static char new_bootarg[MAX_BOOTARG_LEN];
+    char *bootarg_ptr;
+    flash_part_t* fota_ptn;
+    int len;
+
     //dont checksum loaded image
     setenv("verify", "n");
     //dont tftp images automatically for dhcp,bootp,rarp commands
     setenv("autoload", "no");
-	return (0);
+
+    /* Format string for mtdparts bootarg */
+    /* How is attribute field used? */
+    fota_ptn = smem_ptable_get_fota_ptn();
+
+    if(!fota_ptn)
+        return ERROR;
+
+    len = sprintf(mtd_arg, "mtdparts=msm_nand:0x%x@0x%x(%s)",
+                  (fota_ptn->numblocks)*SMEM_FLASH_ERASE_SIZE,
+                  (fota_ptn->start_blk)*SMEM_FLASH_ERASE_SIZE,
+                  fota_ptn->name);
+
+    if (len >= MAX_MTDARG_LEN)
+    {
+        /* Panic. Can't go back. Don't know what memory we have corrupted.
+         * Shouldn't come in here in the released code. Only for testing, if
+         * someone decides to add another partition to this without allocating
+         * enough memory.
+         * The max for one partition on msm_nand:
+         * 25 (fixed text) + 8 (size) + 8 (offset) + 16 (name) + 1 (\0)= 58
+         */
+        BUG();
+    }
+
+    if ((bootarg_ptr = getenv("bootargs")) == NULL)
+        return ERROR;
+
+    /* confirm that we have big enough buffer for the new bootarg. */
+    if ((strlen(bootarg_ptr) + sizeof(mtd_arg) + 1) >= sizeof(new_bootarg))
+        return ERROR;
+
+    sprintf(new_bootarg,"%s %s", bootarg_ptr, mtd_arg);
+
+    if(setenv("bootargs", new_bootarg))
+        return ERROR;
+
+    return SUCCESS;
 }
 
 /******************************
@@ -315,7 +371,7 @@ int board_sdcc_init(sdcc_params_t *sd)
     else
     {
         /* this board does not have an sd/mmc card on this interface. */
-        return -1;
+        return ERROR;
     }
 
     return 0;

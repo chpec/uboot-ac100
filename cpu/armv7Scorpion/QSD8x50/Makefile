@@ -38,6 +38,8 @@ COBJS	+= lcdc.o
 COBJS   += proc_comm.o
 COBJS   += proc_comm_clients.o
 COBJS	+= cmd_npart.o
+COBJS	+= smem.o
+COBJS	+= smem_ptable.o
 
 SOBJS	=
 

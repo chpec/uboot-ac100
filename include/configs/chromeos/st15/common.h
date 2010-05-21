@@ -179,23 +179,22 @@
 #define PHYS_SDRAM_2		0x10000000	    /* EBI1, AFTER ADSP */
 #define PHYS_SDRAM_2_SIZE	0x30000000	    /* 768MB */
 
-/*
- * Use the serial console.
- */
-#define CONFIG_SERIAL_CONSOLE
+#define CONFIG_ARM_DCC
+#define CONFIG_ARM_DCC_MULTI
+#define CONFIG_CPU_V7
 
 /* Console setup */
 #if defined(CONFIG_SERIAL_CONSOLE)
  #define CONFIG_STDOUT "serial"
  #define CONFIG_STDERR "serial"
  #define CONFIG_STDIN  "serial"
-#else
- #define CONFIG_ARM_DCC
- #define CONFIG_ARM_DCC_MULTI
- #define CONFIG_CPU_V7
-
+#elif defined(CONFIG_DCC_CONSOLE)
  #define CONFIG_STDOUT "dcc"
  #define CONFIG_STDERR "dcc"
+ #define CONFIG_STDIN  "dcc"
+#else /* default */
+ #define CONFIG_STDOUT "lcd"
+ #define CONFIG_STDERR "lcd"
  #define CONFIG_STDIN  "dcc"
 #endif
 

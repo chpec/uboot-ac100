@@ -54,7 +54,10 @@
 
 
 int cleanup_platform_before_linux(void);
+
+#ifndef CPU_IS_MSM8x60
 void mmu_init(void);
+#endif
 
 int arch_cpu_init (void)
 {
@@ -63,7 +66,9 @@ int arch_cpu_init (void)
     /*
      * Set up MMU page tables
      */
+#ifndef CPU_IS_MSM8x60
     mmu_init();
+#endif
 
     /*
      * Enable I-cache (I), D-cache (C), MMU (M), and branch prediction (Z).
@@ -86,6 +91,20 @@ int arch_cpu_init (void)
 	FIQ_STACK_START = IRQ_STACK_START - CONFIG_STACKSIZE_IRQ;
 #endif
 	return 0;
+}
+
+void secondary_core(void)
+{
+	/* Entry address into imem */
+	IO_WRITE32(0x2A040020, 0x40208000);
+	/* Secondary FPB: VDD_SC1_ARRAY_CLAMP_GFS_CTL */
+	IO_WRITE32(0x009035A0, 0x0);
+	/* SCSS_CPU1CORE_RESET */
+	IO_WRITE32(0x00902D80, 0x0);
+	/* SCSS_DBG_STATUS_CORE_PWRDUP */
+	IO_WRITE32(0x00902E64, 0x3);
+	/* This delay needs further investigation/tuning  */
+	udelay(2000000);
 }
 
 int cleanup_before_linux (void)
@@ -124,6 +143,7 @@ int cleanup_before_linux (void)
     WCP15_SCTLR(i);
     ISB;
 
+#ifndef CPU_IS_MSM8x60
     /* Invalidate all 4 banks of the L2 */
     WCP15_DCIALL(0x0002);
     WCP15_DCIALL(0x4002);
@@ -140,8 +160,13 @@ int cleanup_before_linux (void)
     /* Invalidate the TLB */
     WCP15_UTLBIALL(0);
     DSB;
+#endif //end CPU_IS_MSM8x60
 
-	return (0);
+#ifdef CPU_IS_MSM8x60
+    secondary_core();
+#endif
+
+    return (0);
 }
 
 int do_reset (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])

@@ -35,7 +35,7 @@
 #include <config.h>
 #include <version.h>
 #include <asm-armv7Scorpion/armv7Scorpion.h>
-
+#include <common.h>
 
 /*
  *************************************************************************
@@ -141,7 +141,8 @@ FIQ_STACK_START:
  */
 
 reset:
-   
+  
+#ifndef CPU_IS_MSM8x60  
        /* Zero out R0 for use below */
         MOV     R0,  #0x0
 
@@ -179,7 +180,7 @@ reset:
 	WCP15_ICFLOOR5(r0)
 	WCP15_ICFLOOR6(r0)
 	WCP15_ICFLOOR7(r0)
-         
+
         /* Initialize D-cache victim and floor registers. */
          
 	WCP15_DCVIC0(r0)
@@ -244,8 +245,8 @@ reset:
         RCP15_SCTLR(r2)
         ORR    r2, r2, #0x00000800
         WCP15_SCTLR(r2)
-
-        /* Make sure Link stack is initialized with branch and links to sequential addresses
+#endif
+        /* Make sure Link stack is initialized with branch and links t  o sequential addresses
            This aids in creating a predictable startup environment */
         BL      SEQ1
 SEQ1:   BL      SEQ2
@@ -255,7 +256,9 @@ SEQ4:   BL      SEQ5
 SEQ5:   BL      SEQ6
 SEQ6:   BL      SEQ7
 SEQ7:   BL      SEQ8
-SEQ8:  
+SEQ8:
+
+#ifndef CPU_IS_MSM8x60
 
         /* REMOVE FOLLOWING THREE INSTRUCTIONS WHEN POWER COLLAPSE IS ENA
          * Make sure the DBGOSLSR[LOCK] bit is cleared to allow access to the debug registers
@@ -316,6 +319,7 @@ SEQ8:
         MOV    r2, #0
         WCP15_L2CPUCR(r2)
 
+#endif
         /* Setup SPCR
            enable all error reporting (reset value is unpredicatble for most bits) */
         MOV    r3, #0x0F
@@ -326,6 +330,7 @@ SEQ8:
 /*      MOV   r3, #0x07  */
         MOV   r3, #0x04
         WCP15_ACTLR(r3)
+#ifndef CPU_IS_MSM8x60
 
         /*----------------------------------------------------------------------
           Unlock ETM and read StickyPD to halt the ETM clocks from running.
@@ -346,8 +351,9 @@ SEQ8:
 	 */
 	bl	platformsetup	/* go setup pll,mux,memory */
 
+#endif
  	/* Check if warm boot */
-        LDR     R0,  _warmboot
+	LDR     R0,  _warmboot
 	LDR	R1,  _WARMBOOT_TRUE
 	CMP	R0,  R1
 	BEQ	_do_warmboot

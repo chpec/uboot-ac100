@@ -2281,6 +2281,9 @@ chromeos_st15_fast_config	:	unconfig
 chromeos_st15_recovery_config	:	unconfig
 	@$(MKCONFIG) chromeos/st15/recovery arm armv7Scorpion chromeos_st15 NULL QSD8x50
 
+chromeos_8660_recovery_config   :       unconfig
+	@$(MKCONFIG) chromeos/MSM8x60/recovery arm armv7Scorpion MSM8x60 NULL MSM8x60
+
 #========================================================================
 # MIPS
 #========================================================================

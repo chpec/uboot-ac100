@@ -47,7 +47,7 @@ enum SD_MCLK_speed
 {	MCLK_144KHz = 144000,
 	MCLK_400KHz = 400000,
 	MCLK_25MHz = 25000000,
-        MCLK_40MHz = 40000000,
+	MCLK_40MHz = 40000000,
 	MCLK_48MHz = 49152000, /* true 48Mhz not supported, use next highest */
 	MCLK_49MHz = 49152000,
 	MCLK_50MHz = 50000000,
@@ -55,12 +55,12 @@ enum SD_MCLK_speed
 #else /*USE_PROC_COMM defined*/
 enum SD_MCLK_speed
 {
-/* 	MCLK_144KHz, //not implemented w/o proc_comm */
-	MCLK_400KHz,
-	MCLK_25MHz,
-	MCLK_48MHz,
-/*	MCLK_49MHz, //not implemented w/o proc_comm */
-	MCLK_50MHz
+	MCLK_400KHz = 400000,
+	MCLK_16MHz  = 16000000,
+	MCLK_17MHz  = 17000000,
+	MCLK_20MHz  = 20200000,
+	MCLK_24MHz  = 24000000,
+	MCLK_48MHz  = 48000000,
 };
 #endif /*USE_PROC_COMM */
 
@@ -96,4 +96,4 @@ typedef struct sd_parms {
    uint32_t adm_ch8_rslt_conf_initial; /* Initial value of HI0_CH8_RSLT_CONF_SD3 */
 } sdcc_params_t;
 
-#endif
+#endif /* _QSD_SDCC_H_ */

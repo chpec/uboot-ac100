@@ -28,6 +28,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #ifdef USE_PROC_COMM
 #include <asm/arch/proc_comm_clients.h>
 #include <asm/arch/proc_comm.h>
+#else
+#include <asm/arch/gpio.h>
 #endif /*USE_PROC_COMM */
 
 #ifdef SDCC_CMD_DEBUG
@@ -133,30 +135,56 @@ int sdcc_read_data(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
         row_len = SDCC_FIFO_SIZE;
         rows_per_block = (data->blocksize / SDCC_FIFO_SIZE);
         num_rows = rows_per_block * data->blocks;
+        uint32_t tx_dst = (uint32_t)data->dest;
 
-        /*  Initialize the DM Box mode command entry (single entry) */
-        sd_box_mode_entry[0] = (ADM_CMD_LIST_LC | (adm_crci_num << 3) | ADM_ADDR_MODE_BOX);
-        sd_box_mode_entry[1] = base + MCI_FIFO;                      /*  SRC addr */
-        sd_box_mode_entry[2] = (uint32_t) data->dest;                /*  DST addr */
-        sd_box_mode_entry[3] = ((row_len << 16) | (row_len << 0));   /*  SRC/DST row len */
-        sd_box_mode_entry[4] = ((num_rows << 16) | (num_rows << 0)); /*  SRC/DST num rows */
-        sd_box_mode_entry[5] = ((0 << 16) | (SDCC_FIFO_SIZE << 0));  /*  SRC/DST offset */
+        while( num_rows != 0 ){
+            uint32_t tx_size = 0;
+            /* Check to see if the attempted transfer size is more than 0xFFFF
+               If it is we need to do more than one transfer. */
+            if( num_rows > 0xFFFF ){
+                tx_size   = 0xFFFF;
+                num_rows -= 0xFFFF;
+            } else{
+                tx_size  = num_rows;
+                num_rows = 0;
+            }
+            /*  Initialize the DM Box mode command entry (single entry) */
+            sd_box_mode_entry[0] = (ADM_CMD_LIST_LC | (adm_crci_num << 3) | ADM_ADDR_MODE_BOX);
+            sd_box_mode_entry[1] = base + MCI_FIFO;                  /*  SRC addr */
+            sd_box_mode_entry[2] = (uint32_t) tx_dst;                /*  DST addr */
+            sd_box_mode_entry[3] = ((row_len << 16) | (row_len << 0));   /*  SRC/DST row len */
+            sd_box_mode_entry[4] = ((tx_size << 16) | (tx_size << 0)); /*  SRC/DST num rows */
+            sd_box_mode_entry[5] = ((0 << 16) | (SDCC_FIFO_SIZE << 0));  /*  SRC/DST offset */
 
-        /*  Initialize the DM Command Pointer List (single entry) */
-        addr_shft = ((uint32_t)(&sd_box_mode_entry[0])) >> 3;
-        sd_adm_cmd_ptr_list[0] = (ADM_CMD_PTR_LP | ADM_CMD_PTR_CMD_LIST | addr_shft);
+            /*  Initialize the DM Command Pointer List (single entry) */
+            addr_shft = ((uint32_t)(&sd_box_mode_entry[0])) >> 3;
+            sd_adm_cmd_ptr_list[0] = (ADM_CMD_PTR_LP | ADM_CMD_PTR_CMD_LIST | addr_shft);
 
-        /*  Start ADM transfer */
-        if (adm_start_transfer(ADM_AARM_SD_CHN, sd_adm_cmd_ptr_list) != 0)
-        {
-           return SDCC_ERR_DATA_ADM_ERR;
-        }
+            /* Start ADM transfer, this transfer waits until it finishes
+               before returing */
+#ifdef CPU_IS_MSM8x60
+            if (adm_do_transfer_sync( get_adm_chn(((sdcc_params_t*)(mmc->priv))->instance),
+                                      sd_adm_cmd_ptr_list) != 0)
+            {
+               return SDCC_ERR_DATA_ADM_ERR;
+            }
+#else
+            /*  Start ADM transfer */
+            if (adm_start_transfer(ADM_AARM_SD_CHN, sd_adm_cmd_ptr_list) != 0)
+            {
+               return SDCC_ERR_DATA_ADM_ERR;
+            }
+#endif /* CPU_IS_MSM8x60 */
+
+            /* Add the amount we have transfered to the destination */
+            tx_dst += (tx_size*row_len);
 
 #ifdef CONFIG_DCACHE
-        /* Invalidate cache so buffer ADM updated can be seen. */
-        invalidate_dcache_range((uint32_t)data->dest,
-                                (uint32_t)data->dest + (data->blocks * data->blocksize));
+            /* Invalidate cache so buffer ADM updated can be seen. */
+            invalidate_dcache_range((uint32_t)data->dest,
+                                    (uint32_t)data->dest + (data->blocks * data->blocksize));
 #endif
+        }
     }
     else
     {
@@ -185,11 +213,11 @@ int sdcc_read_data(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 /* Set SD MCLK speed */
 static int sdcc_mclk_set(int instance, enum SD_MCLK_speed speed)
 {
-#ifndef USE_PROC_COMM
-    #error "use proc_comm"
-#else
+#ifdef USE_PROC_COMM
     proc_comm_set_sdcard_clk(instance, speed);
     proc_comm_enable_sdcard_clk(instance);
+#else
+    set_sdcard_clk(instance, speed);
 #endif /*USE_PROC_COMM*/
 
    return 0;
@@ -217,10 +245,7 @@ void sdcc_set_ios(struct mmc *mmc)
         clk_reg = IO_READ32(base + MCI_CLK) & ~MCI_CLK__WIDEBUS___M;
         IO_WRITE32(base + MCI_CLK, (clk_reg | (BUS_WIDTH_8 << MCI_CLK__WIDEBUS___S)));
     }
-
-    if((mmc->clock == MCLK_144KHz) ||
-       (mmc->clock == MCLK_400KHz) ||
-       (mmc->clock == MCLK_25MHz))
+    if(mmc->clock <= 25000000)
     {
         uint32_t temp32;
 
@@ -231,8 +256,7 @@ void sdcc_set_ios(struct mmc *mmc)
         temp32 |= (MCI_CLK__SELECT_IN__ON_THE_FALLING_EDGE_OF_MCICLOCK << MCI_CLK__SELECT_IN___S);
         IO_WRITE32(base + MCI_CLK, temp32);
     }
-    else if((mmc->clock == MCLK_40MHz) ||
-            (mmc->clock == MCLK_48MHz))
+    else
     {
         uint32_t temp32;
 
@@ -518,13 +542,17 @@ int sdcc_init(struct mmc *mmc)
         return SDCC_ERR_GENERIC;
     }
 
+#ifdef USE_PROC_COMM
     /* Enable clock */
     proc_comm_enable_sdcard_pclk(sd->instance);
 
     /* Set the interface clock */
     proc_comm_set_sdcard_clk(sd->instance, MCLK_400KHz);
     proc_comm_enable_sdcard_clk(sd->instance);
-
+#else
+    /* Set the interface clock */
+    set_sdcard_clk(sd->instance, MCLK_400KHz);
+#endif /* USE_PROC_COMM */
 
     /* Initialize controller */
     sdcc_controller_init(sd);

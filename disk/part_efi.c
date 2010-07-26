@@ -106,7 +106,7 @@ static int is_pte_valid(gpt_entry * pte);
 void print_part_efi(block_dev_desc_t * dev_desc)
 {
 	gpt_header gpt_head;
-	gpt_entry **pgpt_pte = NULL;
+	gpt_entry *pgpt_pte;
 	int i = 0;
 
 	if (!dev_desc) {
@@ -115,30 +115,31 @@ void print_part_efi(block_dev_desc_t * dev_desc)
 	}
 	/* This function validates AND fills in the GPT header and PTE */
 	if (is_gpt_valid(dev_desc, GPT_PRIMARY_PARTITION_TABLE_LBA,
-			 &(gpt_head), pgpt_pte) != 1) {
+			 &(gpt_head), &pgpt_pte) != 1) {
 		printf("%s: *** ERROR: Invalid GPT ***\n", __FUNCTION__);
 		return;
 	}
 
-	debug("%s: gpt-entry at 0x%08X\n", __FUNCTION__, (unsigned int)*pgpt_pte);
+	debug("%s: gpt-entry at 0x%08X\n",
+		__FUNCTION__, (unsigned int)pgpt_pte);
 
 	printf("Part  Start LBA  End LBA\n");
 	for (i = 0; i < le32_to_int(gpt_head.num_partition_entries); i++) {
 
-		if (is_pte_valid(&(*pgpt_pte)[i])) {
+		if (is_pte_valid(&(pgpt_pte)[i])) {
 			printf("%s%d  0x%llX    0x%llX\n", GPT_ENTRY_NAME,
 				(i + 1),
-				le64_to_int((*pgpt_pte)[i].starting_lba),
-				le64_to_int((*pgpt_pte)[i].ending_lba));
+				le64_to_int((pgpt_pte)[i].starting_lba),
+				le64_to_int((pgpt_pte)[i].ending_lba));
 		} else {
 			break;	/* Stop at the first non valid PTE */
 		}
 	}
 
 	/* Remember to free pte */
-	if (*pgpt_pte != NULL) {
+	if (pgpt_pte != NULL) {
 		debug("%s: Freeing pgpt_pte\n", __FUNCTION__);
-		free(*pgpt_pte);
+		free(pgpt_pte);
 	}
 	return;
 }
@@ -147,7 +148,7 @@ int get_partition_info_efi(block_dev_desc_t * dev_desc, int part,
 				disk_partition_t * info)
 {
 	gpt_header gpt_head;
-	gpt_entry **pgpt_pte = NULL;
+	gpt_entry *pgpt_pte;
 
 	/* "part" argument must be at least 1 */
 	if (!dev_desc || !info || part < 1) {
@@ -157,15 +158,15 @@ int get_partition_info_efi(block_dev_desc_t * dev_desc, int part,
 
 	/* This function validates AND fills in the GPT header and PTE */
 	if (is_gpt_valid(dev_desc, GPT_PRIMARY_PARTITION_TABLE_LBA,
-			&(gpt_head), pgpt_pte) != 1) {
+			&(gpt_head), &pgpt_pte) != 1) {
 		printf("%s: *** ERROR: Invalid GPT ***\n", __FUNCTION__);
 		return -1;
 	}
 
 	/* The ulong casting limits the maximum disk size to 2 TB */
-	info->start = (ulong) le64_to_int((*pgpt_pte)[part - 1].starting_lba);
+	info->start = (ulong) le64_to_int((pgpt_pte)[part - 1].starting_lba);
 	/* The ending LBA is inclusive, to calculate size, add 1 to it */
-	info->size = ((ulong)le64_to_int((*pgpt_pte)[part - 1].ending_lba) + 1)
+	info->size = ((ulong)le64_to_int((pgpt_pte)[part - 1].ending_lba) + 1)
 		     - info->start;
 	info->blksz = GPT_BLOCK_SIZE;
 
@@ -176,9 +177,9 @@ int get_partition_info_efi(block_dev_desc_t * dev_desc, int part,
 		info->start, info->size, info->name);
 
 	/* Remember to free pte */
-	if (*pgpt_pte != NULL) {
+	if (pgpt_pte != NULL) {
 		debug("%s: Freeing pgpt_pte\n", __FUNCTION__);
-		free(*pgpt_pte);
+		free(pgpt_pte);
 	}
 	return 0;
 }

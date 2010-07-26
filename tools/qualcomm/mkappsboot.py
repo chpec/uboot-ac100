@@ -29,7 +29,7 @@ bin.close()
 
 # construct the mbn header
 size = len(loader)
-base = 0xE0000000
+base = int(sys.argv[3],16)
 header = struct.pack("10I",
     0x00000005, # appsbl
     0x00000003, # part version

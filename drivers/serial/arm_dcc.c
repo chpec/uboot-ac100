@@ -128,6 +128,10 @@ void arm_dcc_putc(char ch)
 	}
 	if (timeout_count == 0)
 		return;
+	if (ch == '\n'){
+		write_dcc(ch);
+		arm_dcc_putc('\r');
+	}
 	else
 		write_dcc(ch);
 }

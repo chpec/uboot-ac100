@@ -201,7 +201,7 @@ int board_mmc_init(bd_t *bis)
     mmc_2.voltages  = SDCC_3_VOLTAGE_SUPPORTED;
     mmc_2.host_caps = MMC_MODE_4BIT | MMC_MODE_HS | MMC_MODE_HS_52MHz;
     mmc_2.f_min     = MCLK_400KHz;
-    mmc_2.f_max     = MCLK_20MHz;
+    mmc_2.f_max     = MCLK_48MHz;
     sprintf(mmc_2.name, "External_Card");
 
     /* register our available mmc interfaces with mmc framework */
@@ -312,9 +312,13 @@ case 1:
                          GPIO_8MA, GPIO_ENABLE);
         break;
 case 3:
-        //Magic number poking to set up HDrive and Pull values for SDC3 interface pins
+        /* Set up HDrive and Pull values for SDC3 interface pins */
         addr = TLMM_BASE_ADDR + SDC3_HDRV_PULL_CTL;
-        val = 0x1E1B;
+        val = (SDC3_PULL_UP  << SDC3_CMD_PULL__S ) |
+              (SDC3_PULL_UP  << SDC3_DATA_PULL__S) |
+              (SDC3_HDRV_8MA << SDC3_CLK_HDRV__S ) |
+              (SDC3_HDRV_8MA << SDC3_CMD_HDRV__S ) |
+              (SDC3_HDRV_8MA << SDC3_DATA_HDRV__S);
         IO_WRITE32(addr,val);
         break;
 default:

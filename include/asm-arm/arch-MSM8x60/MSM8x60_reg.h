@@ -224,6 +224,28 @@
 #define MCI_CLEAR__DATA_CRC_FAIL_CLR___M 0x00000002
 #define MCI_CLEAR__CMD_CRC_FAIL_CLR___M 0x00000001
 
+#define SDC3_CMD_PULL__S  11
+#define SDC3_DATA_PULL__S 9
+#define SDC3_CLK_HDRV__S  6
+#define SDC3_CMD_HDRV__S  3
+#define SDC3_DATA_HDRV__S 0
+
+/* Inteface pin setup */
+#define SDC3_HDRV_2MA  0x0
+#define SDC3_HDRV_4MA  0x1
+#define SDC3_HDRV_6MA  0x2
+#define SDC3_HDRV_8MA  0x3
+#define SDC3_HDRV_10MA 0x4
+#define SDC3_HDRV_12MA 0x5
+#define SDC3_HDRV_14MA 0x6
+#define SDC3_HDRV_16MA 0x7
+
+#define SDC3_NO_PULL   0x0
+#define SDC3_PULL_DOWN 0x1
+#define SDC3_KEEP      0x2
+#define SDC3_PULL_UP   0x3
+
+
 #define EBI2CS5_BASE                 (0x1C000000)
 #define EBI2CS4_BASE                 (0x1C800000)
 #define EBI2CS3_BASE                 (0x1D000000)

@@ -2171,6 +2171,75 @@ versatileab_config	\
 versatilepb_config :	unconfig
 	@board/armltd/versatile/split_by_variant.sh $@
 
+voiceblue_config:	unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm925t voiceblue
+
+#########################################################################
+## S3C44B0 Systems
+#########################################################################
+
+B2_config	:	unconfig
+	@$(MKCONFIG) $(@:_config=) arm s3c44b0 B2 dave
+
+#########################################################################
+## ARM720T Systems
+#########################################################################
+
+armadillo_config:	unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm720t armadillo
+
+ep7312_config	:	unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm720t ep7312
+
+impa7_config	:	unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm720t impa7
+
+modnet50_config :	unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm720t modnet50
+
+evb4510_config :	unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm720t evb4510 NULL s3c4510b
+
+lpc2292sodimm_config:	unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm720t lpc2292sodimm NULL lpc2292
+
+SMN42_config	:	unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm720t SMN42 siemens lpc2292
+
+#########################################################################
+## ARM CORTEX Systems
+#########################################################################
+
+devkit8000_config :	unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 devkit8000 timll omap3
+
+omap3_beagle_config :	unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 beagle ti omap3
+
+omap3_overo_config :	unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 overo NULL omap3
+
+omap3_evm_config :	unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 evm ti omap3
+
+omap3_pandora_config :	unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 pandora NULL omap3
+
+omap3_sdp3430_config :	unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 sdp3430 ti omap3
+
+omap3_zoom1_config :	unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 zoom1 logicpd omap3
+
+omap3_zoom2_config :	unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 zoom2 logicpd omap3
+
+smdkc100_config:	unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 smdkc100 samsung s5pc1xx
+
+tegra2_harmony_config:  unconfig
+	@$(MKCONFIG) $(@:_config=) arm arm_cortexa9 $$(echo $@ | cut -f2 -d_) tegra2 tegra2
+
 #########################################################################
 ## XScale Systems
 #########################################################################

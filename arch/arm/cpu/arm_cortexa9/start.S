@@ -25,6 +25,16 @@
 #include <config.h>
 #include <version.h>
 
+#define MODE_DISABLE_INTR   0xc0
+#define MODE_SVC            0x13
+#define MODE_SYS            0x1F
+
+#define CP15_I              (1<<12) // instruction cache
+#define CP15_Z              (1<<11) // branch prediction
+#define CP15_C              (1<<2)  // data cache
+#define CP15_M              (1<<0)  // MMU
+#define CP15_V              (1<<13) // high vectors
+
 .globl _start
 _start: b	reset
 	ldr	pc, _undefined_instruction
@@ -88,13 +98,6 @@ FIQ_STACK_START:
 	.word 0x0badc0de
 #endif
 
-#ifdef CONFIG_CMDLINE
-/* ATAGs (kernel style) go here */
-.globl ATAGS_START
-ATAGS_START:
-	.word	0x0badc0de
-#endif
-
 /*
  * the actual reset code
  */
@@ -104,17 +107,9 @@ reset:
 	 * set the cpu to SVC32 mode
 	 */
 	mrs	r0, cpsr
-	bic	r0, r0, #0x1f
-	orr	r0, r0, #0xd3
+	bic	r0, r0, #MODE_SYS
+	orr	r0, r0, #(MODE_SVC | MODE_DISABLE_INTR)
 	msr	cpsr,r0
-
-#ifdef CONFIG_CMDLINE
-	/* 
-	 * Back up the location of ATAGs
-	 */
-	adr	r0, ATAGS_START
-	str	r2, [r0]	@ r2 contains the pointer to atags
-#endif
 
 #if (CONFIG_OMAP34XX)
 	/* Copy vectors to mask ROM indirect addr */
@@ -140,8 +135,10 @@ next:
 #endif /* NAND Boot */
 #endif
 	/* the mask ROM code should have PLL and others stable */
+#ifndef CONFIG_TEGRA2
 #ifndef CONFIG_SKIP_LOWLEVEL_INIT
 	bl	cpu_init_crit
+#endif
 #endif
 
 #ifndef CONFIG_SKIP_RELOCATE_UBOOT
@@ -165,9 +162,13 @@ copy_loop:				@ copy 32 bytes at a time
 
 	/* Set up the stack */
 stack_setup:
-	/* get a stack */
 	mov r0, #CONFIG_STACKBASE
 	add sp, r0, #CONFIG_STACKSIZE
+
+#ifdef CONFIG_TEGRA2
+        /* Tegra2 specific Init */
+        bl      tegra2_start   
+#endif
 
 	/* Clear BSS (if any). Is below tx (watch load addr - need space) */
 clear_bss:
@@ -193,13 +194,14 @@ _start_armboot: .word start_armboot
  * setup memory timing
  *
  *************************************************************************/
+.globl cpu_init_crit
 cpu_init_crit:
 	mrc  p15, 0, r1, c1, c0, 0 /* Read cp15 control register */
-	bic  r1, r1, #(1<<12)	/* Disable instruction cache */
-	bic  r1, r1, #(1<<11)	/* Disable branch predictor */
-	bic  r1, r1, #(1<<2)	/* Disable data cache */
-	bic  r1, r1, #(1<<0)	/* disable the mmu */
-	orr  r1, r1, #(1<<13)	/* set the 'V' bit, force high exceptions. */
+	bic  r1, r1, #CP15_I	/* Disable instruction cache */
+	bic  r1, r1, #CP15_Z	/* Disable branch predictor */
+	bic  r1, r1, #CP15_C	/* Disable data cache */
+	bic  r1, r1, #CP15_M	/* disable the mmu */
+	orr  r1, r1, #CP15_V	/* set the 'V' bit, force high exceptions. */
 	mcr  p15, 0, r1, c1, c0, 0 /* Write cp15 register */
 
 	/* invalidate instruction cache */
@@ -212,7 +214,7 @@ cpu_init_crit:
 
 	/* enable instruction cache */
 	mrc  p15, 0, r1, c1, c0, 0
-	orr  r1, r1, #(1<<12)
+	orr  r1, r1, #CP15_I
 	mcr  p15, 0, r1, c1, c0, 0
 
 	/* enable SMP mode and FW for CPU0, by writing to Auxiliary Control
@@ -228,7 +230,7 @@ cpu_init_crit:
 	mcr p15, 0, r0, c1, c0, 2
 
 	mrc  p15, 0, r1, c1, c0, 0 /* Read cp15 control register */
-	orr  r1, r1, #(1<<11)	  /* Enable branch predictor */
+	orr  r1, r1, #CP15_Z	  /* Enable branch predictor */
 	bic  r1, r1, #(1<<22)	  /* DO NOT allow unaligned loads/stores */
 	orr  r1, r1, #(1<<1)	   /* Turn on strict alignment checking */
 	mcr  p15, 0, r1, c1, c0, 0 /* Write cp15 register */
@@ -239,9 +241,11 @@ cpu_init_crit:
 	 * basic memory. Go here to bump up clock rate and handle
 	 * wake up conditions.
 	 */
+#ifndef CONFIG_TEGRA2
 	mov	ip, lr			@ persevere link reg across call
 	bl	lowlevel_init		@ go setup pll,mux,memory
 	mov	lr, ip			@ restore link
+#endif
 	mov	pc, lr			@ back to my caller
 
 /*

@@ -54,6 +54,12 @@
 #define MODE_UND 0x1B
 #define MODE_SYS 0x1F
 
+#define CP15_I              (1<<12) // instruction cache
+#define CP15_Z              (1<<11) // branch prediction
+#define CP15_C              (1<<2)  // data cache
+#define CP15_M              (1<<0)  // MMU
+#define CP15_V              (1<<13) // high vectors
+
 #define APXX_EXT_MEM_START      0x00000000
 #define APXX_EXT_MEM_END        0x40000000
 

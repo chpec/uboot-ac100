@@ -38,9 +38,12 @@
 #include <common.h>
 #include <asm/io.h>
 #include <asm/proc-armv/ptrace.h>
+#include <asm/arch/nv_drf.h>
+#include <asm/arch/nvcommon.h>
 #include <asm/arch/tegra2.h>
+#include <asm/arch/nv_hardware_access.h>
 
-#if defined(CONFIG_USE_IRQ) || defined(CONFIG_TEGRA2)
+#if defined(CONFIG_USE_IRQ)
 /* enable IRQ interrupts */
 void enable_interrupts(void)
 {
@@ -56,7 +59,19 @@ void enable_interrupts(void)
  */
 int disable_interrupts(void)
 {
-	unsigned long old, temp;
+    unsigned long old, temp;
+    NvU32        Num;
+    NvU8        *pCtlr;
+    NvU32        i;
+
+    pCtlr = (NvU8 *)ARM_PERIPHBASE;
+    {
+        Num = NV_READ32(pCtlr + FIC_DIST_IC_TYPE_0);
+        Num = NV_DRF_VAL(FIC_DIST, IC_TYPE, IT_LINES_NUMBER, Num);
+
+        for (i=0; i<=Num; i++)
+            NV_WRITE32(pCtlr + (FIC_DIST_ENABLE_CLEAR_0_0 + (i*4)), ~0UL);
+    }
 
 	__asm__ __volatile__("mrs %0, cpsr\n"
 			     "orr %1, %0, #0xc0\n"

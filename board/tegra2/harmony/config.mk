@@ -22,4 +22,6 @@
 #  MA 02111-1307 USA
 # 
 
-TEXT_BASE = 0x00e08000
+# original setting
+#TEXT_BASE = 0x00e08000
+TEXT_BASE = 0x00108000

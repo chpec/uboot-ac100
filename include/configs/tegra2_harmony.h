@@ -29,8 +29,6 @@
 /*
  * High Level Configuration Options
  */
-#define CONFIG_ENV_IS_IN_NAND		1
-
 #define CONFIG_TEGRA2_HARMONY	1	/* working with HARMONY */
 #define TEGRA2_SYSMEM           "448M@0M mem=512M@512M"
 #define V_PROMPT		"Tegra2 (harmony) # "

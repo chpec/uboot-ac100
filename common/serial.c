@@ -31,7 +31,11 @@ static struct serial_device *serial_devices = NULL;
 static struct serial_device *serial_current = NULL;
 
 #if !defined(CONFIG_LWMON) && !defined(CONFIG_PXA27X)
+#if defined(CONFIG_TEGRA2) && defined(TEGRA2_AVP_ONLY)
+struct serial_device *default_serial_console (void)
+#else
 struct serial_device *__default_serial_console (void)
+#endif
 {
 #if defined(CONFIG_8xx_CONS_SMC1) || defined(CONFIG_8xx_CONS_SMC2)
 	return &serial_smc_device;
@@ -42,7 +46,8 @@ struct serial_device *__default_serial_console (void)
    || defined(CONFIG_405EP) || defined(CONFIG_405EZ) || defined(CONFIG_405EX) \
    || defined(CONFIG_MB86R0x) || defined(CONFIG_MPC5xxx) \
    || defined(CONFIG_MPC83xx) || defined(CONFIG_MPC85xx) \
-   || defined(CONFIG_MPC86xx) || defined(CONFIG_SYS_SC520)
+   || defined(CONFIG_MPC86xx) || defined(CONFIG_SYS_SC520) \
+   || defined(CONFIG_TEGRA2)
 #if defined(CONFIG_CONS_INDEX) && defined(CONFIG_SYS_NS16550_SERIAL)
 #if (CONFIG_CONS_INDEX==1)
 	return &eserial1_device;
@@ -97,7 +102,9 @@ struct serial_device *__default_serial_console (void)
 #endif
 }
 
+#ifndef TEGRA2_AVP_ONLY
 struct serial_device *default_serial_console(void) __attribute__((weak, alias("__default_serial_console")));
+#endif 
 #endif
 
 int serial_register (struct serial_device *dev)

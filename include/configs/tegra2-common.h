@@ -29,11 +29,12 @@
 /*
  * High Level Configuration Options
  */
-#define CONFIG_CMD_EXT2         1
+//#define CONFIG_CMD_EXT2         1
+#undef CONFIG_CMD_EXT2
 #define CONFIG_ARMCORTEXA9	1	/* This is an ARM V7 CPU core */
 #define CONFIG_TEGRA2		1	/* in a NVidia Tegra2 core */
 #define CONFIG_MACH_TEGRA_GENERIC     1 /* which is a Tegra generic machine */
-#undef CONFIG_SKIP_RELOCATE_UBOOT
+#define CONFIG_SKIP_RELOCATE_UBOOT
 #define CONFIG_L2_OFF		1	/* No L2 cache */
 
 #define CONFIG_ENABLE_CORTEXA9	1	/* enable cortex A9 core */
@@ -54,10 +55,7 @@
 #define CONFIG_USB_ETHER
 #endif
 
-/*
- * ethaddr settings can be overruled via environment settings:
- *  usbnet_devaddr and usbnet_hostaddr
- */
+/* ethaddr settings can be overruled via environment settings: usbnet_devaddr and usbnet_hostaddr */
 #define CONFIG_USBNET_DEV_ADDR          "e4:9b:e7:66:2f:7b"
 #define CONFIG_USBNET_HOST_ADDR         "0a:fa:63:8b:e8:0a"
 #define CONFIG_CMD_NET
@@ -76,15 +74,17 @@
 #undef CONFIG_USE_IRQ
 #define CONFIG_ARCH_CPU_INIT
 #define CONFIG_MISC_INIT_R
-#undef CONFIG_SKIP_LOWLEVEL_INIT
+#define CONFIG_SKIP_LOWLEVEL_INIT
 
 #define CONFIG_CMDLINE_TAG		1	/* enable passing of ATAGs */
+
+/* Environment */
+#define CONFIG_ENV_IS_NOWHERE
+#define CONFIG_ENV_SIZE			SZ_128K	/* Total Size Environment */
 
 /*
  * Size of malloc() pool
  */
-#define CONFIG_ENV_SIZE			SZ_128K	/* Total Size Environment */
-						/* Sector */
 #define CONFIG_SYS_MALLOC_LEN		(SZ_256K * 16)   /* 4MB  */
 #define CONFIG_SYS_GBL_DATA_SIZE	128	/* bytes reserved for */
 						/* initial data */
@@ -124,7 +124,7 @@
 
 #define TEGRAPARTS_DEFAULT		"system:3680:2bc0:800"
 #define TEGRABOOT_DEFAULT 		"nand"
-#define CONFIG_YAFFS2			/* YAFFS2 Support		*/
+#undef CONFIG_YAFFS2			/* YAFFS2 Support		*/
 #define CONFIG_YAFFS2_TAG_NO_ECC /* Disable YAFFS2 ECC calculation */
 				 /* This is required in order to reduce nand
 				  * tag space used by yaffs2 to fit the 20 bytes
@@ -310,8 +310,8 @@
  *
  * The stack sizes are set up in start.S using the settings below
  */
-#define CONFIG_STACK_BASE	0x2800000	/* 40MB */
-#define CONFIG_STACK_SIZE	SZ_128K	/* regular stack */
+#define CONFIG_STACKBASE	0x2800000	/* 40MB */
+#define CONFIG_STACKSIZE	SZ_128K	/* regular stack */
 #ifdef CONFIG_USE_IRQ
 #define CONFIG_STACKSIZE_IRQ	SZ_4K	/* IRQ stack */
 #define CONFIG_STACKSIZE_FIQ	SZ_4K	/* FIQ stack */
@@ -338,10 +338,6 @@
 /* Monitor at start of flash */
 #define CONFIG_SYS_MONITOR_BASE		CONFIG_SYS_FLASH_BASE
 
-/* Environment saved in nand by default, right before yaffs2 fs (single
- * partition, for now).
- */
-#define CONFIG_ENV_OFFSET_DYNAMIC       1
 /*-----------------------------------------------------------------------
  * CFI FLASH driver setup
  */

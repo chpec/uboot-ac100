@@ -62,6 +62,15 @@ typedef double             NvF64; /* IEEE Double Precision (S1E11M52) */
 enum { NV_FALSE = 0, NV_TRUE = 1 };
 typedef NvU8 NvBool;
 
+// Pointer-sized signed and unsigned ints
+#if NVCPU_IS_64_BITS
+typedef NvU64 NvUPtr;
+typedef NvS64 NvSPtr;
+#else
+typedef NvU32 NvUPtr;
+typedef NvS32 NvSPtr;
+#endif
+
 /* 
  * Function attributes are lumped in here too
  * INLINE - Make the function inline

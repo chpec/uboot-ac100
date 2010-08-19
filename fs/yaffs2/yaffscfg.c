@@ -1,6 +1,9 @@
 /*
  * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
  *
+ * (C) Copyright 2010
+ * NVIDIA Corporation <www.nvidia.com>
+ *
  * Copyright (C) 2002-2007 Aleph One Ltd.
  *   for Toby Churchill Ltd and Brightstar Engineering
  *
@@ -182,7 +185,11 @@ int yaffs_StartUp(void)
 		flashDev->nDataBytesPerChunk = mtd->oobblock;
 		flashDev->nChunksPerBlock = mtd->erasesize / mtd->oobblock;
 #endif
+#ifdef CONFIG_TEGRA2
+		nBlocks = lldiv(mtd->size, mtd->erasesize);
+#else
 		nBlocks = mtd->size / mtd->erasesize;
+#endif
 
 		flashDev->nCheckpointReservedBlocks = 10;
 		flashDev->startBlock = 0;

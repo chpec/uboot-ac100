@@ -49,6 +49,7 @@
 #include <net.h>
 #include <serial.h>
 #include <nand.h>
+#include <mmc.h>
 #include <onenand_uboot.h>
 #include <mmc.h>
 
@@ -270,6 +271,10 @@ init_fnc_t *init_sequence[] = {
 	NULL,
 };
 
+#if defined(TEGRA2_AVP_ONLY) || defined(TEGRA2_TRACE)
+void debug_trace (int i);
+#endif
+
 void start_armboot (void)
 {
 	init_fnc_t **init_fnc_ptr;
@@ -277,12 +282,17 @@ void start_armboot (void)
 #if defined(CONFIG_VFD) || defined(CONFIG_LCD)
 	unsigned long addr;
 #endif
+	char i;
 
 	/* Pointer is writable since we allocated a register for it */
+#if defined(CONFIG_TEGRA2)
+	gd = (gd_t*)(CONFIG_STACKBASE - CONFIG_SYS_MALLOC_LEN - sizeof(gd_t));
+#else
 #if defined(CONFIG_STACK_BASE)
 	gd = (gd_t*)(_STACK_BASE - CONFIG_SYS_MALLOC_LEN - sizeof(gd_t));
 #else
 	gd = (gd_t*)(_armboot_start - CONFIG_SYS_MALLOC_LEN - sizeof(gd_t));
+#endif
 #endif
 	/* compiler optimization barrier needed for GCC >= 3.4 */
 	__asm__ __volatile__("": : :"memory");
@@ -294,13 +304,21 @@ void start_armboot (void)
 	gd->flags |= GD_FLG_RELOC;
 
 	monitor_flash_len = _bss_start - _armboot_start;
-
+        i=0;
 	for (init_fnc_ptr = init_sequence; *init_fnc_ptr; ++init_fnc_ptr) {
+#if defined(TEGRA2_AVP_ONLY) || defined(TEGRA2_TRACE)
+                debug_trace (i);
+                ++i;
+#endif
 		if ((*init_fnc_ptr)() != 0) {
 			hang ();
 		}
 	}
 
+#if defined(CONFIG_TEGRA2)
+	/* create memory heap for tegra2 */
+	mem_malloc_init (CONFIG_STACKBASE - CONFIG_SYS_MALLOC_LEN,
+			CONFIG_SYS_MALLOC_LEN);
 #if defined(CONFIG_STACK_BASE)
 	/* _STACK_BASE is defined in the board-specific linker script
 	 * Heap was assumed to be just under the start address _armboot_start.
@@ -312,6 +330,7 @@ void start_armboot (void)
 	/* armboot_start is defined in the board-specific linker script */
 	mem_malloc_init (_armboot_start - CONFIG_SYS_MALLOC_LEN,
 			CONFIG_SYS_MALLOC_LEN);
+#endif
 #endif
 
 #ifndef CONFIG_SYS_NO_FLASH
@@ -370,6 +389,12 @@ void start_armboot (void)
  */
 	puts ("MMC:   ");
 	mmc_initialize (gd->bd);
+#endif
+
+#if defined(CONFIG_CMD_MMC) && !defined(CONFIG_GENERIC_MMC)
+	puts ("MMC:  ");
+	/* The parameter being passed is not being used */
+	mmc_legacy_init(1);
 #endif
 
 	/* initialize environment */

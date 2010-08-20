@@ -9,6 +9,6 @@
     },
   },
   'WATCHLISTS': {
-    'all': ['robotboy@chromium.org', 'amoljadi@codeaurora.org', 'dneiss@codeaurora.org', 'pgargey@codeaurora.org']
+    'all': ['robotboy@chromium.org', 'amoljadi@codeaurora.org', 'dneiss@codeaurora.org', 'pgargey@codeaurora.org', 'olofj@chromium.org']
   },
 }

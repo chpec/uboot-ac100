@@ -30,7 +30,7 @@
 
 #include <stdarg.h>
 #include <stddef.h>
-#include <nvcommon.h>
+#include <asm/arch/nvcommon.h>
 
 #if defined(__cplusplus)
 extern "C"

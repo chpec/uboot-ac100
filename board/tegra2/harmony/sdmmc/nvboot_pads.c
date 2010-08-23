@@ -1,5 +1,5 @@
 /*
- *  (C) Copyright 2010 
+ *  (C) Copyright 2010
  *  NVIDIA Corporation <www.nvidia.com>
  *
  * See file CREDITS for list of people who contributed to this
@@ -96,12 +96,12 @@ NvBootPadsConfigForBootDevice(NvBootFuseBootDevice BootDevice, NvU32 Config)
 
     // Set the pinmmuxes and tristates for the device.
     BootData = g_Ap20MuxControllers[BootDevice];
-    NvBootPadSetPinMuxCtl(BootData, Config); 
+    NvBootPadSetPinMuxCtl(BootData, Config);
     NvBootPadSetTriStates(BootData, Config, NV_FALSE);
 
     *pDrvStrengthDn_1_8V = NVBOOT_PADS_DN_DRIVER_STRENGTH_1_8V;
     *pDrvStrengthUp_1_8V = NVBOOT_PADS_UP_DRIVER_STRENGTH_1_8V;
-    
+
     // Set the driver strength controls as needed
     switch (BootDevice)
     {
@@ -210,6 +210,9 @@ NvBootPadsConfigForBootDevice(NvBootFuseBootDevice BootDevice, NvU32 Config)
              */
             SET_DRIVER_STRENGTH(GMCCFG, 1_8V);
             SET_DRIVER_STRENGTH(GMDCFG, 1_8V);
+
+        default:
+            break;
     }
 
     return NvBootError_Success;

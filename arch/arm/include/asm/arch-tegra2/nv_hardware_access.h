@@ -55,6 +55,33 @@ extern "C"
 #define NV_WRITE(dst, src, len)  NvOsMemcpy(dst, src, len)
 #define NV_READ(dst, src, len)   NvOsMemcpy(dst, src, len)
 
+#ifndef NVB_DEBUG
+#define NV_READ32_(a, d) \
+   { \
+       d = *((const volatile NvU32 *)(a)); \
+   }
+
+#define NV_WRITE32_(a,d) \
+   { \
+      *((volatile NvU32 *)(a)) = (d); \
+   }
+
+#else
+#define NV_READ32_(a, d) \
+   {   \
+       d = *((const volatile NvU32 *)(a)); \
+       printf(" R reg: 0x%08x, val: 0x%08x\n", \
+                (NvU32)a, (NvU32)d);          \
+   }
+
+#define NV_WRITE32_(a,d)    \
+   { \
+      *((volatile NvU32 *)(a)) = (d); \
+       printf(" W reg: 0x%08x, val: 0x%08x\n", \
+                (NvU32)a, (NvU32)d);          \
+   }
+#endif
+
 #ifdef __cplusplus
 }
 #endif  /* __cplusplus */

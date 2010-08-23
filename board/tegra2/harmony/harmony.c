@@ -86,16 +86,6 @@ int board_nand_init(struct nand_chip *nand)
     return -1;
 }
 
-int mmc_legacy_init(int verbose)
-{
-    return -1;
-}
-
-block_dev_desc_t *mmc_get_dev(int dev)
-{
-    return NULL;
-}
-
 int ehci_hcd_init(void)
 {
     return -1;

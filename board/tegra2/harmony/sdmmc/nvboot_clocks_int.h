@@ -28,9 +28,9 @@
 #ifndef INCLUDED_NVBOOT_CLOCKS_INT_H
 #define INCLUDED_NVBOOT_CLOCKS_INT_H
 
+#include <asm/arch/nvcommon.h>
 #include "nvboot_clocks.h"
 #include "nvboot_osc.h"
-#include "nvcommon.h"
 
 #if defined(__cplusplus)
 extern "C"

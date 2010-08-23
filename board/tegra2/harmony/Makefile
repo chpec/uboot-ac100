@@ -27,6 +27,13 @@ include $(TOPDIR)/config.mk
 LIB	= $(obj)lib$(BOARD).a
 
 COBJS	:= $(BOARD).o
+COBJS	+= sdmmc/nvboot_sdmmc.o
+COBJS	+= sdmmc/nvboot_reset.o
+COBJS	+= sdmmc/nvboot_util.o
+COBJS	+= sdmmc/nvboot_clocks.o
+COBJS	+= sdmmc/nvboot_pads.o
+COBJS	+= sdmmc/nvboot_pinmux.o
+COBJS	+= sdmmc/nvboot_pinmux_tables.o
 
 SRCS	:= $(COBJS:.o=.c)
 OBJS	:= $(addprefix $(obj),$(COBJS))

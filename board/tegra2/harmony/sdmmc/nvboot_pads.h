@@ -34,8 +34,8 @@
 #ifndef INCLUDED_NVBOOT_PADS_H
 #define INCLUDED_NVBOOT_PADS_H
 
-#include <nvcommon.h>
-#include <nvboot_error.h>
+#include <asm/arch/nvcommon.h>
+#include <asm/arch/nvboot_error.h>
 #include "nvboot_fuse.h"
 
 #define NVBOOT_PADS_PWR_DET_DELAY (6)

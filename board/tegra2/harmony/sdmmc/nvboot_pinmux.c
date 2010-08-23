@@ -184,7 +184,7 @@ NvBootPadSetTriStates(
                     NvU32 Curr = NV_READ32(NV_ADDRESS_MAP_APB_MISC_BASE + 
                                            APB_MISC_PP_TRISTATE_REG_A_0 +
                                            4*TsOffs);
-#if 0 // jz
+#ifdef DEBUG_PINMUX
 printf("SetTri: R reg: 0x%08x, Curr: 0x%08x, Off 0x%x, Shift %d, Ena: %d\n",
                              NV_ADDRESS_MAP_APB_MISC_BASE +
                              APB_MISC_PP_TRISTATE_REG_A_0 +
@@ -192,7 +192,7 @@ printf("SetTri: R reg: 0x%08x, Curr: 0x%08x, Off 0x%x, Shift %d, Ena: %d\n",
 #endif
                     Curr &= ~(1<<TsShift);
                     Curr |= (EnableTristate?1:0)<<TsShift;
-#if 0 // jz
+#ifdef DEBUG_PINMUX
 printf("SetTri: W reg: 0x%08x, Curr: 0x%08x\n",
                              NV_ADDRESS_MAP_APB_MISC_BASE +
                              APB_MISC_PP_TRISTATE_REG_A_0 +
@@ -266,7 +266,7 @@ NvBootPadSetPinMuxCtl(
             Curr = NV_READ32(NV_ADDRESS_MAP_APB_MISC_BASE +
                              APB_MISC_PP_PIN_MUX_CTL_A_0 +
                              4*MuxCtlOffset);
-#if 0 // jz
+#ifdef DEBUG_PINMUX
 printf("SetPin: R reg: 0x%08x, Curr: 0x%08x, Off 0x%x, shift %d\n",
                              NV_ADDRESS_MAP_APB_MISC_BASE +
                              APB_MISC_PP_PIN_MUX_CTL_A_0 +
@@ -284,7 +284,7 @@ printf("SetPin: R reg: 0x%08x, Curr: 0x%08x, Off 0x%x, shift %d\n",
                 Curr |= (MuxCtlSet<<MuxCtlShift);
             }
             
-#if 0 // jz
+#ifdef DEBUG_PINMUX
 printf("SetPin: W reg: 0x%08x, Curr: 0x%08x\n",
                              NV_ADDRESS_MAP_APB_MISC_BASE +
                              APB_MISC_PP_PIN_MUX_CTL_A_0 +

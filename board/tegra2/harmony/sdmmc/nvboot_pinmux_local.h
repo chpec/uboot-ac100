@@ -29,8 +29,8 @@
  * manager.
  */
 
-#include <nvcommon.h>
-#include <nv_drf.h>
+#include <asm/arch/nvcommon.h>
+#include <asm/arch/nv_drf.h>
 #include "nvboot_util.h"
 
 /*  The pin mux code supports run-time trace debugging of all updates to the

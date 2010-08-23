@@ -29,8 +29,7 @@
 /*
  * High Level Configuration Options
  */
-//#define CONFIG_CMD_EXT2         1
-#undef CONFIG_CMD_EXT2
+#define CONFIG_CMD_EXT2         1
 #define CONFIG_ARMCORTEXA9	1	/* This is an ARM V7 CPU core */
 #define CONFIG_TEGRA2		1	/* in a NVidia Tegra2 core */
 #define CONFIG_MACH_TEGRA_GENERIC     1 /* which is a Tegra generic machine */

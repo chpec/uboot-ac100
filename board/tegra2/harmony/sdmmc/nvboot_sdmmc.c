@@ -31,10 +31,10 @@
 #define NV_SDMMC4
 //#undef NV_SDMMC4
 
-#include <nv_sdmmc.h>
-#include <nvboot_device.h>
-#include <nvboot_sdmmc_param.h>
-#include <nvboot_sdmmc_context.h>
+#include <asm/arch/nv_sdmmc.h>
+#include <asm/arch/nvboot_device.h>
+#include <asm/arch/nvboot_sdmmc_param.h>
+#include <asm/arch/nvboot_sdmmc_context.h>
 #include "nvboot_pads.h"
 #include "nvboot_clocks_int.h"
 #include "nvboot_sdmmc_int.h"
@@ -178,19 +178,6 @@ static NvBootError HwSdmmcResetController(void)
         }
     }
     return NvBootError_Success;
-}
-
-/* Public Function Definitions. */
-
-void FFAConfiguration()
-{
-    // Config PLLP
-    NV_WRITE32(NV_ADDRESS_MAP_CAR_BASE + CLK_RST_CONTROLLER_OSC_CTRL_0, 0xC00003f1);
-    NV_WRITE32(NV_ADDRESS_MAP_CAR_BASE + CLK_RST_CONTROLLER_PLLP_BASE_0, 0x8001B01A);
-    NV_WRITE32(NV_ADDRESS_MAP_CAR_BASE + CLK_RST_CONTROLLER_PLLP_BASE_0, 0xC001B01A);
-    NV_WRITE32(NV_ADDRESS_MAP_CAR_BASE + CLK_RST_CONTROLLER_PLLP_MISC_0, 0x00000800);
-    NV_WRITE32(NV_ADDRESS_MAP_CAR_BASE + CLK_RST_CONTROLLER_PLLP_BASE_0, 0xC001B01A);
-    NV_WRITE32(NV_ADDRESS_MAP_CAR_BASE + CLK_RST_CONTROLLER_PLLP_BASE_0, 0x4001B01A);
 }
 
 void
@@ -540,8 +527,7 @@ static NvBootError HwSdmmcInitController(void)
     NvU32 IntStatusEnableReg;
     NvU32 PowerControlHostReg;
     NvU32 RegData;
-    
-#if 1    
+
     NV_ASSERT(s_FuseInfo.PinmuxSelection <= 1);
     if (s_FuseInfo.PinmuxSelection)
     {
@@ -558,10 +544,7 @@ static NvBootError HwSdmmcInitController(void)
         PRINT_SDMMC_MESSAGES("Setting Pinmux for 4-bit\n");
         PinmuxSelection = NvBootPinmuxConfig_Sdmmc_Std_x4;
     }
-#if 0 // original, jz
-    (void)NvBootPadsConfigForBootDevice(NvBootFuseBootDevice_Sdmmc, 
-        PinmuxSelection);
-#else
+
     // 0x70000080
     NV_READ32_((NV_ADDRESS_MAP_APB_MISC_BASE +
                      APB_MISC_PP_PIN_MUX_CTL_A_0), RegData );
@@ -589,40 +572,6 @@ static NvBootError HwSdmmcInitController(void)
 #endif
     NV_WRITE32((NV_ADDRESS_MAP_APB_MISC_BASE +
                      APB_MISC_PP_TRISTATE_REG_A_0), RegData );
-
-#if 0 // jz
-    RegData &= ~0x00005800;
-    NV_WRITE32((NV_ADDRESS_MAP_APB_MISC_BASE +
-                     APB_MISC_PP_TRISTATE_REG_A_0), RegData );
-
-    // set voltage to 3.3v
-    // 0x70000870
-    NV_READ32_((NV_ADDRESS_MAP_APB_MISC_BASE + 
-                        APB_MISC_GP_ATCFG1PADCTRL_0), RegData);
-
-    RegData = 0xf1f1f038;
-    NV_WRITE32((NV_ADDRESS_MAP_APB_MISC_BASE +
-                     APB_MISC_GP_ATCFG1PADCTRL_0), RegData);
-
-    // 0x70000874
-    NV_READ32_((NV_ADDRESS_MAP_APB_MISC_BASE + 
-                        APB_MISC_GP_ATCFG2PADCTRL_0), RegData);
-
-    RegData = 0xf1f1f038;
-    NV_WRITE32((NV_ADDRESS_MAP_APB_MISC_BASE +
-                     APB_MISC_GP_ATCFG2PADCTRL_0), RegData);
-
-    // 0x700008f4
-    NV_READ32_((NV_ADDRESS_MAP_APB_MISC_BASE + 
-                        APB_MISC_GP_GMACFGPADCTRL_0), RegData);
-
-    RegData = 0xf1612030;
-    NV_WRITE32((NV_ADDRESS_MAP_APB_MISC_BASE +
-                     APB_MISC_GP_GMACFGPADCTRL_0), RegData);
-#endif
-
-#endif
-#endif
 
     // Keep the controller in Reset.
     PRINT_SDMMC_MESSAGES("%s: set contrl in Reset\n", __FUNCTION__);
@@ -2121,159 +2070,6 @@ fail:
     s_SdmmcBitInfo->BootFromBootPartition = 0;
 #endif
     PRINT_SDMMC_MESSAGES("Boot Partition Select Failed.\n");
-}
-
-static NvBootError EmmcGetExtCsd(void)
-{
-    NvBootError e;
-    NvBootDeviceStatus DevStatus;
-    NvU8* pBuffer = (NvU8*)&s_SdmmcContext->SdmmcInternalBuffer[0];
-    
-    // Set num of blocks to read to 1.
-    HwSdmmcSetNumOfBlocks((1 << s_SdmmcContext->PageSizeLog2), 1);
-    // Setup Dma.
-    HwSdmmcSetupDma((NvU8*)s_SdmmcContext->SdmmcInternalBuffer, 
-        (1 << s_SdmmcContext->PageSizeLog2));
-    // Send SEND_EXT_CSD(CMD8) command to get boot partition size.
-    NV_BOOT_CHECK_ERROR(HwSdmmcSendCommand(SdmmcCommand_EmmcSendExtendedCsd,
-        0, SdmmcResponseType_R1, NV_TRUE, NV_FALSE));
-    // If response fails, return error. Nothing to clean up.
-    NV_BOOT_CHECK_ERROR(EmmcVerifyResponse(SdmmcCommand_EmmcSendExtendedCsd, 
-        NV_FALSE));
-    s_SdmmcContext->DeviceStatus = NvBootDeviceStatus_ReadInProgress;
-    s_SdmmcContext->ReadStartTime = NvBootUtilGetTimeUS();
-    do
-    {
-        DevStatus = NvBootSdmmcQueryStatus();
-    } while ( (DevStatus != NvBootDeviceStatus_Idle) && 
-              (DevStatus == NvBootDeviceStatus_ReadInProgress) );
-    if (DevStatus != NvBootDeviceStatus_Idle)
-        return NvBootError_DeviceError;
-    s_SdmmcContext->EmmcBootPartitionSize = 
-        // The partition size comes in 128KB units.
-        // Left shift it by 17 to get it multiplied by 128KB.
-        (pBuffer[EMMC_ECSD_BOOT_PARTITION_SIZE_OFFSET] << 17);
-    s_SdmmcContext->PowerClass26MHz360V = pBuffer[EMMC_ECSD_POWER_CL_26_360_OFFSET];
-    s_SdmmcContext->PowerClass52MHz360V = pBuffer[EMMC_ECSD_POWER_CL_52_360_OFFSET];
-    s_SdmmcContext->PowerClass26MHz195V = pBuffer[EMMC_ECSD_POWER_CL_26_195_OFFSET];
-    s_SdmmcContext->PowerClass52MHz195V = pBuffer[EMMC_ECSD_POWER_CL_52_195_OFFSET];
-    s_SdmmcContext->BootConfig = pBuffer[EMMC_ECSD_BOOT_CONFIG_OFFSET];
-    if (s_SdmmcContext->IsHighCapacityCard)
-    {
-        s_SdmmcContext->NumOfBlocks = (pBuffer[EMMC_ECSD_SECTOR_COUNT_0_OFFSET] | 
-                                      (pBuffer[EMMC_ECSD_SECTOR_COUNT_1_OFFSET] << 8) |
-                                      (pBuffer[EMMC_ECSD_SECTOR_COUNT_2_OFFSET] << 16) | 
-                                      (pBuffer[EMMC_ECSD_SECTOR_COUNT_3_OFFSET] << 24));
-        PRINT_SDMMC_MESSAGES("Ecsd NumOfBlocks=%d\n", s_SdmmcContext->NumOfBlocks);
-    }
-    
-    PRINT_SDMMC_MESSAGES("BootPartition Size=%d\n", 
-        s_SdmmcContext->EmmcBootPartitionSize);
-    PRINT_SDMMC_MESSAGES("PowerClass26MHz360V=%d, PowerClass52MHz360V=%d, "
-        "PowerClass26MHz195V=%d, PowerClass52MHz195V=%d\n", 
-        s_SdmmcContext->PowerClass26MHz360V, s_SdmmcContext->PowerClass52MHz360V, 
-        s_SdmmcContext->PowerClass26MHz195V, s_SdmmcContext->PowerClass52MHz195V);
-    PRINT_SDMMC_MESSAGES("CurrentPowerClass=%d, CardType=%d\n", 
-        pBuffer[EMMC_ECSD_POWER_CLASS_OFFSET], pBuffer[EMMC_ECSD_CARD_TYPE_OFFSET]);
-    return e;
-}
-
-static NvU32 EmmcGetPowerClass(void)
-{
-    NvU32 PowerClass;
-    
-    if (s_SdmmcContext->IsHighVoltageRange)
-        PowerClass = s_SdmmcContext->HighSpeedMode ? 
-                     s_SdmmcContext->PowerClass52MHz360V : 
-                     s_SdmmcContext->PowerClass26MHz360V;
-    else
-        PowerClass = s_SdmmcContext->HighSpeedMode ? 
-                     s_SdmmcContext->PowerClass52MHz195V : 
-                     s_SdmmcContext->PowerClass26MHz195V;
-    /*
-     * In the above power class, lower 4 bits give power class requirement for
-     * for 4-bit data width and upper 4 bits give power class requirement for
-     * for 8-bit data width.
-     */
-    if (s_SdmmcContext->DataWidth == NvBootSdmmcDataWidth_4Bit)
-        PowerClass = (PowerClass >> EMMC_ECSD_POWER_CLASS_4_BIT_OFFSET) & 
-                     EMMC_ECSD_POWER_CLASS_MASK;
-    else if (s_SdmmcContext->DataWidth == NvBootSdmmcDataWidth_8Bit)
-        PowerClass = (PowerClass >> EMMC_ECSD_POWER_CLASS_8_BIT_OFFSET) & 
-                     EMMC_ECSD_POWER_CLASS_MASK;
-    else //if (s_SdmmcContext->DataWidth == NvBootSdmmcDataWidth_1Bit)
-        PowerClass = 0;
-    return PowerClass;
-}
-
-static NvBootError EmmcSetPowerClass(void)
-{
-    NvU32 CmdArg;
-    NvU32 PowerClassToSet;
-    NvBootError e = NvBootError_Success;
-    
-    PowerClassToSet = EmmcGetPowerClass();
-    // Select best possible configuration here.
-    while (PowerClassToSet > s_SdmmcContext->MaxPowerClassSupported)
-    {
-        if (s_SdmmcContext->HighSpeedMode)
-        {
-            // Disable high speed and see, if it can be supported.
-            s_SdmmcContext->CardSupportsHighSpeedMode = NV_FALSE;
-            // Find out clock divider for card clock again for normal speed.
-            HwSdmmcCalculateCardClockDivisor();
-        }
-        else if (s_SdmmcContext->DataWidth == NvBootSdmmcDataWidth_8Bit)
-            s_SdmmcContext->DataWidth = NvBootSdmmcDataWidth_4Bit;
-        else if (s_SdmmcContext->DataWidth == NvBootSdmmcDataWidth_4Bit)
-            s_SdmmcContext->DataWidth = NvBootSdmmcDataWidth_1Bit;
-        PowerClassToSet = EmmcGetPowerClass();
-    }
-    if (PowerClassToSet)
-    {
-        PRINT_SDMMC_MESSAGES("Set Power Class to %d\n", PowerClassToSet);
-        CmdArg = EMMC_SWITCH_SELECT_POWER_CLASS_ARG | 
-                 (PowerClassToSet << EMMC_SWITCH_SELECT_POWER_CLASS_OFFSET);
-        NV_BOOT_CHECK_ERROR(EmmcSendSwitchCommand(CmdArg));
-    }
-#if NVRM
-    s_SdmmcBitInfo->PowerClassUnderUse = PowerClassToSet;
-#endif
-    return e;
-}
-
-static void EmmcEnableHighSpeed(void)
-{
-    NvBootError e;
-    NvU8* pBuffer = (NvU8*)&s_SdmmcContext->SdmmcInternalBuffer[0];
-    
-    // Clear controller's high speed bit.
-    HwSdmmcEnableHighSpeed(NV_FALSE);
-    // Enable the High Speed Mode, if required.
-    if (s_SdmmcContext->HighSpeedMode)
-    {
-        PRINT_SDMMC_MESSAGES("Set High speed to %d\n", 
-            s_SdmmcContext->HighSpeedMode);
-        NV_BOOT_CHECK_ERROR_CLEANUP(EmmcSendSwitchCommand(
-            EMMC_SWITCH_HIGH_SPEED_ENABLE_ARG));
-        // Set the clock for data transfer.
-        HwSdmmcSetCardClock(NvBootSdmmcCardClock_DataTransfer);
-        // Validate high speed mode bit from card here.
-        NV_BOOT_CHECK_ERROR_CLEANUP(EmmcGetExtCsd());
-        if (pBuffer[EMMC_ECSD_HS_TIMING_OFFSET])
-        {
-            // As per Hw team, it should not be enabled. See Hw bug number
-            // AP15#353684/AP20#478599.
-            //HwSdmmcEnableHighSpeed(NV_TRUE);
-            return;
-        }
-    fail:
-        // If enable high speed fails, run in normal speed.
-        PRINT_SDMMC_ERRORS("EmmcEnableHighSpeed Failed\n");
-        s_SdmmcContext->CardSupportsHighSpeedMode = NV_FALSE;
-        // Find out clock divider for card clock again.
-        HwSdmmcCalculateCardClockDivisor();
-    }
 }
 
 static NvBootError EmmcSetBusWidth(void)

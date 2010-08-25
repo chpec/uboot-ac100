@@ -54,7 +54,10 @@
 #define CONFIG_USB_ETHER
 #endif
 
-/* ethaddr settings can be overruled via environment settings: usbnet_devaddr and usbnet_hostaddr */
+/*
+ * ethaddr settings can be overruled via environment settings:
+ *  usbnet_devaddr and usbnet_hostaddr
+ */
 #define CONFIG_USBNET_DEV_ADDR          "e4:9b:e7:66:2f:7b"
 #define CONFIG_USBNET_HOST_ADDR         "0a:fa:63:8b:e8:0a"
 #define CONFIG_CMD_NET
@@ -120,6 +123,11 @@
 /* commands to include */
 #include <config_cmd_default.h>
 
+/* turn on command-line edit/hist/auto */
+
+#define CONFIG_CMDLINE_EDITING		1
+#define CONFIG_COMMAND_HISTORY		1
+#define CONFIG_AUTOCOMPLETE			1
 
 #define TEGRAPARTS_DEFAULT		"system:3680:2bc0:800"
 #define TEGRABOOT_DEFAULT 		"nand"

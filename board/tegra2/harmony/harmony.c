@@ -1,5 +1,5 @@
 /*
- *  (C) Copyright 2010 
+ *  (C) Copyright 2010
  *  NVIDIA Corporation <www.nvidia.com>
  *
  * See file CREDITS for list of people who contributed to this
@@ -22,6 +22,7 @@
  */
 
 #include <common.h>
+#include <nand.h>
 #include <asm/io.h>
 #include <asm/arch/sys_proto.h>
 #include <asm/mach-types.h>
@@ -62,7 +63,7 @@ int misc_init_r(void)
  * Description: init the timestamp and lastinc value
  *
  */
-int timer_init (void)
+int timer_init(void)
 {
     reset_timer();
     return 0;
@@ -108,7 +109,8 @@ void NvBlUartClockInitA(void)
 
     // Avoid running this function more than once.
     static int initialized = 0;
-    if (initialized) return;
+    if (initialized)
+        return;
     initialized = 1;
 
     // 1. Assert Reset to UART A
@@ -151,7 +153,7 @@ void NvBlUartClockInitA(void)
 
 
     // wait for 2us
-    NvBlAvpStallUs (2);
+    NvBlAvpStallUs(2);
 
     // De-assert reset to UART A
     NV_CLK_RST_READ(RST_DEVICES_L, Reg);
@@ -203,7 +205,7 @@ void NvBlUartClockInitD(void)
     NV_CLK_RST_WRITE(CLK_SOURCE_UARTD, Reg);
 
     // wait for 2us
-    NvBlAvpStallUs (2);
+    NvBlAvpStallUs(2);
 
     // De-assert reset to UART D
     NV_CLK_RST_READ(RST_DEVICES_U, Reg);
@@ -318,7 +320,8 @@ NvBlUartInitA(void)
 
     // Avoid running this function more than once.
     static int initialized = 0;
-    if (initialized) return;
+    if (initialized)
+        return;
     initialized = 1;
 
     NvBlUartClockInitA();
@@ -346,7 +349,7 @@ NvBlUartInitA(void)
     NV_UARTA_WRITE(IIR_FCR,    0x31);
 
     // Flush any old characters out of the RX FIFO.
-    while(NvBlUartRxReadyA())
+    while (NvBlUartRxReadyA())
         (void)NvBlUartRxA();
 }
 
@@ -380,7 +383,7 @@ NvBlUartInitD(void)
     NV_UARTD_WRITE(IIR_FCR,    0x31);
 
     // Flush any old characters out of the RX FIFO.
-    while(NvBlUartRxReadyD())
+    while (NvBlUartRxReadyD())
         (void)NvBlUartRxD();
 }
 
@@ -397,7 +400,7 @@ NvBlUartPoll(void)
 }
 
 int NvBlUartWrite(const void *ptr);
-void NvBlPrintf( const char *format, ... );
+void NvBlPrintf(const char *format, ...);
 
 static void
 NvBlPrintU4(NvU8 byte)
@@ -422,26 +425,26 @@ NvBlPrintU32(NvU32 word)
 }
 
 void
-NvBlVprintf( const char *format, va_list ap )
+NvBlVprintf(const char *format, va_list ap)
 {
     char msg[256];
-    sprintf( msg, format, ap );
+    sprintf(msg, format, ap);
     NvBlUartWrite(msg);
 }
 
 void
-NvBlPrintf( const char *format, ... )
+NvBlPrintf(const char *format, ...)
 {
     va_list ap;
 
-    va_start( ap, format );
-    NvBlVprintf( format, ap );
-    va_end( ap );
+    va_start(ap, format);
+    NvBlVprintf(format, ap);
+    va_end(ap);
 }
 
 void uart_post(char c)
 {
-    while(!NvBlUartTxReadyA())
+    while (!NvBlUartTxReadyA())
         ;
     NvBlUartTxA(c);
 }
@@ -453,12 +456,12 @@ void PostZz(void)
     uart_post('Z');
     uart_post('z');
 
-    NvBlAvpStallUs (2000);
+    NvBlAvpStallUs(2000);
 }
 
 void PostYy(void)
 {
-    NvBlAvpStallMs (20);
+    NvBlAvpStallMs(20);
     uart_post(0x0d);
     uart_post(0x0a);
     uart_post('Y');
@@ -473,7 +476,7 @@ NvBlUartWrite(const void *ptr)
 {
     const NvU8 *p = ptr;
 
-    while(*p)
+    while (*p)
     {
         if (*p == '\n') {
             uart_post(0x0D);
@@ -484,7 +487,7 @@ NvBlUartWrite(const void *ptr)
     return 0;
 }
 
-void debug_trace (int i)
+void debug_trace(int i)
 {
     uart_post(i+'a');
     uart_post('.');

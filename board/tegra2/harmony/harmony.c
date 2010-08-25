@@ -30,7 +30,10 @@
 #include <asm/arch/nv_hardware_access.h>
 #include <asm/arch/nv_drf.h>
 #include <asm/arch/tegra2.h>
+#include "./sdmmc/nvboot_clocks_int.h"
 #include "harmony.h"
+
+void board_usb_init(void);
 
 /*
  * Routine: board_init
@@ -45,6 +48,7 @@ int board_init(void)
 	/* board id for Linux */
 	gd->bd->bi_arch_number = MACH_TYPE_TEGRA_HARMONY;
 
+        board_usb_init();
 	return 0;
 }
 
@@ -85,16 +89,6 @@ void set_muxconf_regs(void)
 int board_nand_init(struct nand_chip *nand)
 {
     return -1;
-}
-
-int ehci_hcd_init(void)
-{
-    return -1;
-}
-
-int ehci_hcd_stop(void)
-{
-    return 0;
 }
 
 /***************************************************************************
@@ -492,4 +486,263 @@ void debug_trace(int i)
     uart_post(i+'a');
     uart_post('.');
     uart_post('.');
+}
+
+void UsbfResetController(NvU32 UsbBase)
+{
+	int RegVal = 0;
+
+	if (UsbBase == NV_ADDRESS_MAP_USB_BASE)
+	{
+		/* Enable clock to the USB controller */
+		RegVal= readl(NV_ADDRESS_MAP_CAR_BASE+CLK_RST_CONTROLLER_CLK_OUT_ENB_L_0);
+		RegVal |= Bit22;
+		writel(RegVal, NV_ADDRESS_MAP_CAR_BASE+CLK_RST_CONTROLLER_CLK_OUT_ENB_L_0);
+
+		/* Reset the USB controller */
+		RegVal= readl(NV_ADDRESS_MAP_CAR_BASE+CLK_RST_CONTROLLER_RST_DEVICES_L_0);
+		RegVal |= Bit22;
+		writel(RegVal, NV_ADDRESS_MAP_CAR_BASE+CLK_RST_CONTROLLER_RST_DEVICES_L_0);
+		udelay(2);
+		RegVal= readl(NV_ADDRESS_MAP_CAR_BASE+CLK_RST_CONTROLLER_RST_DEVICES_L_0);
+		RegVal &= ~Bit22;
+		writel(RegVal, NV_ADDRESS_MAP_CAR_BASE+CLK_RST_CONTROLLER_RST_DEVICES_L_0);
+		udelay(2);
+
+		/* Set USB1_NO_LEGACY_MODE to 1 */
+		RegVal= readl(UsbBase+USB1_LEGACY_CTRL);
+		RegVal |= Bit0;
+		writel(RegVal, UsbBase+USB1_LEGACY_CTRL);
+	}
+	else if(UsbBase == NV_ADDRESS_MAP_USB3_BASE)
+	{
+		/* Enable clock to the USB3 controller */
+		RegVal= readl(NV_ADDRESS_MAP_CAR_BASE+CLK_RST_CONTROLLER_CLK_OUT_ENB_L_0+4);
+		RegVal |= Bit27;
+		writel(RegVal, NV_ADDRESS_MAP_CAR_BASE+CLK_RST_CONTROLLER_CLK_OUT_ENB_L_0+4);
+
+		/* Reset USB3 controller */
+		RegVal= readl(NV_ADDRESS_MAP_CAR_BASE+CLK_RST_CONTROLLER_RST_DEVICES_L_0+4);
+		if (RegVal & Bit27)
+		{
+			writel(RegVal, NV_ADDRESS_MAP_CAR_BASE+CLK_RST_CONTROLLER_RST_DEVICES_L_0+4);
+			udelay(2);
+			RegVal= readl(NV_ADDRESS_MAP_CAR_BASE+CLK_RST_CONTROLLER_RST_DEVICES_L_0+4);
+			RegVal &= ~Bit27;
+			writel(RegVal, NV_ADDRESS_MAP_CAR_BASE+CLK_RST_CONTROLLER_RST_DEVICES_L_0+4);
+			udelay(2);
+		}
+	}
+
+	/*
+	 * Assert UTMIP_RESET in USB1/3_IF_USB_SUSP_CTRL register to put
+	 * UTMIP1/3 in reset.
+	 */
+	RegVal= readl(UsbBase+USB_SUSP_CTRL);
+	RegVal |= Bit11;
+	writel(RegVal, UsbBase+USB_SUSP_CTRL);
+
+	if(UsbBase == NV_ADDRESS_MAP_USB3_BASE)
+	{
+		/*
+		 * Set USB3 to use UTMIP PHY by setting
+		 * USB3_IF_USB_SUSP_CTRL.UTMIP_PHY_ENB  register to 1.
+		 */
+        	RegVal = readl(UsbBase+USB_SUSP_CTRL);
+		RegVal |= Bit12;
+		writel(RegVal, UsbBase+USB_SUSP_CTRL);
+	}
+
+}
+
+void board_usb_init(void)
+{
+	int RegVal;
+	int i;
+	NvU32 PlluStableTime =0;
+	NvBootClocksOscFreq OscFreq;
+	int UsbBase;
+	int loop_count;
+	int PhyClkValid;
+
+	/* Get the Oscillator frequency */
+	OscFreq = NvBootClocksGetOscFreq();
+
+	/* Enable PLL U for USB */
+	NvBootClocksStartPll(NvBootClocksPllId_PllU,
+                         s_UsbPllBaseInfo[OscFreq].M,
+                         s_UsbPllBaseInfo[OscFreq].N,
+                         s_UsbPllBaseInfo[OscFreq].P,
+                         s_UsbPllBaseInfo[OscFreq].CPCON,
+                         s_UsbPllBaseInfo[OscFreq].LFCON,
+                         &PlluStableTime);
+
+	/* Initialize USB1 & USB3 controllers */
+	for (i = 0; i < 2; i++)
+	{
+        /* Select the correct base address for the ith controller. */
+        UsbBase = (i) ? NV_ADDRESS_MAP_USB3_BASE : NV_ADDRESS_MAP_USB_BASE;
+
+        /* Reset the usb controller. */
+        UsbfResetController(UsbBase);
+
+        /* Stop crystal clock by setting UTMIP_PHY_XTAL_CLOCKEN low */
+	RegVal= readl(UsbBase+UTMIP_MISC_CFG1);
+	RegVal &= ~Bit30;
+	writel(RegVal, UsbBase+UTMIP_MISC_CFG1);
+
+        /* Follow the crystal clock disable by >100ns delay. */
+	udelay(1);
+
+        /*
+         * To Use the A Session Valid for cable detection logic,
+         * VBUS_WAKEUP mux must be switched to actually use a_sess_vld
+         * threshold.  This is done by setting VBUS_SENSE_CTL bit in
+         * USB_LEGACY_CTRL register.
+         */
+        if (UsbBase == NV_ADDRESS_MAP_USB_BASE)
+        {
+		RegVal= readl(UsbBase+USB1_LEGACY_CTRL);
+		RegVal |= (Bit2+Bit1);
+		writel(RegVal, UsbBase+USB1_LEGACY_CTRL);
+        }
+
+	/* PLL Delay CONFIGURATION settings
+	 * The following parameters control the bring up of the plls:
+	 */	
+	RegVal= readl(UsbBase+UTMIP_MISC_CFG1);
+	RegVal &= 0xFFFC003F;
+	RegVal |= (s_UsbPllDelayParams[OscFreq].StableCount << 6);
+
+	RegVal &= 0xFF83FFFF;
+	RegVal |= (s_UsbPllDelayParams[OscFreq].ActiveDelayCount << 18);
+	writel(RegVal, UsbBase+UTMIP_MISC_CFG1);
+
+	/* Set PLL enable delay count and Crystal frequency count */
+	RegVal= readl(UsbBase+UTMIP_PLL_CFG1);
+	RegVal &= 0x08FFFFFF;
+	RegVal |= (s_UsbPllDelayParams[OscFreq].EnableDelayCount <<27);
+
+	RegVal &= 0xFFFFF000;
+	RegVal |= (s_UsbPllDelayParams[OscFreq].XtalFreqCount);
+	writel(RegVal, UsbBase+UTMIP_PLL_CFG1);
+
+	/* Setting the tracking length time. */
+	RegVal= readl(UsbBase+UTMIP_BIAS_CFG1);
+	RegVal &= 0xFFFFFF07;
+	RegVal |= (s_UsbBiasTrkLengthTime[OscFreq] <<3);
+	writel(RegVal, UsbBase+UTMIP_BIAS_CFG1);
+
+	/* Program Debounce time for VBUS to become valid. */
+	RegVal= readl(UsbBase+UTMIP_DEBOUNCE_CFG0);
+	RegVal &= 0xFFFF0000;
+	RegVal |= s_UsbBiasDebounceATime[OscFreq];
+	writel(RegVal, UsbBase+UTMIP_DEBOUNCE_CFG0);
+
+	/* Set UTMIP_FS_PREAMBLE_J to 1 */
+	RegVal= readl(UsbBase+UTMIP_TX_CFG0);
+	RegVal |= Bit19;
+	writel(RegVal, UsbBase+UTMIP_TX_CFG0);
+
+	/* Disable Batery charge enabling bit set to '1' for disable */
+	RegVal= readl(UsbBase+UTMIP_BAT_CHRG_CFG0);
+	RegVal |= Bit0;
+	writel(RegVal, UsbBase+UTMIP_BAT_CHRG_CFG0);
+
+	/* Set UTMIP_XCVR_LSBIAS_SEL to 0 */
+	RegVal= readl(UsbBase+UTMIP_XCVR_CFG0);
+	RegVal &= ~Bit21;
+	writel(RegVal, UsbBase+UTMIP_XCVR_CFG0);
+
+	/* Set bit 3 of UTMIP_SPARE_CFG0 to 1 */
+	RegVal= readl(UsbBase+UTMIP_SPARE_CFG0);
+	RegVal |= Bit3;
+	writel(RegVal, UsbBase+UTMIP_SPARE_CFG0);
+
+        /* Configure the UTMIP_IDLE_WAIT and UTMIP_ELASTIC_LIMIT
+         * Setting these fields, together with default values of the other
+         * fields, results in programming the registers below as follows:
+         *         UTMIP_HSRX_CFG0 = 0x9168c000
+         *         UTMIP_HSRX_CFG1 = 0x13
+         */
+
+	/* Set PLL enable delay count and Crystal frequency count */
+	RegVal= readl(UsbBase+UTMIP_HSRX_CFG0);
+	RegVal &= 0xFFF07FFF;
+	RegVal |= s_UtmipIdleWaitDelay << 15;
+
+	RegVal &= 0xFFFF83FF;
+	RegVal |= s_UtmipElasticLimit << 10;
+	writel(RegVal, UsbBase+UTMIP_HSRX_CFG0);
+
+	/* Configure the UTMIP_HS_SYNC_START_DLY */
+	RegVal= readl(UsbBase+UTMIP_HSRX_CFG1);
+	RegVal &= 0xFFFFFFC1;
+	RegVal |= s_UtmipHsSyncStartDelay << 1;
+	writel(RegVal, UsbBase+UTMIP_HSRX_CFG1);
+
+	/* Preceed  the crystal clock disable by >100ns delay. */
+        udelay(1);
+
+	/* Resuscitate  crystal clock by setting UTMIP_PHY_XTAL_CLOCKEN */
+	RegVal= readl(UsbBase+UTMIP_MISC_CFG1);
+	RegVal |= Bit30;
+	writel(RegVal, UsbBase+UTMIP_MISC_CFG1);
+	}
+
+	/* Finished the per-controller init. */
+
+	/* De-assert UTMIP_RESET in USB3_IF_USB_SUSP_CTRL register
+	 * to bring out of reset.
+	 */
+	RegVal= readl(UsbBase+USB_SUSP_CTRL);
+	RegVal &= ~Bit11;
+	writel(RegVal, UsbBase+USB_SUSP_CTRL);
+ 
+	loop_count = 100000;
+	while (loop_count)
+	{
+	/* Wait for the phy clock to become valid in 100 ms */
+	PhyClkValid = readl(UsbBase+USB_SUSP_CTRL) & Bit7;
+	if (PhyClkValid)
+		break;
+	udelay(1);
+	loop_count--;
+	}
+
+	/* Disable by writing IC_ENB1  in USB2_CONTROLLER_2_USB2D_ICUSB_CTRL_0. */
+	RegVal= readl(NV_ADDRESS_MAP_USB3_BASE+ICUSB_CTRL);
+	RegVal &= ~Bit3;
+	writel(RegVal, NV_ADDRESS_MAP_USB3_BASE+ICUSB_CTRL);
+
+	/* Setting STS field to 0 and PTS field to 0 */
+	RegVal= readl(NV_ADDRESS_MAP_USB3_BASE+PORTSC1);
+	RegVal &= ~(Bit31+Bit30+Bit29);
+	writel(RegVal, NV_ADDRESS_MAP_USB3_BASE+PORTSC1);
+
+	/* Deassert power down state */
+	RegVal= readl(UsbBase+UTMIP_XCVR_CFG0);
+	RegVal &= ~(Bit18+Bit16+Bit14);
+	writel(RegVal, UsbBase+UTMIP_XCVR_CFG0);
+
+	RegVal= readl(UsbBase+UTMIP_XCVR_CFG1);
+	RegVal &= ~(Bit4+Bit2+Bit0);
+	writel(RegVal, UsbBase+UTMIP_XCVR_CFG1);
+#if 0
+	/* Hold the reset for UTMIP3. */
+	RegVal= readl(UsbBase+USB_SUSP_CTRL);
+	RegVal |= Bit11;
+	writel(RegVal, UsbBase+USB_SUSP_CTRL);
+
+	loop_count = 100000;
+	while (loop_count)
+	{
+        //Wait for the phy clock to become 0 in 100 ms
+        PhyClkValid = readl(UsbBase+USB_SUSP_CTRL) & Bit7;
+	if (!PhyClkValid)
+		break;
+        udelay(1);
+        loop_count--;
+	}
+#endif
 }

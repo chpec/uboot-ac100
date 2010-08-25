@@ -44,4 +44,8 @@
 /* UARTA: debug board uart */
 #define CONFIG_SYS_NS16550_COM2		NV_ADDRESS_MAP_APB_UARTA_BASE
 
+/* These config switches are for GPIO support */
+#define CONFIG_TEGRA2_GPIO		1
+#define CONFIG_CMD_TEGRA2_GPIO_INFO	1
+
 #endif /* __CONFIG_H */

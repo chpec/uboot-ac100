@@ -169,13 +169,17 @@ int mmc_legacy_init(int verbose)
     mmc_blk_dev.lun = 0;
     mmc_blk_dev.type = 0;
 
-    mmc_blk_dev.lba = 0x10000;
+    /* This needs to be probed, go with something sufficiently large to read
+     * the partition table for now
+     */
+    mmc_blk_dev.lba = 0x10000000;
     mmc_blk_dev.removable = 0;
 
     /* Block Readsi/Writes should use the SD Block Driver Read/Write interface */
     mmc_blk_dev.block_read = mmc_bread;
     mmc_blk_dev.block_write = mmc_bwrite;
     printf("EMMC Probed Successfully\n");
+    init_part(&mmc_blk_dev);
     return 0;
 
 fail :

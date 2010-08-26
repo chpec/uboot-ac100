@@ -1,6 +1,6 @@
 /*
- * (C) Copyright 2010
- * NVIDIA Corporation <www.nvidia.com>
+ *  (C) Copyright 2010
+ *  NVIDIA Corporation <www.nvidia.com>
  *
  * See file CREDITS for list of people who contributed to this
  * project.
@@ -20,6 +20,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  */
+
+/*
+ * Defines useful constants for working with clocks.
+ */
+
+
 #ifndef INCLUDED_NVBOOT_CLOCKS_H
 #define INCLUDED_NVBOOT_CLOCKS_H
 
@@ -41,9 +47,9 @@ extern "C"
  * Rounding is performed in such way as to guarantee at least the range
  * that is down for min and up for max
  * the range macros receive the frequency in kHz as argument
- * division by 32 kHz then becomes a shift by 5 to the right 
+ * division by 32 kHz then becomes a shift by 5 to the right
  *
- * The macros are defined for a frequency of 32768 Hz (not 32000 Hz). 
+ * The macros are defined for a frequency of 32768 Hz (not 32000 Hz).
  * They use 2^-5 ranges, or about 3.2% and dispense with the rounding.
  * Also need to use the full value in Hz in the macro
  */
@@ -65,8 +71,8 @@ extern "C"
 #define NVBOOT_CLOCKS_MIN_CNT_26 NVBOOT_CLOCKS_MIN_RANGE(26000000)
 #define NVBOOT_CLOCKS_MAX_CNT_26 NVBOOT_CLOCKS_MAX_RANGE(26000000)
 
-// The stabilization delay in usec 
-#define NVBOOT_CLOCKS_PLL_STABILIZATION_DELAY (300) 
+// The stabilization delay in usec
+#define NVBOOT_CLOCKS_PLL_STABILIZATION_DELAY (300)
 
 // other values important when starting PLLP
 #define NVBOOT_CLOCKS_PLLP_CPCON_DEFAULT (8)

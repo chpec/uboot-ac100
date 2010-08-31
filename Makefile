@@ -2243,6 +2243,9 @@ tegra2_harmony_config:  unconfig
 chromeos_tegra2_harmony_recovery_config: unconfig
 	@$(MKCONFIG) chromeos/tegra2/harmony/recovery arm arm_cortexa9 harmony tegra2 tegra2
 
+chromeos_tegra2_seaboard_recovery_config: unconfig
+	@$(MKCONFIG) chromeos/tegra2/seaboard/recovery arm arm_cortexa9 harmony tegra2 tegra2
+
 #########################################################################
 ## XScale Systems
 #########################################################################

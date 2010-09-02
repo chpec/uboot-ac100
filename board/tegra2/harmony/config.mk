@@ -21,7 +21,4 @@
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 #  MA 02111-1307 USA
 # 
-
-# original setting
-#TEXT_BASE = 0x00e08000
-TEXT_BASE = 0x00108000
+TEXT_BASE = 0x00e08000

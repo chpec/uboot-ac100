@@ -38,4 +38,9 @@
 /* UARTA: debug board uart */
 #define CONFIG_SYS_NS16550_COM2		NV_ADDRESS_MAP_APB_UARTA_BASE
 
+#define CONFIG_EXTRA_ENV_SETTINGS	\
+	CONFIG_TEGRA_ENV_SETTINGS	\
+	"platform_extras=mem=384M@0M nvmem=128M@384M mem=512M@512M\0"
+
+
 #endif //__configs_chromeos_tegra2_harmony_recovery_h__

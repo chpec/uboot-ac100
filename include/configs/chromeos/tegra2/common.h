@@ -102,9 +102,8 @@
 
 #define CONFIG_LOADADDR			0x408000
 #define CONFIG_BOOTDELAY		-1		/* disable auto boot */
-#define CONFIG_EXTRA_ENV_SETTINGS	\
-	"console=console=ttyS0,115200n8\0" \
-	"platform_extras=mem=448M@0M mem=512M@512M\0" \
+#define CONFIG_TEGRA_ENV_SETTINGS	\
+	"console=console=ttyS0,115200n8\0"
 
 #define CONFIG_SYS_LOAD_ADDR		0xA00800
 

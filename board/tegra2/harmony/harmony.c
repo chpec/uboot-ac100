@@ -460,9 +460,17 @@ void PostYy(void)
     uart_post(0x0a);
     uart_post('Y');
     uart_post('y');
+}
+
+void PostXx(void)
+{
+    NvBlAvpStallMs(20);
     uart_post(0x0d);
     uart_post(0x0a);
-
+    uart_post('X');
+    uart_post('x');
+    uart_post(0x0d);
+    uart_post(0x0a);
 }
 
 int

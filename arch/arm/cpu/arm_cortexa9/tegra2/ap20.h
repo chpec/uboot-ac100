@@ -95,6 +95,15 @@
 /// Calculate clock frequency value from reference and clock divider value
 #define CLK_FREQUENCY(REF, REG)  (((REF) * 2) / (REG + 2))
 
+#define SCU_CONTROL_0                   _MK_ADDR_CONST(0x0)
+#define SCU_CONTROL_0_SCU_ENABLE_RANGE                  0:0
+#define SCU_INVALID_ALL_0                       _MK_ADDR_CONST(0xc)
+
+#define ARM_PREF_BASE  0x50040000
+
+#define NV_SCU_REGR(reg)      NV_READ32(ARM_PREF_BASE + SCU_##reg##_0)
+#define NV_SCU_REGW(reg, val) NV_WRITE32((ARM_PREF_BASE + SCU_##reg##_0), (val))
+
 //------------------------------------------------------------------------------
 // Provide missing enumerators for spec files.
 //------------------------------------------------------------------------------
@@ -114,3 +123,4 @@ void cpu_start(void);
 void cpu_init_crit(void);
 void PostZz(void);
 void PostYy(void);
+void PostXx(void);

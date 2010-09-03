@@ -602,6 +602,151 @@ NV_NAKED void ColdBoot_AP20( void )
     );
 }
 
+void enableScu(void)
+{
+    NvU32 reg;
+
+    return;
+    reg = NV_SCU_REGR(CONTROL);
+    if (NV_DRF_VAL(SCU, CONTROL, SCU_ENABLE, reg) == 1)
+    {
+        /* SCU already enabled, return */
+        return;
+    }
+
+    /* Invalidate all ways for all processors */
+    NV_SCU_REGW(INVALID_ALL, 0xffff);
+
+    /* Enable SCU - bit 0 */
+    reg = NV_SCU_REGR(CONTROL);
+    reg |= 0x1;
+    NV_SCU_REGW(CONTROL, reg);
+
+    return;
+}
+
+void disableScu(void)
+{
+    NvU32 reg;
+
+    reg = NV_SCU_REGR(CONTROL);
+    if (NV_DRF_VAL(SCU, CONTROL, SCU_ENABLE, reg) == 0)
+    {
+        //Return if scu already disabled
+        return;
+    }
+ 
+    /* Invalidate all ways for all processors */
+    NV_SCU_REGW(INVALID_ALL, 0xffff);
+
+    /* Disable SCU - bit 0 */
+    reg = NV_SCU_REGR(CONTROL);
+    reg &= ~(NvU32)0x1;
+    NV_SCU_REGW(CONTROL, reg);
+
+    return;
+}
+ 
+NV_NAKED void NvBlCacheConfigure(void)
+{
+    asm volatile(
+     "stmdb r13!,{r14}                              \n"
+    //invalidate instruction cache
+    "mov r1, #0                                     \n"
+    "mcr p15, 0, r1, c7, c5, 0                      \n"
+
+    //invalidate the i&d tlb entries
+    "mcr p15, 0, r1, c8, c5, 0                      \n"
+    "mcr p15, 0, r1, c8, c6, 0                      \n"
+
+    //enable instruction cache
+    "mrc  p15, 0, r1, c1, c0, 0                     \n"
+    "orr  r1, r1, #(1<<12)                          \n"
+    "mcr  p15, 0, r1, c1, c0, 0                     \n"
+
+#if 0
+    //read in the cpuid register.  If we are on ARMv7 then we have to
+    //iterate over the data cache lines, there is no single invalidate for
+    //the entire cache
+    "mrc p15, 0, r0, c0, c0, 0                      \n"
+    //Part number is bits 4 to 15
+    "ldr r1, = 0xfff0                               \n"
+    //Mask all bits except bits 4 to 15
+    "and r0, r0, r1                                 \n"
+    //0xc09 is the part number for Cortex A9
+    "ldr r1, = (0xC09 << 4)                         \n"
+    "cmp r0, r1                                     \n"
+    "beq cortexA9                                   \n"
+
+    //invalidate data cache
+    "mov r0, #0                                     \n"
+    "mcr p15, 0, r0, c7, c6, 0                      \n"// invalidate
+    "mov r0, #0                                     \n"
+    "mcr p15, 0, r0, c7, c10, 4                     \n"// data sync barrier
+    "bl nvaos_L2Invalidate                          \n"
+    "mcr p15, 0, r0, c7, c10, 4                     \n"// data sync barrier
+
+    "b invalidate_done                              \n"
+
+"cortexA9:                                          \n"
+#endif
+
+#if 0
+    // We enable the SCU early only for AP20 because it is
+    // required for PCIE. For all other A9-based chips, delay
+    // SCU initialization until it is decided that we need it
+    // for SMP to save power and reduce latency.
+    "ldr r0, =0x70000000                            \n"// ldr r0, =AP15_APB_MISC_BASE
+    "ldr r0, [r0, #0x804]                           \n"// ldr r0, [r0, #APB_MISC_GP_HIDREV_0]
+    "mov r0, r0, asr #8                             \n"// mov r0, r0, asr #APB_MISC_GP_HIDREV_0_CHIPID_SHIFT
+    "and r0, r0, #0xFF                              \n"// and r0, r0, #APB_MISC_GP_HIDREV_0_CHIPID_DEFAULT_MASK
+    "cmp r0, #0x20                                  \n"
+
+    //enable SCU - Snoop control unit of Cortex A9
+    "bleq enableScu                                 \n"
+#else
+    "bl enableScu                                   \n"
+#endif
+
+    //enable SMP mode and FW for CPU0, by writing to Auxiliary Control
+    //Register
+    "mrc p15, 0, r0, c1, c0, 1                      \n"
+    "orr r0, r0, #0x41                              \n"
+    "mcr p15, 0, r0, c1, c0, 1                      \n"
+
+    //Now flush the Dcache
+    "mov r0, #0                                     \n"
+    "mov r1, #256                                   \n"// 256 cache lines
+
+"invalidate_loop:                                   \n"
+
+    "add r1, r1, #-1                                \n"
+    "mov r0, r1, lsl #5                             \n"
+    // invalidate d-cache using line (way0)
+    "mcr p15, 0, r0, c7, c6, 2                      \n"
+
+    "orr r2, r0, #(1<<30)                           \n"
+    // invalidate d-cache using line (way1)
+    "mcr p15, 0, r2, c7, c6, 2                      \n"
+
+    "orr r2, r0, #(2<<30)                           \n"
+    // invalidate d-cache using line (way2)
+    "mcr p15, 0, r2, c7, c6, 2                      \n"
+
+    "orr r2, r0, #(3<<30)                           \n"
+    // invalidate d-cache using line (way3)
+    "mcr p15, 0, r2, c7, c6, 2                      \n"
+
+    "cmp r1, #0                                     \n"
+    "bne invalidate_loop                            \n"
+
+    // FIXME: should have ap20's L2 disabled too
+"invalidate_done:                                   \n"
+    "ldmia r13!,{pc}                                \n"
+    ".ltorg                                         \n"
+    );
+}
+
 NvU32 s_ChipId;
 volatile NvU32 s_bFirstBoot = 1;
 
@@ -657,12 +802,15 @@ void tegra2_start()
         /***********************************************************************/
         /* more cpu init */
         /***********************************************************************/
-        cpu_init_crit();
+        NvBlCacheConfigure();
+
+        /* post code 'Yy' */
+        PostYy();
 #endif
 
         /* Init UART PortD (115200 8n1)*/
         NvBlUartInitD();
 
-        /* post code 'Yy' */
-        PostYy();
+        /* post code 'Xx' */
+        PostXx();
 }

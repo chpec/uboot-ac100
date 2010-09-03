@@ -46,7 +46,7 @@ int board_init(void)
 	/* boot param addr */
 	gd->bd->bi_boot_params = (NV_ADDRESS_MAP_SDRAM_BASE + 0x100);
 	/* board id for Linux */
-	gd->bd->bi_arch_number = MACH_TYPE_TEGRA_HARMONY;
+	gd->bd->bi_arch_number = MACH_TYPE_HARMONY;
 
         board_usb_init();
 	return 0;

@@ -45,6 +45,9 @@
 #define CONFIG_MISC_INIT_R
 #define CONFIG_SKIP_LOWLEVEL_INIT
 
+#define CONFIG_SYS_64BIT_STRTOUL                1
+#define CONFIG_SYS_64BIT_VSPRINTF               1
+
 /*
  * NS16550 Configuration
  */

@@ -104,9 +104,19 @@
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
 
 #define CONFIG_LOADADDR			0x408000
-#define CONFIG_BOOTDELAY		-1		/* disable auto boot */
+#define CONFIG_BOOTDELAY		2	/* 2s to break to prompt */
 #define CONFIG_TEGRA_ENV_SETTINGS	\
-	"console=console=ttyS0,115200n8\0"
+	"console=console=ttyS0,115200n8\0" \
+	"img=/boot/vmlinux.uimg\0" \
+	"usbboot=usb start;ext2load usb 0:3 ${loadaddr} ${img};" \
+		"setenv bootargs ${console} root=/dev/sda3 rootwait ${platform_extras};" \
+		"bootm ${loadaddr}\0" \
+	"mmcboot=mmc init;ext2load mmc 0:3 ${loadaddr} ${img};" \
+		"setenv bootargs ${console} root=/dev/mmcblk0p3 rootwait ${platform_extras};" \
+		"bootm ${loadaddr}\0"
+
+#undef CONFIG_BOOTCOMMAND
+#define CONFIG_BOOTCOMMAND		"run usbboot ; run mmcboot"
 
 #define CONFIG_SYS_LOAD_ADDR		0xA00800
 

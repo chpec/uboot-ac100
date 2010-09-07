@@ -42,5 +42,7 @@
 	CONFIG_TEGRA_ENV_SETTINGS	\
 	"platform_extras=mem=384M@0M nvmem=128M@384M mem=512M@512M\0"
 
+#define LINUX_MACH_TYPE			MACH_TYPE_HARMONY
+
 
 #endif //__configs_chromeos_tegra2_harmony_recovery_h__

@@ -16,33 +16,25 @@
 #ifndef __TEGRA2_GPIO_H
 #define __TEGRA2_GPIO_H
 
-/* from kernel include/linux/bitops.h */
-#define BITS_PER_BYTE 8
-#define BITS_TO_LONGS(nr)	DIV_ROUND_UP(nr, BITS_PER_BYTE * sizeof(long))
+#define TEGRA2_GPIO_BASE	0x6000D000
 
-#define GPIO_MAX		224
-#define TEGRA2_GPIO0_BASE	0x6000D000
-
-#define pin_to_port(pin)    	(pin / 8)
-#define pin_to_bit(pin)    	(pin % 8)
-
-#define GPIO_OFF(pin)		(pin_to_port(pin) << 5)
-#define GPIO_CNF(pin)		(TEGRA2_GPIO0_BASE + GPIO_OFF(pin) + 0x00)
-#define GPIO_OE(pin)	    	(TEGRA2_GPIO0_BASE + GPIO_OFF(pin) + 0x10)
-#define GPIO_OUT(pin)	    	(TEGRA2_GPIO0_BASE + GPIO_OFF(pin) + 0x20)
-#define GPIO_IN(pin)	    	(TEGRA2_GPIO0_BASE + GPIO_OFF(pin) + 0x30)
-#define GPIO_INT_STA(pin)	(TEGRA2_GPIO0_BASE + GPIO_OFF(pin) + 0x40)
-#define GPIO_INT_ENB(pin)	(TEGRA2_GPIO0_BASE + GPIO_OFF(pin) + 0x50)
-#define GPIO_INT_LVL(pin)	(TEGRA2_GPIO0_BASE + GPIO_OFF(pin) + 0x60)
-#define GPIO_INT_CLR(pin)	(TEGRA2_GPIO0_BASE + GPIO_OFF(pin) + 0x70)
+#define GPIO_OFF(port)		(((port / 4) * 128) + ((port % 4) * 4))
+#define GPIO_CNF(port)		(TEGRA2_GPIO_BASE + GPIO_OFF(port) + 0x00)
+#define GPIO_OE(port)		(TEGRA2_GPIO_BASE + GPIO_OFF(port) + 0x10)
+#define GPIO_OUT(port)		(TEGRA2_GPIO_BASE + GPIO_OFF(port) + 0x20)
+#define GPIO_IN(port)		(TEGRA2_GPIO_BASE + GPIO_OFF(port) + 0x30)
+#define GPIO_INT_STA(port)	(TEGRA2_GPIO_BASE + GPIO_OFF(port) + 0x40)
+#define GPIO_INT_ENB(port)	(TEGRA2_GPIO_BASE + GPIO_OFF(port) + 0x50)
+#define GPIO_INT_LVL(port)	(TEGRA2_GPIO_BASE + GPIO_OFF(port) + 0x60)
+#define GPIO_INT_CLR(port)	(TEGRA2_GPIO_BASE + GPIO_OFF(port) + 0x70)
 
 /*
  * Tegra2-specific GPIO API
  */
 
-int tg2_gpio_direction_input(unsigned pin);
-int tg2_gpio_direction_output(unsigned pin, int value);
-int tg2_gpio_get_value(unsigned pin);
-void tg2_gpio_set_value(unsigned pin, int value);
+int tg2_gpio_direction_input(unsigned port, unsigned bit);
+int tg2_gpio_direction_output(unsigned port, unsigned bit, int value);
+int tg2_gpio_get_value(unsigned port, unsigned bit);
+void tg2_gpio_set_value(unsigned port, unsigned bit, int value);
 
 #endif

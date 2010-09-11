@@ -40,7 +40,7 @@
 
 #define CONFIG_EXTRA_ENV_SETTINGS	\
 	CONFIG_TEGRA_ENV_SETTINGS	\
-	"platform_extras=mem=384M@0M nvmem=128M@384M\0"
+	"platform_extras=mem=384M@0M nvmem=128M@384M mem=512M@512M\0"
 
 #define LINUX_MACH_TYPE			MACH_TYPE_TEGRA_SEABOARD
 

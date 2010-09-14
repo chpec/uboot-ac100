@@ -103,17 +103,21 @@
 #define CONFIG_SYS_NAND_BASE		NAND_BASE
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
 
-#define CONFIG_LOADADDR			0x408000
+#define CONFIG_LOADADDR			0x40C000
 #define CONFIG_BOOTDELAY		2	/* 2s to break to prompt */
 #define CONFIG_TEGRA_ENV_SETTINGS	\
-	"console=console=ttyS0,115200n8\0" \
-	"img=/boot/vmlinux.uimg\0" \
-	"usbboot=usb start;ext2load usb 0:3 ${loadaddr} ${img};" \
-		"setenv bootargs ${console} root=/dev/sda3 rootwait ${platform_extras};" \
-		"bootm ${loadaddr}\0" \
-	"mmcboot=mmc init;ext2load mmc 0:3 ${loadaddr} ${img};" \
-		"setenv bootargs ${console} root=/dev/mmcblk0p3 rootwait ${platform_extras};" \
-		"bootm ${loadaddr}\0"
+	"scriptaddr=0x408000\0" \
+	"script_img=/u-boot/boot.scr.uimg\0" \
+	"scriptboot=fatload ${devtype} 0:c ${scriptaddr} ${script_img};" \
+		"source ${scriptaddr}\0" \
+	"mmcboot=mmc init;" \
+		"setenv devtype mmc;" \
+		"setenv devname mmcblk0p;" \
+		"run scriptboot;\0" \
+	"usbboot=usb start;" \
+		"setenv devtype usb;" \
+		"setenv devname sda;" \
+		"run scriptboot;\0"
 
 #undef CONFIG_BOOTCOMMAND
 #define CONFIG_BOOTCOMMAND		"run usbboot ; run mmcboot"

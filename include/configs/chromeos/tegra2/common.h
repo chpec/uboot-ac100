@@ -49,6 +49,11 @@
 #define CONFIG_SYS_64BIT_VSPRINTF               1
 
 /*
+ * PllX Configuration
+ */
+#define CONFIG_SYS_CPU_OSC_FREQUENCY    1000000        /* Set CPU clock to 1GHz */
+
+/*
  * NS16550 Configuration
  */
 #define CONFIG_SYS_NS16550

@@ -80,13 +80,7 @@ static NvU32  NvBlQueryBootCpuFrequency_NVAP( void )
 {
     NvU32   frequency;
 
-    #if     NVBL_PLL_BYPASS
-        // In bypass mode we run at the oscillator frequency.
-        frequency = NvBlQueryBootOscillatorFrequency_NVAP(ChipId);
-    #else
-        //frequency = (ChipId->SKU == FUSE_SKU_INFO_0_AP15L) ? 450000 : 600000;
-        frequency = 600000;
-    #endif
+    frequency = CONFIG_SYS_CPU_OSC_FREQUENCY;
 
     return frequency;
 }

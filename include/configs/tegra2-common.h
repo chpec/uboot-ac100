@@ -96,6 +96,11 @@
  */
 
 /*
+ * PllX Configuration
+ */
+#define CONFIG_SYS_CPU_OSC_FREQUENCY	1000000
+
+/*
  * NS16550 Configuration
  */
 #define V_NS16550_CLK			216000000	/* 216MHz (pllp_out0) */

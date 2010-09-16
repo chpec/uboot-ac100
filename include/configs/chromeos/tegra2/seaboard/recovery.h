@@ -43,5 +43,6 @@
 	"platform_extras=mem=384M@0M nvmem=128M@384M mem=512M@512M\0"
 
 #define LINUX_MACH_TYPE			MACH_TYPE_TEGRA_SEABOARD
+#define CONFIG_SYS_BOARD_ODMDATA	0x30d08011
 
 #endif //__configs_chromeos_tegra2_seaboard_recovery_h__

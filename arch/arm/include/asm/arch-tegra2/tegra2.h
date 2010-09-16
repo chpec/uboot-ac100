@@ -526,7 +526,9 @@
 #define UART_ASR_0                      _MK_ADDR_CONST(0x3c)
 
 /* ap20/arapbpm.h */
-#define APBDEV_PMC_SCRATCH20_0                       _MK_ADDR_CONST(0xa0)
+#define APBDEV_PMC_SCRATCH1_0                   _MK_ADDR_CONST(0x54)
+#define APBDEV_PMC_SCRATCH20_0                  _MK_ADDR_CONST(0xa0)
+#define APBDEV_PMC_SCRATCH23_0                  _MK_ADDR_CONST(0xac)
 #define APBDEV_PMC_CNTRL_0                           _MK_ADDR_CONST(0x0)
 #define APBDEV_PMC_CNTRL_0_MAIN_RST_RANGE            4:4
 #define APBDEV_PMC_CNTRL_0_MAIN_RST_ENABLE           _MK_ENUM_CONST(1)

@@ -741,6 +741,23 @@ NV_NAKED void NvBlCacheConfigure(void)
     );
 }
 
+void NvBlInitPmcScratch(void)
+{
+    volatile NvU8 *pPmc;
+    NvU32 i;
+   
+    pPmc = (volatile NvU8 *)(NV_ADDRESS_MAP_PMC_BASE);
+
+    //  SCRATCH0 is initialized by the boot ROM and shouldn't be cleared
+    for (i=APBDEV_PMC_SCRATCH1_0; i<=APBDEV_PMC_SCRATCH23_0; i+=4)
+    {
+        if (i==APBDEV_PMC_SCRATCH20_0)
+            NV_WRITE32(pPmc+i, CONFIG_SYS_BOARD_ODMDATA);
+        else
+            NV_WRITE32(pPmc+i, 0);
+    }
+}
+
 NvU32 s_ChipId;
 volatile NvU32 s_bFirstBoot = 1;
 
@@ -804,6 +821,9 @@ void tegra2_start()
 
         /* Init UART PortD (115200 8n1)*/
         NvBlUartInitD();
+
+        /* Init PMC scratch memory */
+        NvBlInitPmcScratch();
 
         /* post code 'Xx' */
         PostXx();

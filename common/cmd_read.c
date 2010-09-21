@@ -33,35 +33,75 @@
  * Software Foundation.
  */
 
-#ifndef __configs_chromeos_recovery_h__
-#define __configs_chromeos_recovery_h__
+#include <common.h>
+#include <command.h>
+#include <part.h>
 
-#include <configs/chromeos/common.h>
+int do_read (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+	char *ep;
+	block_dev_desc_t *dev_desc = NULL;
+	int dev;
+	int part = 0;
+	disk_partition_t part_info;
+	ulong offset = 0u;
+	ulong limit = 0u;
+	void *addr;
+	uint blk;
+	uint cnt;
 
-#define CONFIG_CMD_AUTOSCRIPT
-#define CONFIG_CMD_BDI
-#define CONFIG_CMD_BOOTD
-#define CONFIG_CMD_CONSOLE
-#define CONFIG_CMD_ECHO
-#define CONFIG_CMD_FPGA
-#define CONFIG_CMD_IMI
-#define CONFIG_CMD_ITEST
-#define CONFIG_CMD_LOADB
-#define CONFIG_CMD_LOADS
-#define CONFIG_CMD_MISC
-#define CONFIG_CMD_RUN
-#define CONFIG_CMD_SAVEENV
-#define CONFIG_CMD_SETGETDCR
-#define CONFIG_CMD_SOURCE
-#define CONFIG_CMD_XIMG
+	if (argc != 6) {
+		cmd_usage (cmdtp);
+		return 1;
+	}
 
-#define CONFIG_MMC
-#define CONFIG_EFI_PARTITION
-#define CONFIG_DOS_PARTITION
+	dev = (int)simple_strtoul (argv[2], &ep, 16);
+	if (*ep) {
+		if (*ep != ':') {
+			printf ("Invalid block device %s\n", argv[2]);
+			return 1;
+		}
+		part = (int)simple_strtoul (++ep, NULL, 16);
+	}
 
-#define CONFIG_CMD_MMC
-#define CONFIG_CMD_EXT2
-#define CONFIG_CMD_FAT
-#define CONFIG_CMD_READ
+	dev_desc = get_dev (argv[1], dev);
+	if (dev_desc == NULL) {
+		printf ("Block device %s %d not supported\n", argv[1], dev);
+		return 1;
+	}
 
-#endif //__configs_chromeos_recovery_h__
+	addr = (void *)simple_strtoul (argv[3], NULL, 16);
+	blk = simple_strtoul (argv[4], NULL, 16);
+	cnt = simple_strtoul (argv[5], NULL, 16);
+
+	if (part != 0) {
+		if (get_partition_info (dev_desc, part, &part_info)) {
+			printf ("Cannot find partition %d\n", part);
+			return 1;
+		}
+		offset = part_info.start;
+		limit = part_info.size;
+	} else {
+		/* Largest address not available in block_dev_desc_t. */
+		limit = ~0;
+	}
+
+	if (cnt + blk > limit) {
+		printf ("Read out of range\n");
+		return 1;
+	}
+
+	if (dev_desc->block_read (dev, offset + blk, cnt, addr) < 0) {
+		printf ("Error reading blocks\n");
+		return 1;
+	}
+
+	return 0;
+}
+
+U_BOOT_CMD(
+	read,	6,	0,	do_read,
+	"Load binary data from a partition",
+	"<interface> <dev[:part]> addr blk# cnt"
+);
+

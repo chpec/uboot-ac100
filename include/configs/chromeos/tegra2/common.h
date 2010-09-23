@@ -114,7 +114,9 @@
 	"scriptaddr=0x408000\0" \
 	"script_img=/u-boot/boot.scr.uimg\0" \
 	"scriptboot=fatload ${devtype} 0:c ${scriptaddr} ${script_img};" \
-		"source ${scriptaddr}\0" \
+		"source ${scriptaddr};" \
+		"read ${devtype} 0:${kernelpart} ${scriptaddr} 0 10;" \
+		"source ${scriptaddr};\0" \
 	"mmcboot=mmc init;" \
 		"setenv devtype mmc;" \
 		"setenv devname mmcblk0p;" \

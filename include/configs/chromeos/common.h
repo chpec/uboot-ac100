@@ -60,8 +60,6 @@
 #define CONFIG_DISPLAY_BOARDINFO	1
 
 #define CONFIG_SYS_LONGHELP		1
-#define CONFIG_SYS_HUSH_PARSER		1
-#define CONFIG_SYS_PROMPT_HUSH_PS2	"    > "
 #define CONFIG_SYS_PROMPT		"CrOS> "
 
 #define CONFIG_BOOTARGS \
@@ -78,8 +76,8 @@
 #define CONFIG_SYS_CBSIZE		512
 #define CONFIG_SYS_PBSIZE		(CONFIG_SYS_CBSIZE + \
 					 sizeof(CONFIG_SYS_PROMPT) + \
-					 16)
-#define CONFIG_SYS_MAXARGS		16
+					 64)
+#define CONFIG_SYS_MAXARGS		64
 #define CONFIG_SYS_BARGSIZE		(CONFIG_SYS_CBSIZE)
 
 #endif //__configs_chromeos_common_h__

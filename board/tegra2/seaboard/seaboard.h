@@ -21,11 +21,11 @@
  * MA 02111-1307 USA
  */
 
-#ifndef _HARMONY_H_
-#define _HARMONY_H_
+#ifndef _SEABOARD_H_
+#define _SEABOARD_H_
 
 const tegra2_sysinfo sysinfo = {
-	"Tegra2 Harmony board",
+	"Tegra2 Seaboard",
 #if defined(CONFIG_ENV_IS_IN_ONENAND)
 	"OneNAND",
 #else
@@ -33,4 +33,4 @@ const tegra2_sysinfo sysinfo = {
 #endif
 };
 
-#endif /* _HARMONY_H_ */
+#endif /* _SEABOARD_H_ */

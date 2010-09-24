@@ -30,7 +30,7 @@
  * High Level Configuration Options
  */
 #define TEGRA2_SYSMEM           "mem=384M@0M nvmem=128M@384M mem=512M@512M"
-#define V_PROMPT		"Tegra2 (harmony) # "
+#define V_PROMPT		"Tegra2 (SeaBoard) # "
 #define TEGRA_NFSPORT_DEFAULT	"usb0"
 
 #define CONFIG_SERIAL_MULTI	1
@@ -47,7 +47,7 @@
 #define CONFIG_TEGRA2_GPIO		1
 #define CONFIG_CMD_TEGRA2_GPIO_INFO	1
 
-#define LINUX_MACH_TYPE			MACH_TYPE_HARMONY
-#define CONFIG_SYS_BOARD_ODMDATA	0x30d08011
+#define LINUX_MACH_TYPE                 MACH_TYPE_TEGRA_SEABOARD
+#define CONFIG_SYS_BOARD_ODMDATA        0x30d08011
 
 #endif /* __CONFIG_H */

@@ -98,7 +98,7 @@
 /*
  * PllX Configuration
  */
-#define CONFIG_SYS_CPU_OSC_FREQUENCY	1000000
+#define CONFIG_SYS_CPU_OSC_FREQUENCY    1000000        /* Set CPU clock to 1GHz */
 
 /*
  * NS16550 Configuration
@@ -124,6 +124,7 @@
 #define CONFIG_MMC			1
 #define CONFIG_TEGRA2_MMC		1
 #define CONFIG_DOS_PARTITION		1
+#define CONFIG_EFI_PARTITION		1
 
 /* commands to include */
 #include <config_cmd_default.h>
@@ -220,24 +221,21 @@
 #define CONFIG_IPADDR		10.0.0.2
 #define CONFIG_SERVERIP		10.0.0.1
 #define CONFIG_LOADADDR		0x408000 /* free RAM to download kernel to */
-#define CONFIG_BOOTFILE		uImage
+#define CONFIG_BOOTFILE		vmlinux.uimg
 #define TEGRA_EHCI_PROBE_DELAY_DEFAULT	"5000"
-#define CONFIG_BOOTDELAY		-1      /* disable auto boot */
+#define CONFIG_BOOTDELAY		2      /* -1 to disable auto boot */
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"usbprobedelay=" TEGRA_EHCI_PROBE_DELAY_DEFAULT "\0" \
 	"usbhost=on\0" \
 	CONFIG_DEFAULT_ENV_SETTINGS \
-	"usbargs=setenv bootargs mem=${mem} " \
-		"video=${videospec} " \
+	"usbargs=setenv bootargs root=/dev/sda3 rw rootwait " \
+		"${mem} " \
+                "video=${videospec} " \
 		"console=${console} " \
+		"usbcore.old_scheme_first=1 " \
 		"tegraboot=${tegraboot} " \
-		"tegrapart=${tegraparts} " \
-		"${smpflag} " \
-		"${usb_old_scheme_first} " \
-		"rw root=/dev/sda1 rootfstype=ext2 "\
-		"rootdelay=${rootdelay} " \
-		"ip=:::::${nfsport}:off;\0"\
-	"nandargs=setenv bootargs mem=448M@0M mem=512M@512M " \
+		"tegrap earlyprintk;\0"\
+	"nandargs=setenv bootargs ${mem} " \
 		"video=${videospec} " \
 		"console=${console} " \
 		"tegraboot=${tegraboot} " \
@@ -245,7 +243,7 @@
 		"${smpflag} " \
 		"${usb_old_scheme_first} " \
 		"rw root=/dev/sda1 rootdelay=15;\0"\
-	"mmcargs=setenv bootargs mem=${mem} " \
+	"mmcargs=setenv bootargs ${mem} " \
 		"video=${videospec} " \
 		"console=${console} " \
 		"tegraboot=${tegraboot} " \
@@ -254,7 +252,7 @@
 		"${usb_old_scheme_first} " \
 		"rw root=/dev/mmchd0p1 rootfstype=ext3 "\
 		"ip=:::::${nfsport}:off;\0"\
-	"nfsargs=setenv bootargs mem=${mem} "\
+	"nfsargs=setenv bootargs ${mem} "\
 		"video=${videospec} " \
 		"console=${console} " \
 		"tegraboot=${tegraboot} " \
@@ -266,9 +264,15 @@
 			"setenv bootargs ${bootargs} " \
 				"tegra_ehci_probe_delay=${usbprobedelay}; " \
 		"fi;\0" \
-	"usbboot=setenv bootcmd  " \
-		"run usbargs \\; " \
-		"ext2load usb 0 ${loadaddr} /boot/${bootfile}\\; " \
+	"usbboot=usb start; " \
+		"ext2load usb 0:3 ${loadaddr} /boot/${bootfile}; " \
+		"setenv bootargs root=/dev/sda3 rw rootwait " \
+                "${mem} " \
+                "video=${videospec} " \
+		"console=${console} " \
+		"usbcore.old_scheme_first=1 " \
+		"tegraboot=${tegraboot} " \
+		"tegrap earlyprintk; "\
 		"bootm ${loadaddr}\0" \
 	"nandboot=setenv bootcmd  " \
 		"run nandargs \\; " \
@@ -276,19 +280,25 @@
 		"yrdm /flash/boot/${bootfile} ${loadaddr}\\; " \
 		"yumount /flash\\; " \
 		"bootm ${loadaddr}\0" \
-	"mmcboot=setenv bootcmd " \
-		"run mmcargs\\; " \
-		"ext2load mmc 0 ${loadaddr} /boot/${bootfile}\\; " \
+	"mmcboot=ext2load mmc 0:3 ${loadaddr} /boot/${bootfile}; " \
+		"setenv bootargs root=/dev/mmcblk0p3 rw rootwait " \
+                "${mem} " \
+                "video=${videospec} " \
+		"console=${console} " \
+		"usbcore.old_scheme_first=1 " \
+		"tegraboot=${tegraboot} " \
+		"tegrap earlyprintk; "\
 		"bootm ${loadaddr}\0" \
 	"nfsboot=setenv bootcmd " \
 		"run nfsargs\\; "\
 		"tftpboot ${loadaddr}\\;"\
 		"bootm ${loadaddr}\0"
 
-/* load from sd mmc card */
-#define CONFIG_BOOTCOMMAND "run nandargs;" \
-		"ext2load mmc 0 ${loadaddr} /boot/${bootfile};" \
-		"bootm ${loadaddr};"
+/* auto load */
+/* try load from usb first, then mmc */
+#undef CONFIG_BOOTCOMMAND
+#define CONFIG_BOOTCOMMAND              "run usbboot ; run mmcboot"
+
 #define CONFIG_AUTO_COMPLETE
 /*
  * Miscellaneous configurable options

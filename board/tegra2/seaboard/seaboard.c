@@ -225,3 +225,10 @@ NvBlUartInitD(void)
     while (NvBlUartRxReadyD())
         (void)NvBlUartRxD();
 }
+
+int drv_keyboard_init(void)
+{
+#ifdef CONFIG_TEGRA2_KEYBOARD
+	tegra_kbc_init();
+#endif
+}

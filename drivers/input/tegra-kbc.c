@@ -357,7 +357,7 @@ static int tegra_kbc_open(void)
 	return 0;
 }
 
-int tegra_kbc_init(void)
+int drv_keyboard_init(void)
 {
 	int error;
 	struct stdio_dev kbddev;
@@ -409,4 +409,3 @@ int tegra_kbc_init(void)
 
 	return error;
 }
-

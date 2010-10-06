@@ -46,13 +46,14 @@ extern "C"
 // Bit 6 == 0: the clock has no associated but in register CLK_ENB, bits 5:0 form a secondary ID
 //             it also happens that none of these clocks has a source register in standard format
 // The two MSB encode the offset of the source register if of standard format, 0 if not
-#define NVBOOT_CLOCKS_STANDARD_ENB  (0x40)
+#define NVBOOT_CLOCKS_STANDARD_ENB  (0x100)
 #define NVBOOT_CLOCKS_ENB_BIT_OFFSET_MASK (0x1F)
 #define NVBOOT_CLOCKS_H_REG (0x20)
+#define NVBOOT_CLOCKS_U_REG (0x40)
 #define NVBOOT_CLOCKS_SOURCE_SHIFT (16)
 #define NVBOOT_CLOCKS_HAS_STANDARD_ENB(ClockId) (((NvU32) ClockId) & NVBOOT_CLOCKS_STANDARD_ENB)
 #define NVBOOT_CLOCKS_BIT_OFFSET(ClockId)       (((NvU32) ClockId) & NVBOOT_CLOCKS_ENB_BIT_OFFSET_MASK)
-#define NVBOOT_CLOCKS_REG_OFFSET(ClockId)     ( (((NvU32) ClockId) & NVBOOT_CLOCKS_H_REG) >> 3 )
+#define NVBOOT_CLOCKS_REG_OFFSET(ClockId)     ( (((NvU32) ClockId) & (NVBOOT_CLOCKS_H_REG | NVBOOT_CLOCKS_U_REG)) >> 3 )
 #define NVBOOT_CLOCKS_SOURCE_OFFSET(ClockId)  ( (((NvU32) ClockId) & ~((1<<NVBOOT_CLOCKS_SOURCE_SHIFT) -1))\
                                                  >> NVBOOT_CLOCKS_SOURCE_SHIFT)
 typedef enum
@@ -66,9 +67,21 @@ typedef enum
     NvBootClocksClockId_UsbId    = CLK_RST_CONTROLLER_CLK_OUT_ENB_L_0_CLK_ENB_USBD_SHIFT
                                  + NVBOOT_CLOCKS_STANDARD_ENB,
 
+    NvBootClocksClockId_I2cpId   = CLK_RST_CONTROLLER_CLK_OUT_ENB_H_0_CLK_ENB_DVC_I2C_SHIFT
+                                 + NVBOOT_CLOCKS_STANDARD_ENB + NVBOOT_CLOCKS_H_REG
+                                 + (CLK_RST_CONTROLLER_CLK_SOURCE_DVC_I2C_0 << NVBOOT_CLOCKS_SOURCE_SHIFT),
+
     NvBootClocksClockId_I2c1Id   = CLK_RST_CONTROLLER_CLK_OUT_ENB_L_0_CLK_ENB_I2C1_SHIFT
                                  + NVBOOT_CLOCKS_STANDARD_ENB
                                  + (CLK_RST_CONTROLLER_CLK_SOURCE_I2C1_0 << NVBOOT_CLOCKS_SOURCE_SHIFT),
+
+    NvBootClocksClockId_I2c2Id   = CLK_RST_CONTROLLER_CLK_OUT_ENB_H_0_CLK_ENB_I2C2_SHIFT
+                                 + NVBOOT_CLOCKS_STANDARD_ENB + NVBOOT_CLOCKS_H_REG
+                                 + (CLK_RST_CONTROLLER_CLK_SOURCE_I2C2_0 << NVBOOT_CLOCKS_SOURCE_SHIFT),
+
+    NvBootClocksClockId_I2c3Id   = CLK_RST_CONTROLLER_CLK_OUT_ENB_U_0_CLK_ENB_I2C3_SHIFT
+                                 + NVBOOT_CLOCKS_STANDARD_ENB + NVBOOT_CLOCKS_U_REG
+                                 + (CLK_RST_CONTROLLER_CLK_SOURCE_I2C3_0 << NVBOOT_CLOCKS_SOURCE_SHIFT),
 
     NvBootClocksClockId_NandId   = CLK_RST_CONTROLLER_CLK_OUT_ENB_L_0_CLK_ENB_NDFLASH_SHIFT
                                  + NVBOOT_CLOCKS_STANDARD_ENB

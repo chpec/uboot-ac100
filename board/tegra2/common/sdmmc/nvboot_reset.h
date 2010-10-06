@@ -38,13 +38,17 @@ extern "C"
 // The corresponding enum embeds some information on the register structure
 #define NVBOOT_RESET_DEVICE_BIT_OFFSET_MASK (0x1F)
 #define NVBOOT_RESET_H_REG (0x20)
+#define NVBOOT_RESET_U_REG (0x40)
 #define NVBOOT_RESET_BIT_OFFSET(DeviceId)         (((NvU32) DeviceId) & NVBOOT_RESET_DEVICE_BIT_OFFSET_MASK)
-#define NVBOOT_RESET_REG_OFFSET(DeviceId)        ((((NvU32) DeviceId) & NVBOOT_RESET_H_REG) >> 3 )
+#define NVBOOT_RESET_REG_OFFSET(DeviceId)        ((((NvU32) DeviceId) & (NVBOOT_RESET_H_REG | NVBOOT_RESET_U_REG)) >> 3 )
 typedef enum 
 {                                                                                      
     NvBootResetDeviceId_CpuId    = CLK_RST_CONTROLLER_RST_DEVICES_L_0_SWR_CPU_RST_SHIFT,
     NvBootResetDeviceId_CopId    = CLK_RST_CONTROLLER_RST_DEVICES_L_0_SWR_COP_RST_SHIFT,
+    NvBootResetDeviceId_I2cpId   = CLK_RST_CONTROLLER_RST_DEVICES_H_0_SWR_DVC_I2C_RST_SHIFT	+ NVBOOT_RESET_H_REG,
     NvBootResetDeviceId_I2c1Id   = CLK_RST_CONTROLLER_RST_DEVICES_L_0_SWR_I2C1_RST_SHIFT,
+    NvBootResetDeviceId_I2c2Id   = CLK_RST_CONTROLLER_RST_DEVICES_H_0_SWR_I2C2_RST_SHIFT	+ NVBOOT_RESET_H_REG,
+    NvBootResetDeviceId_I2c3Id   = CLK_RST_CONTROLLER_RST_DEVICES_U_0_SWR_I2C3_RST_SHIFT	+ NVBOOT_RESET_U_REG,
     NvBootResetDeviceId_NandId   = CLK_RST_CONTROLLER_RST_DEVICES_L_0_SWR_NDFLASH_RST_SHIFT,
     // jz
 #if 1 // SDMMC4

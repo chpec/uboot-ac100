@@ -108,6 +108,18 @@
 #define CONFIG_SYS_NAND_BASE		NAND_BASE
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
 
+/*-------------------------
+ *  I2C configuration
+ */
+#define CONFIG_TEGRA2_I2C
+
+#ifdef CONFIG_TEGRA2_I2C
+#define CONFIG_CMD_I2C
+#define CONFIG_I2C_MULTI_BUS		1
+#define CONFIG_SYS_MAX_I2C_BUS		4
+#define CONFIG_SYS_I2C_SPEED		100000
+#endif
+
 #define CONFIG_LOADADDR			0x40C000
 #define CONFIG_BOOTDELAY		2	/* 2s to break to prompt */
 #define CONFIG_TEGRA_ENV_SETTINGS	\

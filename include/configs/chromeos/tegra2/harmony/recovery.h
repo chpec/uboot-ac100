@@ -45,4 +45,9 @@
 #define LINUX_MACH_TYPE			MACH_TYPE_HARMONY
 #define CONFIG_SYS_BOARD_ODMDATA	0x30d08011
 
+#define CONFIG_I2CP_PIN_MUX		1
+#define CONFIG_I2C1_PIN_MUX		1
+#define CONFIG_I2C2_PIN_MUX		1
+#define CONFIG_I2C3_PIN_MUX		1
+
 #endif //__configs_chromeos_tegra2_harmony_recovery_h__

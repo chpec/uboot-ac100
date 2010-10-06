@@ -390,4 +390,15 @@
 #   define CONFIG_SYS_WHITE_ON_BLACK       /*Console colors*/
 #endif
 
+/*
+ *  I2C configuration
+ */
+#define CONFIG_TEGRA2_I2C
+
+#ifdef CONFIG_TEGRA2_I2C
+#define CONFIG_CMD_I2C
+#define CONFIG_I2C_MULTI_BUS	1
+#define CONFIG_SYS_MAX_I2C_BUS	4
+#endif
+
 #endif /* __CONFIG_H */

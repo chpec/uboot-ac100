@@ -74,6 +74,7 @@ typedef enum
     NvBootError_InvalidBootDeviceEncoding,
     NvBootError_CableNotConnected,
     NvBootError_InvalidBlDst,
+    NvBootError_SlaveNotFound,
 
     NvBootError_Force32 = 0x7fffffff
 } NvBootError;

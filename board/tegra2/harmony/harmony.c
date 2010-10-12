@@ -43,7 +43,7 @@ int board_init(void)
 	gd->bd->bi_boot_params = (NV_ADDRESS_MAP_SDRAM_BASE + 0x100);
 	/* board id for Linux */
 	gd->bd->bi_arch_number = MACH_TYPE_TEGRA_HARMONY;
-	
+
 	return 0;
 }
 
@@ -58,9 +58,9 @@ int misc_init_r(void)
 
 /*
  * Routine: timer_init
- *              
+ *
  * Description: init the timestamp and lastinc value
- *              
+ *
  */
 int timer_init (void)
 {
@@ -123,13 +123,13 @@ void NvBlUartClockInitA(void)
 
     // 1. Assert Reset to UART A
     NV_CLK_RST_READ(RST_DEVICES_L, Reg);
-    Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, RST_DEVICES_L, 
+    Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, RST_DEVICES_L,
                              SWR_UARTA_RST, ENABLE, Reg);
     NV_CLK_RST_WRITE(RST_DEVICES_L, Reg);
 
     // 2. Enable clk to UART A
     NV_CLK_RST_READ(CLK_OUT_ENB_L, Reg);
-    Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, CLK_OUT_ENB_L, 
+    Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, CLK_OUT_ENB_L,
                              CLK_ENB_UARTA, ENABLE, Reg);
     NV_CLK_RST_WRITE(CLK_OUT_ENB_L, Reg);
 
@@ -141,21 +141,21 @@ void NvBlUartClockInitA(void)
           | NV_DRF_DEF(CLK_RST_CONTROLLER, PLLP_BASE, PLLP_BASE_OVRRIDE, ENABLE)
           | NV_DRF_NUM(CLK_RST_CONTROLLER, PLLP_BASE, PLLP_LOCK, 0x0)
           | NV_DRF_NUM(CLK_RST_CONTROLLER, PLLP_BASE, PLLP_DIVP, 0x1)
-          | NV_DRF_NUM(CLK_RST_CONTROLLER, PLLP_BASE, PLLP_DIVN, 
+          | NV_DRF_NUM(CLK_RST_CONTROLLER, PLLP_BASE, PLLP_DIVN,
                        NVRM_PLLP_FIXED_FREQ_KHZ/500)
           | NV_DRF_NUM(CLK_RST_CONTROLLER, PLLP_BASE, PLLP_DIVM, 0x0C);
     NV_CLK_RST_WRITE(PLLP_BASE, Reg);
 
-    Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, PLLP_BASE, 
+    Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, PLLP_BASE,
                              PLLP_ENABLE, ENABLE, Reg);
     NV_CLK_RST_WRITE(PLLP_BASE, Reg);
 
-    Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, PLLP_BASE, 
+    Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, PLLP_BASE,
                              PLLP_BYPASS, DISABLE, Reg);
     NV_CLK_RST_WRITE(PLLP_BASE, Reg);
 
     // Enable pllp_out0 to UARTA.
-    Reg = NV_DRF_DEF(CLK_RST_CONTROLLER, CLK_SOURCE_UARTA, 
+    Reg = NV_DRF_DEF(CLK_RST_CONTROLLER, CLK_SOURCE_UARTA,
                      UARTA_CLK_SRC, PLLP_OUT0);
     NV_CLK_RST_WRITE(CLK_SOURCE_UARTA, Reg);
 
@@ -165,7 +165,7 @@ void NvBlUartClockInitA(void)
 
     // De-assert reset to UART A
     NV_CLK_RST_READ(RST_DEVICES_L, Reg);
-    Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, RST_DEVICES_L, 
+    Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, RST_DEVICES_L,
                              SWR_UARTA_RST, DISABLE, Reg);
     NV_CLK_RST_WRITE(RST_DEVICES_L, Reg);
 
@@ -177,13 +177,13 @@ void NvBlUartClockInitD(void)
 
     // 1. Assert Reset to UART D
     NV_CLK_RST_READ(RST_DEVICES_U, Reg);
-    Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, RST_DEVICES_U, 
+    Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, RST_DEVICES_U,
                              SWR_UARTD_RST, ENABLE, Reg);
     NV_CLK_RST_WRITE(RST_DEVICES_U, Reg);
 
     // 2. Enable clk to UART D
     NV_CLK_RST_READ(CLK_OUT_ENB_U, Reg);
-    Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, CLK_OUT_ENB_U, 
+    Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, CLK_OUT_ENB_U,
                              CLK_ENB_UARTD, ENABLE, Reg);
     NV_CLK_RST_WRITE(CLK_OUT_ENB_U, Reg);
 
@@ -194,21 +194,21 @@ void NvBlUartClockInitD(void)
           | NV_DRF_DEF(CLK_RST_CONTROLLER, PLLP_BASE, PLLP_BASE_OVRRIDE, ENABLE)
           | NV_DRF_NUM(CLK_RST_CONTROLLER, PLLP_BASE, PLLP_LOCK, 0x0)
           | NV_DRF_NUM(CLK_RST_CONTROLLER, PLLP_BASE, PLLP_DIVP, 0x1)
-          | NV_DRF_NUM(CLK_RST_CONTROLLER, PLLP_BASE, PLLP_DIVN, 
+          | NV_DRF_NUM(CLK_RST_CONTROLLER, PLLP_BASE, PLLP_DIVN,
                        NVRM_PLLP_FIXED_FREQ_KHZ/500)
           | NV_DRF_NUM(CLK_RST_CONTROLLER, PLLP_BASE, PLLP_DIVM, 0x0C);
     NV_CLK_RST_WRITE(PLLP_BASE, Reg);
 
-    Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, PLLP_BASE, 
+    Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, PLLP_BASE,
                              PLLP_ENABLE, ENABLE, Reg);
     NV_CLK_RST_WRITE(PLLP_BASE, Reg);
 
-    Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, PLLP_BASE, 
+    Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, PLLP_BASE,
                              PLLP_BYPASS, DISABLE, Reg);
     NV_CLK_RST_WRITE(PLLP_BASE, Reg);
 
     // Enable pllp_out0 to UARTD.
-    Reg = NV_DRF_DEF(CLK_RST_CONTROLLER, CLK_SOURCE_UARTD, 
+    Reg = NV_DRF_DEF(CLK_RST_CONTROLLER, CLK_SOURCE_UARTD,
                      UARTD_CLK_SRC, PLLP_OUT0);
     NV_CLK_RST_WRITE(CLK_SOURCE_UARTD, Reg);
 
@@ -217,7 +217,7 @@ void NvBlUartClockInitD(void)
 
     // De-assert reset to UART D
     NV_CLK_RST_READ(RST_DEVICES_U, Reg);
-    Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, RST_DEVICES_U, 
+    Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, RST_DEVICES_U,
                              SWR_UARTD_RST, DISABLE, Reg);
     NV_CLK_RST_WRITE(RST_DEVICES_U, Reg);
 
@@ -232,18 +232,18 @@ NvBlAvpClockSetDivider(NvBool Enable, NvU32 Dividened, NvU32 Divisor)
     {
         // Set up divider for SCLK.
         // SCLK is used for AVP, AHB, and APB.
-        val = NV_DRF_DEF(CLK_RST_CONTROLLER, SUPER_SCLK_DIVIDER, 
+        val = NV_DRF_DEF(CLK_RST_CONTROLLER, SUPER_SCLK_DIVIDER,
                          SUPER_SDIV_ENB, ENABLE)
-              | NV_DRF_NUM(CLK_RST_CONTROLLER, SUPER_SCLK_DIVIDER, 
+              | NV_DRF_NUM(CLK_RST_CONTROLLER, SUPER_SCLK_DIVIDER,
                            SUPER_SDIV_DIVIDEND, Dividened - 1)
-              | NV_DRF_NUM(CLK_RST_CONTROLLER, SUPER_SCLK_DIVIDER, 
+              | NV_DRF_NUM(CLK_RST_CONTROLLER, SUPER_SCLK_DIVIDER,
                            SUPER_SDIV_DIVISOR, Divisor - 1);
         NV_CLK_RST_WRITE(SUPER_SCLK_DIVIDER, val);
     }
-    else 
+    else
     {
         // Disable divider for SCLK.
-        val = NV_DRF_DEF(CLK_RST_CONTROLLER, SUPER_SCLK_DIVIDER, 
+        val = NV_DRF_DEF(CLK_RST_CONTROLLER, SUPER_SCLK_DIVIDER,
                          SUPER_SDIV_ENB, DISABLE);
         NV_CLK_RST_WRITE(SUPER_SCLK_DIVIDER, val);
     }

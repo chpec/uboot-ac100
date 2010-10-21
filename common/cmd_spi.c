@@ -78,6 +78,9 @@ int do_spi (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 	if ((flag & CMD_FLAG_REPEAT) == 0)
 	{
+		if (argc < 2)
+			return cmd_usage(cmdtp);
+
 		if (argc >= 2)
 			device = simple_strtoul(argv[1], NULL, 10);
 		if (argc >= 3)

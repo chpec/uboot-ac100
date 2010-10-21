@@ -36,7 +36,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // PLL CONFIGURATION & PARAMETERS for different clock generators:
 //-----------------------------------------------------------------------------
-// Reference frequency     13.0MHz         19.2MHz         12.0MHz     26.0MHz 
+// Reference frequency     13.0MHz         19.2MHz         12.0MHz     26.0MHz
 // ----------------------------------------------------------------------------
 // PLLU_ENABLE_DLY_COUNT   02 (02h)        03 (03h)        02 (02h)    04 (04h)
 // PLLU_STABLE_COUNT       51 (33h)        75 (4Bh)        47 (2Fh)   102 (66h)
@@ -55,25 +55,25 @@ static const UsbPllDelayParams s_UsbPllDelayParams[NvBootClocksOscFreq_Num] =
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //  PLLU configuration information (reference clock is osc/clk_m and PLLU-FOs are fixed at 12MHz/60MHz/480MHz).
 //
-//  reference frequency         13.0MHz         19.2MHz         12.0MHz         26.0MHz    
+//  reference frequency         13.0MHz         19.2MHz         12.0MHz         26.0MHz
 //  ---------------------------------------------------------------------------------------
 //      DIVN                    960 (3c0h)      200 (0c8h)      960 (3c0h)      960 (3c0h)
 //      DIVM                    13 ( 0dh)        4 ( 04h)       12 ( 0ch)       26 ( 1ah)
-// Filter frequency (MHz)       1               4.8             6           2  
+// Filter frequency (MHz)       1               4.8             6           2
 // CPCON                        1100b           0011b           1100b       1100b
-// LFCON0                       0               0               0           0 
+// LFCON0                       0               0               0           0
 ///////////////////////////////////////////////////////////////////////////////
-static const UsbPllClockParams s_UsbPllBaseInfo[NvBootClocksOscFreq_Num] = 
+static const UsbPllClockParams s_UsbPllBaseInfo[NvBootClocksOscFreq_Num] =
 {
     //DivN, DivM, DivP, CPCON,  LFCON
     {0x3C0, 0x0D, 0x00, 0xC,      0}, // For NvBootClocksOscFreq_13,
     {0x0C8, 0x04, 0x00, 0x3,      0}, // For NvBootClocksOscFreq_19_2
     {0x3C0, 0x0C, 0x00, 0xC,      0}, // For NvBootClocksOscFreq_12
     {0x3C0, 0x1A, 0x00, 0xC,      0}  // For NvBootClocksOscFreq_26
-}; 
+};
 
 ///////////////////////////////////////////////////////////////////////////////
-// Debounce values IdDig, Avalid, Bvalid, VbusValid, VbusWakeUp, and SessEnd. 
+// Debounce values IdDig, Avalid, Bvalid, VbusValid, VbusWakeUp, and SessEnd.
 // Each of these signals have their own debouncer and for each of those one out
 // of 2 debouncing times can be chosen (BIAS_DEBOUNCE_A or BIAS_DEBOUNCE_B.)
 //
@@ -82,7 +82,7 @@ static const UsbPllClockParams s_UsbPllBaseInfo[NvBootClocksOscFreq_Num] =
 // <n> ms = <n> *1000 / (1/19.2MHz) / 4
 // So to program a 1 ms debounce for BIAS_DEBOUNCE_A, we have:
 // BIAS_DEBOUNCE_A[15:0] = 1000 * 19.2 / 4  = 4800 = 0x12c0
-// We need to use only DebounceA for BOOTROM. We dont need the DebounceB 
+// We need to use only DebounceA for BOOTROM. We dont need the DebounceB
 // values, so we can keep those to default.
 ///////////////////////////////////////////////////////////////////////////////
 static const NvU32 s_UsbBiasDebounceATime[NvBootClocksOscFreq_Num] =
@@ -94,7 +94,7 @@ static const NvU32 s_UsbBiasDebounceATime[NvBootClocksOscFreq_Num] =
     0xFDE8   // For NvBootClocksOscFreq_26
 };
 
-static const NvU32 s_UsbBiasTrkLengthTime[NvBootClocksOscFreq_Num] = 
+static const NvU32 s_UsbBiasTrkLengthTime[NvBootClocksOscFreq_Num] =
 {
     /* 20 micro seconds delay after bias cell operation */
     5,  // For NvBootClocksOscFreq_13,
@@ -111,6 +111,7 @@ static const NvU8 s_UtmipElasticLimit     = 16;
 static const NvU8 s_UtmipHsSyncStartDelay = 9;
 
 void board_usb_init(void);
+void board_spi_init(void);
 
 /*
  * Routine: board_init
@@ -125,7 +126,7 @@ int board_init(void)
 	/* board id for Linux */
 	gd->bd->bi_arch_number = LINUX_MACH_TYPE;
 
-        board_usb_init();
+	board_usb_init();
 	return 0;
 }
 
@@ -135,6 +136,7 @@ int board_init(void)
  */
 int misc_init_r(void)
 {
+	board_spi_init();
 	return 0;
 }
 
@@ -505,7 +507,7 @@ void board_usb_init(void)
 
 	/* PLL Delay CONFIGURATION settings
 	 * The following parameters control the bring up of the plls:
-	 */	
+	 */
 	RegVal= readl(UsbBase+UTMIP_MISC_CFG1);
 	RegVal &= 0xFFFC003F;
 	RegVal |= (s_UsbPllDelayParams[OscFreq].StableCount << 6);
@@ -594,7 +596,7 @@ void board_usb_init(void)
 	RegVal= readl(UsbBase+USB_SUSP_CTRL);
 	RegVal &= ~Bit11;
 	writel(RegVal, UsbBase+USB_SUSP_CTRL);
- 
+
 	loop_count = 100000;
 	while (loop_count)
 	{

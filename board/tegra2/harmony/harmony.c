@@ -33,6 +33,11 @@
 #include "../common/board.h"
 #include "harmony.h"
 
+void board_spi_init(void)
+{
+	/* Harmony has no SPI flash on it */
+}
+
 /***************************************************************************
  * Routines for SD/EMMC board specific configuration.
  ***************************************************************************/

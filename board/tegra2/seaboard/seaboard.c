@@ -32,6 +32,12 @@
 #include <asm/arch/tegra2.h>
 #include "../common/board.h"
 #include "seaboard.h"
+#include <spi.h>
+
+void board_spi_init(void)
+{
+	spi_init();
+}
 
 /***************************************************************************
  * Routines for SD/EMMC board specific configuration.

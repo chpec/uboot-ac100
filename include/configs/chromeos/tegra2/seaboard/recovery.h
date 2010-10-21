@@ -50,4 +50,26 @@
 #define CONFIG_I2C2_PIN_MUX		2
 #define CONFIG_I2C3_PIN_MUX		1
 
+/*
+ * SPI Settings
+ */
+#define CONFIG_TEGRA2_SPI
+#define CONFIG_SPI_FLASH
+#define CONFIG_SPI_FLASH_WINBOND
+#define CONFIG_SPI_FLASH_SLOW_READ
+#define CONFIG_SF_DEFAULT_MODE	SPI_MODE_0
+#define CONFIG_CMD_SPI
+#define CONFIG_CMD_SF
+
+/*
+ * To put the env in SPI-Flash on Seaboard, define the following,
+ *  and undef or delete the CONFIG_ENV_IS_NOWHERE (if present).
+ * Note that you MUST change the ENV_OFFSET to be beyond the BCT/BL area!
+ */
+#if	0
+#define CONFIG_ENV_IS_IN_SPI_FLASH
+#define CONFIG_ENV_SECT_SIZE	0x1000	/* 4K sectors */
+#define CONFIG_ENV_OFFSET	0x0	/* DANGER! for test, use offset != 0 */
+#endif
+
 #endif //__configs_chromeos_tegra2_seaboard_recovery_h__

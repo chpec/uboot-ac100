@@ -70,12 +70,12 @@ int spi_flash_cmd_write(struct spi_slave *spi, const u8 *cmd, size_t cmd_len,
 
 	ret = spi_xfer(spi, cmd_len * 8, cmd, NULL, flags);
 	if (ret) {
-		debug("SF: Failed to send read command (%zu bytes): %d\n",
+		debug("SF: Failed to send write command (%zu bytes): %d\n",
 				cmd_len, ret);
 	} else if (data_len != 0) {
 		ret = spi_xfer(spi, data_len * 8, data, NULL, SPI_XFER_END);
 		if (ret)
-			debug("SF: Failed to read %zu bytes of data: %d\n",
+			debug("SF: Failed to write %zu bytes of data: %d\n",
 					data_len, ret);
 	}
 

@@ -44,6 +44,7 @@
 #   define CONFIG_DEFAULT_SPI_MODE	SPI_MODE_0
 #endif
 
+
 /*
  * Values from last command.
  */
@@ -106,7 +107,7 @@ int do_spi (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	}
 
 	if ((bitlen < 0) || (bitlen >  (MAX_SPI_BYTES * 8))) {
-		printf("Invalid bitlen %d, giving up.\n", bitlen);
+		printf("Invalid bitlen %d, max is %d - giving up.\n", bitlen, (MAX_SPI_BYTES * 8));
 		return 1;
 	}
 
@@ -121,16 +122,19 @@ int do_spi (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	debug ("spi chipsel = %08X\n", device);
 
 	spi_claim_bus(slave);
-	if(spi_xfer(slave, bitlen, dout, din,
+
+	if (spi_xfer(slave, bitlen, dout, din,
 				SPI_XFER_BEGIN | SPI_XFER_END) != 0) {
 		printf("Error with the SPI transaction.\n");
 		rcode = 1;
 	} else {
+		puts("Result: 0x");
 		for(j = 0; j < ((bitlen + 7) / 8); j++) {
 			printf("%02X", din[j]);
 		}
 		printf("\n");
 	}
+
 	spi_release_bus(slave);
 	spi_free_slave(slave);
 

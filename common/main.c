@@ -904,6 +904,9 @@ static int cread_line(const char *const prompt, char *buf, unsigned int *len)
 			break;
 		}
 #endif
+		case '\0':
+			continue;
+
 		default:
 			cread_add_char(ichar, insert, &num, &eol_num, buf, *len);
 			break;

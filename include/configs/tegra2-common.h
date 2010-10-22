@@ -40,7 +40,7 @@
 #ifndef CONFIG_ENABLE_CORTEXA9
   #define TEGRA2_AVP_ONLY
 #endif
-#define TEGRA2_TRACE
+#undef TEGRA2_TRACE
 
 /*
  * Configuration required for using ethernet over usb.

@@ -38,7 +38,7 @@
 #define CONFIG_L2_OFF			1
 
 #define CONFIG_ENABLE_CORTEXA9		1
-#define TEGRA2_TRACE
+#undef  TEGRA2_TRACE
 
 #undef CONFIG_USE_IRQ
 #define CONFIG_ARCH_CPU_INIT

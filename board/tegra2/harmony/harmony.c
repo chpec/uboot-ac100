@@ -49,12 +49,6 @@ void NvBlUartClockInitA(void)
 {
     NvU32 Reg;
 
-    // Avoid running this function more than once.
-    static int initialized = 0;
-    if (initialized)
-        return;
-    initialized = 1;
-
     // 1. Assert Reset to UART A
     NV_CLK_RST_READ(RST_DEVICES_L, Reg);
     Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, RST_DEVICES_L,
@@ -162,12 +156,6 @@ NvBlUartInitA(void)
 {
     NvU32 Reg;
 
-    // Avoid running this function more than once.
-    static int initialized = 0;
-    if (initialized)
-        return;
-    initialized = 1;
-
     NvBlUartClockInitA();
 
     /* Enable UARTA - Harmony board uses config4 */
@@ -230,3 +218,15 @@ NvBlUartInitD(void)
     while (NvBlUartRxReadyD())
         (void)NvBlUartRxD();
 }
+void
+NvBlUartInit(void)
+{
+#if (CONFIG_TEGRA2_ENABLE_UARTD)
+    NvBlUartInitD();
+#endif
+
+#if (CONFIG_TEGRA2_ENABLE_UARTA)
+    NvBlUartInitA();
+#endif
+}
+

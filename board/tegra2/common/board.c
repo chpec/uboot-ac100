@@ -285,11 +285,12 @@ NvBlUartPoll(void)
 
 int NvBlUartWrite(const void *ptr);
 void NvBlPrintf(const char *format, ...);
+void uart_post(char c);
 
 static void
 NvBlPrintU4(NvU8 byte)
 {
-    NvBlPrintf("%c", s_Hex2Char[byte & 0xF]);
+    uart_post(s_Hex2Char[byte & 0xF]);
 }
 
 void
@@ -328,9 +329,21 @@ NvBlPrintf(const char *format, ...)
 
 void uart_post(char c)
 {
+#if defined(TEGRA2_TRACE)
+
+#if (CONFIG_TEGRA2_ENABLE_UARTA)
     while (!NvBlUartTxReadyA())
         ;
     NvBlUartTxA(c);
+#endif
+
+#if (CONFIG_TEGRA2_ENABLE_UARTD)
+    while (!NvBlUartTxReadyD())
+        ;
+    NvBlUartTxD(c);
+#endif
+
+#endif
 }
 
 void PostZz(void)

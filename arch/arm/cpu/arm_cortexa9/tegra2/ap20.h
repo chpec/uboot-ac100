@@ -117,10 +117,10 @@ NV_NAKED void NvBlStartUpAvp_AP20( void );
 NV_NAKED void ColdBoot_AP20( void );
 void tegra2_start(void);
 void uart_post(char c);
-void NvBlUartInitA(void);
-void NvBlUartInitD(void);
+void NvBlUartInit(void);
 void cpu_start(void);
 void cpu_init_crit(void);
 void PostZz(void);
 void PostYy(void);
 void PostXx(void);
+

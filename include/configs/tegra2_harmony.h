@@ -29,13 +29,13 @@
 /*
  * High Level Configuration Options
  */
-#define TEGRA2_SYSMEM           "mem=384M@0M nvmem=128M@384M mem=512M@512M"
-#define V_PROMPT		"Tegra2 (harmony) # "
-#define TEGRA_NFSPORT_DEFAULT	"usb0"
+#define TEGRA2_SYSMEM			"mem=384M@0M nvmem=128M@384M mem=512M@512M"
+#define V_PROMPT			"Tegra2 (harmony) # "
+#define TEGRA_NFSPORT_DEFAULT		"usb0"
 
-#define CONFIG_SERIAL_MULTI	1
-#define CONFIG_TEGRA2_HARMONY_ENABLE_KEYBOARD_UART	1
-#define CONFIG_TEGRA2_HARMONY_ENABLE_DEBUG_UART		1
+#define CONFIG_SERIAL_MULTI		1
+#define CONFIG_TEGRA2_ENABLE_UARTD	1
+#define CONFIG_TEGRA2_ENABLE_UARTA	0
 
 /* UARTD: keyboard satellite board uart, default */
 #define CONFIG_SYS_NS16550_COM1		NV_ADDRESS_MAP_APB_UARTD_BASE
@@ -48,7 +48,7 @@
 #define CONFIG_CMD_TEGRA2_GPIO_INFO	1
 
 #define LINUX_MACH_TYPE			MACH_TYPE_HARMONY
-#define CONFIG_SYS_BOARD_ODMDATA	0x30d08011
+#define CONFIG_SYS_BOARD_ODMDATA	0x300d8011
 
 #define CONFIG_I2CP_PIN_MUX		1
 #define CONFIG_I2C1_PIN_MUX		1

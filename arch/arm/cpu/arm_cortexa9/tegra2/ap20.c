@@ -798,33 +798,32 @@ void cpu_start( void )
 
 void tegra2_start()
 {
+    if( s_bFirstBoot ) {
         /* Init Debug UART Port (115200 8n1)*/
-        NvBlUartInitA();
+        NvBlUartInit();
 
         /* post code 'Zz' */
         PostZz();
 
-#ifdef CONFIG_ENABLE_CORTEXA9
-        /* take the mpcore out of reset.
-         * if calling from the mpcore, do nothing.
-         */
-        cpu_start();
-
-        /***********************************************************************/
-        /* more cpu init */
-        /***********************************************************************/
-        NvBlCacheConfigure();
-
-        /* post code 'Yy' */
-        PostYy();
-#endif
-
-        /* Init UART PortD (115200 8n1)*/
-        NvBlUartInitD();
-
         /* Init PMC scratch memory */
         NvBlInitPmcScratch();
+    }
 
-        /* post code 'Xx' */
-        PostXx();
+#ifdef CONFIG_ENABLE_CORTEXA9
+    /* take the mpcore out of reset.
+     * if calling from the mpcore, do nothing.
+     */
+    cpu_start();
+
+    /***********************************************************************/
+    /* more cpu init */
+    /***********************************************************************/
+    NvBlCacheConfigure();
+
+    /* post code 'Yy' */
+    PostYy();
+#endif
+
+    /* post code 'Xx' */
+    PostXx();
 }

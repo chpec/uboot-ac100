@@ -33,53 +33,15 @@
  * Software Foundation.
  */
 
-#ifndef __configs_chromeos_common_h__
-#define __configs_chromeos_common_h__
+#ifndef BIOSINCLUDES_H
+#define BIOSINCLUDES_H
 
-#include <asm/sizes.h>
-#include <config.h>
+/*
+ * This file is a placeholder for the includes supplied by the BIOS
+ * compilation environment.  This file is included if and only if
+ * CHROMEOS_ENVIRONMENT is not defined at compilation time.
+ *
+ * Currently nothing goes here.
+ */
 
-#define CONFIG_CHROMEOS
-
-#define CONFIG_CMDLINE_TAG		1
-
-#define CONFIG_ENV_IS_NOWHERE		1
-#define CONFIG_ENV_SIZE			SZ_128K
-#define CONFIG_ENV_OVERWRITE		1
-
-#define CONFIG_SYS_MALLOC_LEN		SZ_1M
-#define CONFIG_SYS_GBL_DATA_SIZE	128
-
-#define CONFIG_BAUDRATE			115200
-#define CONFIG_SYS_BAUDRATE_TABLE	{4800, \
-					 9600, \
-					 19200, \
-					 38400, \
-					 57600, \
-					 115200}
-
-#define CONFIG_DISPLAY_CPUINFO		1
-#define CONFIG_DISPLAY_BOARDINFO	1
-
-#define CONFIG_SYS_LONGHELP		1
-#define CONFIG_SYS_PROMPT		"CrOS> "
-
-#define CONFIG_BOOTARGS \
-	"${console} root=/dev/mmcblk0p3 ${platform_extras}"
-
-#define CONFIG_BOOTCOMMAND \
-	"ext2load mmc 0:3 ${loadaddr} /boot/vmlinux.uimg;" \
-	"bootm ${loadaddr};"
-
-#define CONFIG_CMDLINE_EDITING		1
-#define CONFIG_COMMAND_HISTORY		1
-#define CONFIG_AUTOCOMPLETE		1
-
-#define CONFIG_SYS_CBSIZE		512
-#define CONFIG_SYS_PBSIZE		(CONFIG_SYS_CBSIZE + \
-					 sizeof(CONFIG_SYS_PROMPT) + \
-					 64)
-#define CONFIG_SYS_MAXARGS		64
-#define CONFIG_SYS_BARGSIZE		(CONFIG_SYS_CBSIZE)
-
-#endif //__configs_chromeos_common_h__
+#endif /* BIOSINCLUDES_H */

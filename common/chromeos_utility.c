@@ -33,53 +33,74 @@
  * Software Foundation.
  */
 
-#ifndef __configs_chromeos_common_h__
-#define __configs_chromeos_common_h__
+/* Implementation of helper functions/wrappers for memory allocations,
+ * manipulation and comparison for vboot library.
+ */
 
-#include <asm/sizes.h>
 #include <config.h>
+#include <common.h>
+#include <malloc.h>
 
-#define CONFIG_CHROMEOS
+/* HACK: Get rid of U-Boots debug and assert macros */
+#undef debug
+#undef assert
 
-#define CONFIG_CMDLINE_TAG		1
+/* HACK: We want to use malloc, free, memcmp, memcpy, memset */
+#define _STUB_IMPLEMENTATION_
 
-#define CONFIG_ENV_IS_NOWHERE		1
-#define CONFIG_ENV_SIZE			SZ_128K
-#define CONFIG_ENV_OVERWRITE		1
+/* Import interface of vboot's helper functions */
+#include <utility.h>
 
-#define CONFIG_SYS_MALLOC_LEN		SZ_1M
-#define CONFIG_SYS_GBL_DATA_SIZE	128
+/* Is it defined in lib_generic/string.c? */
+int memcmp(const void *cs, const void *ct, size_t count);
 
-#define CONFIG_BAUDRATE			115200
-#define CONFIG_SYS_BAUDRATE_TABLE	{4800, \
-					 9600, \
-					 19200, \
-					 38400, \
-					 57600, \
-					 115200}
+void abort(void)
+{
+	reset_cpu(0);
+}
 
-#define CONFIG_DISPLAY_CPUINFO		1
-#define CONFIG_DISPLAY_BOARDINFO	1
+#define exit(retcode) abort()
 
-#define CONFIG_SYS_LONGHELP		1
-#define CONFIG_SYS_PROMPT		"CrOS> "
+void error(const char *format, ...)
+{
+	va_list ap;
+	va_start(ap, format);
+	puts("ERROR: ");
+	vprintf(format, ap);
+	va_end(ap);
+	exit(1);
+}
 
-#define CONFIG_BOOTARGS \
-	"${console} root=/dev/mmcblk0p3 ${platform_extras}"
+void debug(const char *format, ...)
+{
+	va_list ap;
+	va_start(ap, format);
+	puts("DEBUG: ");
+	vprintf(format, ap);
+	va_end(ap);
+}
 
-#define CONFIG_BOOTCOMMAND \
-	"ext2load mmc 0:3 ${loadaddr} /boot/vmlinux.uimg;" \
-	"bootm ${loadaddr};"
+void *Malloc(size_t size)
+{
+	void *p = malloc(size);
+	if (!p) {
+		/* Fatal Error. We must abort. */
+		abort();
+	}
+	return p;
+}
 
-#define CONFIG_CMDLINE_EDITING		1
-#define CONFIG_COMMAND_HISTORY		1
-#define CONFIG_AUTOCOMPLETE		1
+void Free(void *p)
+{
+	free(p);
+}
 
-#define CONFIG_SYS_CBSIZE		512
-#define CONFIG_SYS_PBSIZE		(CONFIG_SYS_CBSIZE + \
-					 sizeof(CONFIG_SYS_PROMPT) + \
-					 64)
-#define CONFIG_SYS_MAXARGS		64
-#define CONFIG_SYS_BARGSIZE		(CONFIG_SYS_CBSIZE)
+int Memcmp(const void *src1, const void *src2, size_t n)
+{
+	return memcmp(src1, src2, n);
+}
 
-#endif //__configs_chromeos_common_h__
+void *Memcpy(void *dest, const void *src, uint64_t n)
+{
+	return memcpy(dest, src, (size_t) n);
+}

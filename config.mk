@@ -181,6 +181,9 @@ endif
 ifdef VBOOT
 CPPFLAGS += -I$(VBOOT)/include/vboot
 endif
+ifdef VBOOT_DEBUG
+CPPFLAGS += -DVBOOT_DEBUG
+endif
 
 CPPFLAGS += -I$(TOPDIR)/include
 CPPFLAGS += -fno-builtin -ffreestanding -nostdinc	\

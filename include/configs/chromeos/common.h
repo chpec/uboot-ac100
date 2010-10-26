@@ -41,6 +41,16 @@
 
 #define CONFIG_CHROMEOS
 
+/* friendly debug environment */
+#ifdef VBOOT_DEBUG
+#define CONFIG_CMD_CROS
+#define CONFIG_SYS_HUSH_PARSER
+#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
+#define CONFIG_CMD_MEMORY
+#define CONFIG_SYS_MEMTEST_START	0x0000
+#define CONFIG_SYS_MEMTEST_END		0x1000
+#endif
+
 #define CONFIG_CMDLINE_TAG		1
 
 #define CONFIG_ENV_IS_NOWHERE		1

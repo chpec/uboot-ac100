@@ -34,6 +34,7 @@
 #define WINBOND_ID_W25X64		0x3017
 
 #define WINBOND_ID_W25Q16B		0x4015
+#define WINBOND_ID_W25Q32B		0x4016
 
 #define WINBOND_SR_WIP		(1 << 0)	/* Write-in-Progress */
 
@@ -123,6 +124,14 @@ static const struct winbond_spi_flash_params winbond_spi_flash_table[] = {
 		.sectors_per_block	= 16,
 		.nr_blocks		= 32,
 		.name			= "W25Q16B",
+	},
+	{
+		.id			= WINBOND_ID_W25Q32B,
+		.l2_page_size		= 8,
+		.pages_per_sector	= 16,
+		.sectors_per_block	= 16,
+		.nr_blocks		= 64,
+		.name			= "W25Q32B",
 	},
 
 };

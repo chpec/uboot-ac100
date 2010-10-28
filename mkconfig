@@ -47,6 +47,12 @@ CONFIG_NAME="${1%_config}"
 
 [ "${BOARD_NAME}" ] || BOARD_NAME="${CONFIG_NAME}"
 
+if [[ ${CONFIG_NAME} =~ "chromeos_" ]] ; then
+    CONFIG_NAME=${CONFIG_NAME//_/\/}
+fi
+
+echo ${CONFIG_NAME}
+
 arch="$2"
 cpu="$3"
 if [ "$4" = "-" ] ; then
@@ -58,11 +64,11 @@ fi
 [ $# -gt 5 ] && [ "$6" != "-" ] && soc="$6"
 
 if [ "${ARCH}" -a "${ARCH}" != "${arch}" ]; then
-	echo "Failed: \$ARCH=${ARCH}, should be '${arch}' for ${BOARD_NAME}" 1>&2
+	echo "Failed: \$ARCH=${ARCH}, should be '${arch}' for ${board}" 1>&2
 	exit 1
 fi
 
-echo "Configuring for ${BOARD_NAME} board..."
+echo "Configuring for ${board} board..."
 
 #
 # Create link to architecture specific headers

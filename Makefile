@@ -2247,12 +2247,6 @@ tegra2_harmony_config:  unconfig
 tegra2_seaboard_config:  unconfig
 	@$(MKCONFIG) $(@:_config=) arm arm_cortexa9 $$(echo $@ | cut -f2 -d_) tegra2 tegra2
 
-chromeos_tegra2_harmony_recovery_config: unconfig
-	@$(MKCONFIG) chromeos/tegra2/harmony/recovery arm arm_cortexa9 harmony tegra2 tegra2
-
-chromeos_tegra2_seaboard_recovery_config: unconfig
-	@$(MKCONFIG) chromeos/tegra2/seaboard/recovery arm arm_cortexa9 seaboard tegra2 tegra2
-
 #########################################################################
 ## XScale Systems
 #########################################################################
@@ -2344,30 +2338,6 @@ QSD8x50_surf_config	:	unconfig
 	else										\
 		echo "#define CONFIG_SDRAM_256MB" >> $(obj)include/config.h;		\
 	fi
-
-chromeos_st1q_stub_config	:	unconfig
-	@$(MKCONFIG) chromeos/st1q/stub arm armv7Scorpion chromeos_st1q NULL QSD8x50
-
-chromeos_st1q_fast_config	:	unconfig
-	@$(MKCONFIG) chromeos/st1q/fast arm armv7Scorpion chromeos_st1q NULL QSD8x50
-
-chromeos_st1q_recovery_config	:	unconfig
-	@$(MKCONFIG) chromeos/st1q/recovery arm armv7Scorpion chromeos_st1q NULL QSD8x50
-
-chromeos_st15_stub_config	:	unconfig
-	@$(MKCONFIG) chromeos/st15/stub arm armv7Scorpion chromeos_st15 NULL QSD8x50
-
-chromeos_st15_fast_config	:	unconfig
-	@$(MKCONFIG) chromeos/st15/fast arm armv7Scorpion chromeos_st15 NULL QSD8x50
-
-chromeos_st15_recovery_config	:	unconfig
-	@$(MKCONFIG) chromeos/st15/recovery arm armv7Scorpion chromeos_st15 NULL QSD8x50
-
-chromeos_8660_recovery_config   :       unconfig
-	@$(MKCONFIG) chromeos/MSM8x60/recovery arm armv7Scorpion MSM8x60 NULL MSM8x60
-
-chromeos_st1q_qrdc_recovery_config   :       unconfig
-	@$(MKCONFIG) chromeos/qrdc/recovery arm armv7Scorpion MSM8x60 NULL MSM8x60
 
 #========================================================================
 # MIPS

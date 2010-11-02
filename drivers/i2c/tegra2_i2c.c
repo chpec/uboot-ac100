@@ -69,6 +69,17 @@ NvU32 i2c_cnfg_addrs[] = {
 	NV_ADDRESS_MAP_APB_I2C3_CNFG_REG
 };
 
+/* I2C_SL_CNFG registers for I2C, I2C2 and I2C3 controllers */
+/*    Note that DVC_I2C controller does not have I2C_SL_CNFG register.
+ *    Use address of 0 for DVC_I2C controller.
+ *    Will skip address 0 when programming the I2C_SL_CNFG registers. */
+NvU32 i2c_sl_cnfg_addrs[] = {
+	0,
+	NV_ADDRESS_MAP_APB_I2C_SL_CNFG_REG,
+	NV_ADDRESS_MAP_APB_I2C2_SL_CNFG_REG,
+	NV_ADDRESS_MAP_APB_I2C3_SL_CNFG_REG
+};
+
 NvU32 i2c_tx_fifo_addrs[] = {
 	NV_ADDRESS_MAP_APB_DVC_I2C_TX_FIFO_REG,
 	NV_ADDRESS_MAP_APB_I2C_TX_FIFO_REG,
@@ -264,11 +275,20 @@ static void set_packet_mode(NvU32 controller)
 {
 	NvU32 config;
 	NvU32 i2c_cnfg_reg;
+	NvU32 i2c_sl_cnfg_reg;
 
 	i2c_cnfg_reg = i2c_cnfg_addrs[controller];
 	config = NV_DRF_DEF(I2C, I2C_CNFG, NEW_MASTER_FSM, ENABLE);
 	config = NV_FLD_SET_DRF_DEF(I2C, I2C_CNFG, PACKET_MODE_EN, GO, config);
 	NVB_WRITE32(i2c_cnfg_reg, config);
+	/* program I2C_SL_CNFG.NEWSL to ENABLE */
+	/* This fixes probe issues, i.e., some slaves may be wrongly detected */
+	i2c_sl_cnfg_reg = i2c_sl_cnfg_addrs[controller];
+	/* skip if i2c_sl_cnfg_reg is 0; Cntlr 0 does not have I2C_SL_CNFG. */
+	if (i2c_sl_cnfg_reg != 0) {
+		config = NV_DRF_DEF(I2C, I2C_SL_CNFG, NEWSL, ENABLE);
+		NVB_WRITE32(i2c_sl_cnfg_reg, config);
+	}
 }
 
 static void get_packet_headers(

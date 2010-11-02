@@ -126,7 +126,9 @@ int board_init(void)
 	/* board id for Linux */
 	gd->bd->bi_arch_number = LINUX_MACH_TYPE;
 
+	board_spi_init();		/* do this early so UART mux is OK */
 	board_usb_init();
+
 	return 0;
 }
 
@@ -136,7 +138,6 @@ int board_init(void)
  */
 int misc_init_r(void)
 {
-	board_spi_init();
 	return 0;
 }
 

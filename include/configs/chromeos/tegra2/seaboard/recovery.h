@@ -48,6 +48,9 @@
 #define CONFIG_I2C2_PIN_MUX		2
 #define CONFIG_I2C3_PIN_MUX		1
 
+#define CONFIG_SYS_MEMTEST_START       0x0000
+#define CONFIG_SYS_MEMTEST_END         0x1000
+
 /*
  * SPI Settings
  */

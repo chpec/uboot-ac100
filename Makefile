@@ -184,7 +184,7 @@ OBJS := $(addprefix $(obj),$(OBJS))
 LIBS  = lib/libgeneric.a
 LIBS += lib/lzma/liblzma.a
 LIBS += lib/lzo/liblzo.a
-LIBS += lib_generic/chromeos/libchromeos.a
+LIBS += lib/chromeos/libchromeos.a
 LIBS += $(shell if [ -f board/$(VENDOR)/common/Makefile ]; then echo \
 	"board/$(VENDOR)/common/lib$(VENDOR).a"; fi)
 LIBS += $(CPUDIR)/lib$(CPU).a

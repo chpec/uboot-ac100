@@ -35,6 +35,14 @@
 
 #define CONFIG_SERIAL_MULTI		1
 #define CONFIG_TEGRA2_ENABLE_UARTD	1
+#define CONFIG_TEGRA2_KEYBOARD		1
+#define CONFIG_KEYBOARD			1
+
+#define CONFIG_CONSOLE_MUX		1
+#define CONFIG_SYS_CONSOLE_IS_IN_ENV	1
+#define CONFIG_STD_DEVICES_SETTINGS	"stdin=serial,tegra-kbc\0" \
+					"stdout=serial\0" \
+					"stderr=serial\0"
 
 /* UARTD: default */
 #define CONFIG_SYS_NS16550_COM1		NV_ADDRESS_MAP_APB_UARTD_BASE

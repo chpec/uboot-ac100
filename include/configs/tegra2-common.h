@@ -207,7 +207,6 @@
 #define CONFIG_USB_ETHER_ASIX
 #define CONFIG_USB_ETHER_SMSC95XX
 
-
 /* Environment information */
 #define CONFIG_DEFAULT_ENV_SETTINGS \
 	"tegraparts=" TEGRAPARTS_DEFAULT "\0" \
@@ -228,6 +227,7 @@
 	"usbprobedelay=" TEGRA_EHCI_PROBE_DELAY_DEFAULT "\0" \
 	"usbhost=on\0" \
 	CONFIG_DEFAULT_ENV_SETTINGS \
+	CONFIG_STD_DEVICES_SETTINGS \
 	"usbargs=setenv bootargs root=/dev/sda3 rw rootwait " \
 		"${mem} " \
                 "video=${videospec} " \

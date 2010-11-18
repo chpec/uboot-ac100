@@ -249,7 +249,7 @@ static unsigned char tegra_kbc_get_char(void)
 	return c;
 }
 
-static int kbd_fetch_char(int loop)
+static int kbd_fetch_char(int test)
 {
 	unsigned char c;
 	static unsigned char prev_c;
@@ -259,20 +259,19 @@ static int kbd_fetch_char(int loop)
 		c = tegra_kbc_get_char();
 		if (!c) {
 			prev_c = 0;
-			continue;
+			if (test)
+				break;
+			else
+				continue;
 		}
 
 		/* This logic takes care of the repeat rate */
 		if ((c != prev_c) || !(rpt_dly--))
 			break;
-	} while (loop);
+	} while (1);
 
 	if (c == prev_c) {
-		/* kbc_testc should return 0 to indicate repeat charachters */
-		if (!loop)
-			c = 0;
-		else
-			rpt_dly = KBC_RPT_RATE;
+		rpt_dly = KBC_RPT_RATE;
 	} else {
 		rpt_dly = KBC_RPT_DLY;
 		prev_c = c;
@@ -281,16 +280,27 @@ static int kbd_fetch_char(int loop)
 	return c;
 }
 
+int valid_char;
 static int kbd_testc(void)
 {
-	unsigned char c = kbd_fetch_char(false);
+	unsigned char c = kbd_fetch_char(true);
+
+	if (c)
+		valid_char = c;
 
 	return (c != 0);
 }
 
 static int kbd_getc(void)
 {
-	unsigned char c = kbd_fetch_char(true);
+	unsigned char c;
+
+	if (valid_char) {
+		c = valid_char;
+		valid_char = 0;
+	} else {
+		c = kbd_fetch_char(false);
+	}
 
 	return c;
 }

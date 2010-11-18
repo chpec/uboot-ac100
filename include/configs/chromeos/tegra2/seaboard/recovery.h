@@ -29,6 +29,11 @@
 
 #define CONFIG_SERIAL_MULTI		1
 #define CONFIG_TEGRA2_ENABLE_UARTD	1
+#define CONFIG_TEGRA2_KEYBOARD		1
+#define CONFIG_KEYBOARD			1
+
+#define CONFIG_CONSOLE_MUX		1
+#define CONFIG_SYS_CONSOLE_IS_IN_ENV	1
 
 /* UARTD: keyboard satellite board uart, default */
 #define CONFIG_SYS_NS16550_COM1		NV_ADDRESS_MAP_APB_UARTD_BASE
@@ -38,7 +43,10 @@
 
 #define CONFIG_EXTRA_ENV_SETTINGS	\
 	CONFIG_TEGRA_ENV_SETTINGS	\
-	"platform_extras=mem=384M@0M nvmem=128M@384M mem=512M@512M\0"
+	"platform_extras=mem=384M@0M nvmem=128M@384M mem=512M@512M\0" \
+	"stdin=serial,tegra-kbc\0" \
+	"stdout=serial\0" \
+	"stderr=serial\0" \
 
 #define LINUX_MACH_TYPE			MACH_TYPE_TEGRA_SEABOARD
 #define CONFIG_SYS_BOARD_ODMDATA	0x300d8011  //lp1, 1GB

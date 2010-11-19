@@ -27,9 +27,9 @@ include $(TOPDIR)/config.mk
 LIB	= $(obj)lib$(BOARD).a
 
 COBJS	:= $(BOARD).o
-#ifdef CONFIG_TEGRA2_KEYBOARD
+ifdef CONFIG_TEGRA2_KEYBOARD
 COBJS	+= $(BOARD)_kbc.o
-#endif
+endif
 COBJS	+= ../common/board.o
 COBJS	+= ../common/sdmmc/nvboot_sdmmc.o
 COBJS	+= ../common/sdmmc/nvboot_reset.o

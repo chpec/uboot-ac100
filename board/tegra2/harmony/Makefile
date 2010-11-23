@@ -24,6 +24,8 @@
 
 include $(TOPDIR)/config.mk
 
+$(shell mkdir -p $(obj)../common/sdmmc)
+
 LIB	= $(obj)lib$(BOARD).a
 
 COBJS	:= $(BOARD).o

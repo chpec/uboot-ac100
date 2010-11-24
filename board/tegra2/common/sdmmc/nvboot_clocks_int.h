@@ -40,10 +40,11 @@ extern "C"
 // Set of clocks supported in the API
 // The corresponding enum embeds some information on the register structure
 // The lowest byte of the enum is unique per clock and built like this
-// Bit 6 == 1: the clock is associated with a bit in register CLK_ENB, offset encoded in bits 5:0
+// Bit 8 == 1: the clock is associated with a bit in register CLK_ENB, offset encoded in bits 6:0
+//	       bit 6 == 1 for the _U registe
 //             bit 5 == 1 for the _H register and 0 for the _L register
 //             bit 4:0 is the offset in the register, that is the _SHIFT part
-// Bit 6 == 0: the clock has no associated but in register CLK_ENB, bits 5:0 form a secondary ID
+// Bit 8 == 0: the clock has no associated but in register CLK_ENB, bits 5:0 form a secondary ID
 //             it also happens that none of these clocks has a source register in standard format
 // The two MSB encode the offset of the source register if of standard format, 0 if not
 #define NVBOOT_CLOCKS_STANDARD_ENB  (0x100)
@@ -87,15 +88,21 @@ typedef enum
                                  + NVBOOT_CLOCKS_STANDARD_ENB
                                  + (CLK_RST_CONTROLLER_CLK_SOURCE_NDFLASH_0 << NVBOOT_CLOCKS_SOURCE_SHIFT),
 
-#if 1 // SDMMC4
-    NvBootClocksClockId_SdmmcId  = CLK_RST_CONTROLLER_CLK_OUT_ENB_L_0_CLK_ENB_SDMMC4_SHIFT
+    NvBootClocksClockId_Sdmmc1Id  = CLK_RST_CONTROLLER_CLK_OUT_ENB_L_0_CLK_ENB_SDMMC1_SHIFT  
                                  + NVBOOT_CLOCKS_STANDARD_ENB
-                                 + (CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC4_0 << NVBOOT_CLOCKS_SOURCE_SHIFT),
-#else // SDMMC2
-    NvBootClocksClockId_SdmmcId  = CLK_RST_CONTROLLER_CLK_OUT_ENB_L_0_CLK_ENB_SDMMC2_SHIFT
+                                 + (CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC1_0 << NVBOOT_CLOCKS_SOURCE_SHIFT),
+
+    NvBootClocksClockId_Sdmmc2Id  = CLK_RST_CONTROLLER_CLK_OUT_ENB_L_0_CLK_ENB_SDMMC2_SHIFT  
                                  + NVBOOT_CLOCKS_STANDARD_ENB
                                  + (CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC2_0 << NVBOOT_CLOCKS_SOURCE_SHIFT),
-#endif
+
+    NvBootClocksClockId_Sdmmc3Id  = CLK_RST_CONTROLLER_CLK_OUT_ENB_U_0_CLK_ENB_SDMMC3_SHIFT  
+                                 + NVBOOT_CLOCKS_STANDARD_ENB + NVBOOT_CLOCKS_U_REG
+                                 + (CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC3_0 << NVBOOT_CLOCKS_SOURCE_SHIFT),
+
+    NvBootClocksClockId_Sdmmc4Id  = CLK_RST_CONTROLLER_CLK_OUT_ENB_L_0_CLK_ENB_SDMMC4_SHIFT  
+                                 + NVBOOT_CLOCKS_STANDARD_ENB
+                                 + (CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC4_0 << NVBOOT_CLOCKS_SOURCE_SHIFT),
 
     NvBootClocksClockId_BseaId   = CLK_RST_CONTROLLER_CLK_OUT_ENB_H_0_CLK_ENB_BSEA_SHIFT
                                  + NVBOOT_CLOCKS_STANDARD_ENB + NVBOOT_CLOCKS_H_REG,
@@ -148,7 +155,10 @@ typedef enum
                (ClockId == NvBootClocksClockId_Usb3Id) || \
                (ClockId == NvBootClocksClockId_I2c1Id) || \
                (ClockId == NvBootClocksClockId_NandId) || \
-               (ClockId == NvBootClocksClockId_SdmmcId)||  \
+               (ClockId == NvBootClocksClockId_Sdmmc1Id)||  \
+               (ClockId == NvBootClocksClockId_Sdmmc2Id)||  \
+               (ClockId == NvBootClocksClockId_Sdmmc3Id)||  \
+               (ClockId == NvBootClocksClockId_Sdmmc4Id)||  \
                (ClockId == NvBootClocksClockId_BseaId)  || \
                (ClockId == NvBootClocksClockId_BsevId)  || \
                (ClockId == NvBootClocksClockId_KbcId)   || \

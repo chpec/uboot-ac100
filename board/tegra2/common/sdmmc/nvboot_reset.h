@@ -50,12 +50,10 @@ typedef enum
     NvBootResetDeviceId_I2c2Id   = CLK_RST_CONTROLLER_RST_DEVICES_H_0_SWR_I2C2_RST_SHIFT	+ NVBOOT_RESET_H_REG,
     NvBootResetDeviceId_I2c3Id   = CLK_RST_CONTROLLER_RST_DEVICES_U_0_SWR_I2C3_RST_SHIFT	+ NVBOOT_RESET_U_REG,
     NvBootResetDeviceId_NandId   = CLK_RST_CONTROLLER_RST_DEVICES_L_0_SWR_NDFLASH_RST_SHIFT,
-    // jz
-#if 1 // SDMMC4
-    NvBootResetDeviceId_SdmmcId  = CLK_RST_CONTROLLER_RST_DEVICES_L_0_SWR_SDMMC4_RST_SHIFT,
-#else // SDMMC2
-    NvBootResetDeviceId_SdmmcId  = CLK_RST_CONTROLLER_RST_DEVICES_L_0_SWR_SDMMC2_RST_SHIFT,
-#endif
+    NvBootResetDeviceId_Sdmmc1Id = CLK_RST_CONTROLLER_RST_DEVICES_L_0_SWR_SDMMC1_RST_SHIFT,
+    NvBootResetDeviceId_Sdmmc2Id = CLK_RST_CONTROLLER_RST_DEVICES_L_0_SWR_SDMMC2_RST_SHIFT,
+    NvBootResetDeviceId_Sdmmc3Id = CLK_RST_CONTROLLER_RST_DEVICES_U_0_SWR_SDMMC3_RST_SHIFT	+ NVBOOT_RESET_U_REG,
+    NvBootResetDeviceId_Sdmmc4Id = CLK_RST_CONTROLLER_RST_DEVICES_L_0_SWR_SDMMC4_RST_SHIFT,
     NvBootResetDeviceId_UartaId  = CLK_RST_CONTROLLER_RST_DEVICES_L_0_SWR_UARTA_RST_SHIFT,
     NvBootResetDeviceId_UsbId    = CLK_RST_CONTROLLER_RST_DEVICES_L_0_SWR_USBD_RST_SHIFT,
     NvBootResetDeviceId_McId     = CLK_RST_CONTROLLER_RST_DEVICES_H_0_SWR_MEM_RST_SHIFT    + NVBOOT_RESET_H_REG,
@@ -76,7 +74,10 @@ typedef enum
                (DeviceId == NvBootResetDeviceId_CopId)    || \
                (DeviceId == NvBootResetDeviceId_I2c1Id)   || \
                (DeviceId == NvBootResetDeviceId_NandId)   || \
-               (DeviceId == NvBootResetDeviceId_SdmmcId)  || \
+               (DeviceId == NvBootResetDeviceId_Sdmmc1Id) || \
+               (DeviceId == NvBootResetDeviceId_Sdmmc2Id) || \
+               (DeviceId == NvBootResetDeviceId_Sdmmc3Id) || \
+               (DeviceId == NvBootResetDeviceId_Sdmmc4Id) || \
                (DeviceId == NvBootResetDeviceId_UartaId)  || \
                (DeviceId == NvBootResetDeviceId_UsbId)    || \
                (DeviceId == NvBootResetDeviceId_Usb3Id)   || \

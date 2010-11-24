@@ -40,7 +40,20 @@ extern "C"
 {
 #endif
 
-//void FFAConfiguration(void);
+/* eMMC controller id */
+typedef enum
+{
+    NvEmmc0 = 0,
+    NvEmmc1,
+    NvEmmc2,
+    NvEmmc3,
+    NvEmmc4,
+    NvUnknownId = 0x7fffffff
+} NvEmmcDeviceId;
+
+NvEmmcDeviceId mmc_get_device_id(int dev);
+
+NvEmmcDeviceId mmc_get_current_device_id(void);
 
 /**
  * Returns a pointer to a device-specific structure of device parameters 
@@ -79,6 +92,7 @@ NvBool NvBootSdmmcValidateParams(const NvBootSdmmcParams *Params);
  */
 void 
 NvBootSdmmcGetBlockSizes(
+    NvEmmcDeviceId DevId,
     const NvBootSdmmcParams *Params,
     NvU32 *BlockSizeLog2,
     NvU32 *PageSizeLog2);
@@ -104,6 +118,7 @@ NvBootSdmmcGetBlockSizes(
  */
 NvBootError 
 NvBootSdmmcInit(
+    NvEmmcDeviceId DevId,
     const NvBootSdmmcParams *ParamData,
     NvBootSdmmcContext *Context);
 
@@ -145,7 +160,7 @@ NvBootDeviceStatus NvBootSdmmcQueryStatus(void);
  * Shutdowns device and cleanup the state.
  * 
  */
-void NvBootSdmmcShutdown(void);
+void NvBootSdmmcShutdown(NvEmmcDeviceId DevId);
 
 #if defined(__cplusplus)
 }

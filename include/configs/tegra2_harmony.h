@@ -56,4 +56,9 @@
 #define CONFIG_I2C2_PIN_MUX		1
 #define CONFIG_I2C3_PIN_MUX		1
 
+#define MMC_DEV_INSTANCES 2 
+#define NvEmmcx_0	NvEmmc4
+#define NvEmmcx_1	NvEmmc2
+#define NvEmmcx_2	0
+#define NvEmmcx_3	0
 #endif /* __CONFIG_H */

@@ -393,9 +393,11 @@ void start_armboot (void)
 #endif
 
 #if defined(CONFIG_CMD_MMC) && !defined(CONFIG_GENERIC_MMC)
+#if !defined(CONFIG_TEGRA2)
 	puts ("MMC:  ");
 	/* The parameter being passed is not being used */
 	mmc_legacy_init(1);
+#endif
 #endif
 
 	/* initialize environment */

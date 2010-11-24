@@ -47,9 +47,17 @@
 #define CONFIG_SYS_MEMTEST_START       0x0000
 #define CONFIG_SYS_MEMTEST_END         0x1000
 
+/* These config switches are for I2C support */
 #define CONFIG_I2CP_PIN_MUX		1
 #define CONFIG_I2C1_PIN_MUX		1
 #define CONFIG_I2C2_PIN_MUX		1
 #define CONFIG_I2C3_PIN_MUX		1
+
+/* These config switches are for SD/MMC controller support */
+#define MMC_DEV_INSTANCES 2 
+#define NvEmmcx_0       NvEmmc4
+#define NvEmmcx_1       NvEmmc2
+#define NvEmmcx_2       0
+#define NvEmmcx_3       0
 
 #endif //__configs_chromeos_tegra2_harmony_recovery_h__

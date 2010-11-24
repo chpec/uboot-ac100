@@ -28,9 +28,6 @@
 #include <asm/arch/tegra2.h>
 #include <asm/arch/nv_hardware_access.h>
 
-#define NV_SDMMC4
-//#undef NV_SDMMC4
-
 #include <asm/arch/nv_sdmmc.h>
 #include <asm/arch/nvboot_device.h>
 #include <asm/arch/nvboot_sdmmc_param.h>
@@ -40,31 +37,14 @@
 #include "nvboot_sdmmc_int.h"
 #include "nvboot_reset.h"
 #include "nvboot_util.h"
+#include "../board.h"
+#include <asm/arch/gpio.h>
 
-#define DEBUG_SDMMC 0
-
-#ifdef NV_SDMMC4
-#define NVBOOT_SDMMC_BASE_ADDRESS NV_ADDRESS_MAP_SDMMC4_BASE	
-#else
-#define NVBOOT_SDMMC_BASE_ADDRESS NV_ADDRESS_MAP_SDMMC2_BASE    // SD only
-#endif
-
-#if DEBUG_SDMMC
-#define PRINT_SDMMC_REG_ACCESS(...)  printf(__VA_ARGS__);
-#define PRINT_SDMMC_MESSAGES(...)    printf(__VA_ARGS__);
-#define PRINT_SDMMC_ERRORS(...)      printf(__VA_ARGS__);
-#else
-#define PRINT_SDMMC_REG_ACCESS(...)
-#define PRINT_SDMMC_MESSAGES(...)
-#define PRINT_SDMMC_ERRORS(...)
-#endif
-
-#if DEBUG_SDMMC
 #define NV_SDMMC_READ(reg, value) \
     do \
     { \
         NV_READ32_((NVBOOT_SDMMC_BASE_ADDRESS + SDMMC_##reg##_0), value); \
-        PRINT_SDMMC_REG_ACCESS("%s: R (0x%08x) %s = 0x%8.8x\n", __FUNCTION__, \
+        debug("%s: R (0x%08x) %s = 0x%8.8x\n", __FUNCTION__, \
                           (NVBOOT_SDMMC_BASE_ADDRESS + SDMMC_##reg##_0), \
                             #reg, value);\
     } while (0)
@@ -72,43 +52,28 @@
 #define NV_SDMMC_WRITE(reg, value) \
     do { \
         NV_WRITE32_((NVBOOT_SDMMC_BASE_ADDRESS + SDMMC_##reg##_0), value); \
-        PRINT_SDMMC_REG_ACCESS("%s: W (0x%08x) %s = 0x%8.8x\n", __FUNCTION__,\
+        debug("%s: W (0x%08x) %s = 0x%8.8x\n", __FUNCTION__,\
                           (NVBOOT_SDMMC_BASE_ADDRESS + SDMMC_##reg##_0), \
                             #reg, value);\
     } while (0)
-
-#else
-#define NV_SDMMC_READ(reg, value) \
-    do \
-    { \
-        NV_READ32_((NVBOOT_SDMMC_BASE_ADDRESS + SDMMC_##reg##_0), value); \
-    } while (0)
-
-#define NV_SDMMC_WRITE(reg, value) \
-    do { \
-        NV_WRITE32_((NVBOOT_SDMMC_BASE_ADDRESS + SDMMC_##reg##_0), value); \
-    } while (0)
-
-#endif
 
 #define NV_SDMMC_WRITE_08(reg, offset, value) \
     do { \
         NV_WRITE08((NVBOOT_SDMMC_BASE_ADDRESS + SDMMC_##reg##_0 + offset), value); \
-        PRINT_SDMMC_REG_ACCESS("W (0x%08x) Byte %s = 0x%2x",\
+        debug("W (0x%08x) Byte %s = 0x%2x",\
             (NVBOOT_SDMMC_BASE_ADDRESS + SDMMC_##reg##_0 + offset), #reg, \
             value); \
     } while (0)
 
-
-// Can't use do while for this, as it is also called from PRINT_SDMMC_XXX.
 #define QUOTIENT_CEILING(dividend, divisor) \
     ((dividend + divisor - 1) / divisor)
 
+static int NVBOOT_SDMMC_BASE_ADDRESS;
 static NvBootSdmmcParams s_DefaultSdmmcParams;
 static NvBootSdmmcContext *s_SdmmcContext = NULL;
 static NvBool s_IsBootModeDataValid = NV_FALSE;
 
-// This struct holds the Info from fuses.
+/* This struct holds the Info from fuses. */
 typedef struct
 {
     /*
@@ -119,24 +84,24 @@ typedef struct
      * on the fuse value enumeration.
      */
     NvBootSdmmcVoltageRange VoltageRange;
-    // Holds Boot mode support.
+    /* Holds Boot mode support. */
     NvBool DisableBootMode;
-    // Holds the card type (EMMC or SD).
+    /* Holds the card type (EMMC or SD). */
     NvBootSdmmcCardType CardType;
-    // Pinmux selection.
+    /* Pinmux selection. */
     NvU8 PinmuxSelection;
 } NvBootSdmmcFuseInfo;
 
 static NvBootSdmmcFuseInfo s_FuseInfo = 
 {NvBootSdmmcVoltageRange_QueryVoltage, NV_FALSE, NvBootSdmmcCardType_Emmc, 0};
 
-// Table that maps fuse values to CMD1 OCR argument values.
+/* Table that maps fuse values to CMD1 OCR argument values. */
 static NvU32 s_OcrVoltageRange[] = 
 {
-    EmmcOcrVoltageRange_QueryVoltage, // NvBootSdmmcVoltageRange_QueryVoltage
-    EmmcOcrVoltageRange_HighVoltage,  // NvBootSdmmcVoltageRange_HighVoltage
-    EmmcOcrVoltageRange_DualVoltage,  // NvBootSdmmcVoltageRange_DualVoltage
-    EmmcOcrVoltageRange_LowVoltage    // NvBootSdmmcVoltageRange_LowVoltage
+    EmmcOcrVoltageRange_QueryVoltage, /* NvBootSdmmcVoltageRange_QueryVoltage */
+    EmmcOcrVoltageRange_HighVoltage,  /* NvBootSdmmcVoltageRange_HighVoltage */
+    EmmcOcrVoltageRange_DualVoltage,  /* NvBootSdmmcVoltageRange_DualVoltage */
+    EmmcOcrVoltageRange_LowVoltage    /* NvBootSdmmcVoltageRange_LowVoltage */
 };
 
 /* Forward Private Function declarations. */
@@ -157,11 +122,11 @@ static NvBootError HwSdmmcResetController(void)
     NvU32 ResetInProgress;
     NvU32 TimeOut = SDMMC_TIME_OUT_IN_US;
     
-    // Reset Controller's All reg's.
+    /* Reset Controller's All reg's. */
     StcReg = NV_DRF_DEF(SDMMC, SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL,
                 SW_RESET_FOR_ALL, RESETED);
     NV_SDMMC_WRITE(SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL, StcReg);
-    // Wait till Reset is completed.
+    /* Wait till Reset is completed. */
     while (TimeOut)
     {
         NV_SDMMC_READ(SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL, StcReg);
@@ -173,7 +138,7 @@ static NvBootError HwSdmmcResetController(void)
         TimeOut--;
         if (!TimeOut)
         {
-            PRINT_SDMMC_ERRORS("Reset all timed out.\n");
+            printf("Reset all timed out.\n");
             return NvBootError_HwTimeOut;
         }
     }
@@ -188,7 +153,7 @@ NvBootSdmmcGetParams(
     NvU32 Index;
     NV_ASSERT(Params != NULL);
     
-    // Extract Data width from Param Index, which comes from fuses.
+    /* Extract Data width from Param Index, which comes from fuses. */
     Index = NV_DRF_VAL(SDMMC_DEVICE, CONFIG, DATA_WIDTH, ParamIndex);
     /*
      * One Fuse bit is used for Data width. The value starting from
@@ -242,15 +207,8 @@ NvBootSdmmcGetParams(
     s_DefaultSdmmcParams.MaxPowerClassSupported = 0;
     
     *Params = (NvBootSdmmcParams*)&s_DefaultSdmmcParams;
-#if NVRM
-    s_SdmmcBitInfo->FuseDataWidth = s_DefaultSdmmcParams.DataWidth;
-    s_SdmmcBitInfo->FuseCardType = s_FuseInfo.CardType;
-    s_SdmmcBitInfo->FuseVoltageRange = s_FuseInfo.VoltageRange;
-    s_SdmmcBitInfo->FuseDisableBootMode = s_FuseInfo.DisableBootMode;
-    s_SdmmcBitInfo->FusePinmuxSelection = s_FuseInfo.PinmuxSelection;
-#endif
     
-    PRINT_SDMMC_MESSAGES("ParamIndex=0x%x, DataWidth=%d (1->4bit, 2->8bit), "
+    debug("ParamIndex=0x%x, DataWidth=%d (1->4bit, 2->8bit), "
         "CardType=%d (0->EMMC, 1->ESD),\r\nVoltageRange=%d(0->query, 1->high, "
         "2-> dual, 3->low), DisableBootMode=%d(0:E,1:D),\r\nClockDivider=%d, MaxPowClass"
         "Supported=%d\n", ParamIndex, s_DefaultSdmmcParams.DataWidth, 
@@ -261,6 +219,7 @@ NvBootSdmmcGetParams(
 
 void
 NvBootSdmmcGetBlockSizes(
+    NvEmmcDeviceId DevId,
     const NvBootSdmmcParams *Params,
     NvU32 *BlockSizeLog2,
     NvU32 *PageSizeLog2)
@@ -272,7 +231,7 @@ NvBootSdmmcGetBlockSizes(
     
     *BlockSizeLog2 = s_SdmmcContext->BlockSizeLog2;
     *PageSizeLog2 = s_SdmmcContext->PageSizeLog2;
-    PRINT_SDMMC_MESSAGES("BlockSize=%d, PageSize=%d, PagesPerBlock=%d\n", 
+    debug("BlockSize=%d, PageSize=%d, PagesPerBlock=%d\n", 
         (1 << s_SdmmcContext->BlockSizeLog2),(1 << s_SdmmcContext->PageSizeLog2),
         (1 << s_SdmmcContext->PagesPerBlockLog2));
 }
@@ -294,14 +253,14 @@ static NvBootError HwSdmmcWaitForClkStable(void)
         TimeOut--;
         if (!TimeOut)
         {
-            PRINT_SDMMC_ERRORS("HwSdmmcInitController()-Clk stable timed out.\n");
+            printf("HwSdmmcInitController()-Clk stable timed out.\n");
             return NvBootError_HwTimeOut;
         }
     }
     return NvBootError_Success;
 }
 
-static NvBootError HwSdmmcSetCardClock(NvBootSdmmcCardClock ClockRate)
+static NvBootError HwSdmmcSetCardClock(NvEmmcDeviceId DevId, NvBootSdmmcCardClock ClockRate)
 {
     NvU32 taac;
     NvU32 nsac;
@@ -315,14 +274,14 @@ static NvBootError HwSdmmcSetCardClock(NvBootSdmmcCardClock ClockRate)
     NvU32 CardCycleTimeInNanoSec;
     NvU32 ControllerClockDivisor;
     NvU32 ContollerCycleTimeInNanoSec;
-    // These array values are as per Emmc/Esd Spec's.
+    /* These array values are as per Emmc/Esd Spec's. */
     const NvU32 TaacTimeUnitArray[] = {1, 10, 100, 1000, 10000, 100000, 1000000, 
                                        10000000};
     const NvU32 TaacMultiplierArray[] = {10, 10, 12, 13, 15, 20, 25, 30, 35, 40, 
                                          45, 50, 55, 60, 70, 80};
     
     s_SdmmcContext->CurrentClockRate = ClockRate;
-    // Disable Card clock before changing it's Frequency.
+    /* Disable Card clock before changing it's Frequency. */
     NV_SDMMC_READ(SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL, StcReg);
     StcReg = NV_FLD_SET_DRF_DEF(SDMMC, SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL,
                 SD_CLOCK_EN, DISABLE, StcReg);
@@ -345,7 +304,7 @@ static NvBootError HwSdmmcSetCardClock(NvBootSdmmcCardClock ClockRate)
         ControllerClockDivisor = s_SdmmcContext->ClockDivisor;
         CardClockDivisor = s_SdmmcContext->CardClockDivisor;
     }
-    else //if (ClockRate == NvBootSdmmcCardClock_20MHz)
+    else /*if (ClockRate == NvBootSdmmcCardClock_20MHz) */
     {
         ControllerClockDivisor = 22;
         CardClockDivisor = 1;
@@ -357,54 +316,57 @@ static NvBootError HwSdmmcSetCardClock(NvBootSdmmcCardClock ClockRate)
     CardClockInMHz = QUOTIENT_CEILING(SDMMC_PLL_FREQ_IN_MHZ, 
                         (ControllerClockDivisor * CardClockDivisor));
     CardCycleTimeInNanoSec = QUOTIENT_CEILING(1000, CardClockInMHz);
-    // Find read time out.
+    /* Find read time out. */
     if (s_SdmmcContext->taac != 0)
     {
-        // For Emmc, Read time is 10 times of (TAAC + NSAC).
-        // for Esd, Read time is 100 times of (TAAC + NSAC) or 100ms, which ever
-        // is lower.
+        /* For Emmc, Read time is 10 times of (TAAC + NSAC).
+           for Esd, Read time is 100 times of (TAAC + NSAC) or 100ms, which ever
+           is lower. */
         taac = TaacTimeUnitArray[s_SdmmcContext->taac & 
                EMMC_CSD_TAAC_TIME_UNIT_MASK] * 
                TaacMultiplierArray[(s_SdmmcContext->taac >> 
                EMMC_CSD_TAAC_TIME_VALUE_OFFSET) & EMMC_CSD_TAAC_TIME_VALUE_MASK];
         nsac = CardCycleTimeInNanoSec * s_SdmmcContext->nsac * 1000;
-        // taac and nsac are already multiplied by 10.
-// jz
-//        s_SdmmcContext->ReadTimeOutInUs = QUOTIENT_CEILING((taac + nsac), 1000);
-        PRINT_SDMMC_MESSAGES("Card ReadTimeOutInUs=%d\n", 
+
+        debug("Card ReadTimeOutInUs=%d\n", 
             s_SdmmcContext->ReadTimeOutInUs);
-        // Use 200ms time out instead of 100ms. This could be helpful in case
-        // old version of cards.
+        /* Use 200ms time out instead of 100ms. This could be helpful in case
+           old version of cards. */
         if (s_SdmmcContext->ReadTimeOutInUs < 200000)
             s_SdmmcContext->ReadTimeOutInUs = 200000;
         else if (s_SdmmcContext->ReadTimeOutInUs > 800000)
         {
-            //NV_ASSERT(NV_FALSE);
-            // Calculation seem to have gone wrong or TAAc is not valid. 
-            // Set it to 800msec, which is max timeout.
+            /* Calculation seem to have gone wrong or TAAc is not valid. 
+               Set it to 800msec, which is max timeout. */
             s_SdmmcContext->ReadTimeOutInUs = 800000;
         }
     }
-    PRINT_SDMMC_MESSAGES("Base Clock=%dMHz\n", 
+    debug("Base Clock=%dMHz\n", 
         QUOTIENT_CEILING(SDMMC_PLL_FREQ_IN_MHZ, ControllerClockDivisor));
-    PRINT_SDMMC_MESSAGES("HwSdmmcSetCardClock Div=%d\n", CardClockDivisor);
+    debug("HwSdmmcSetCardClock Div=%d\n", CardClockDivisor);
     
-    NvBootClocksConfigureClock(NvBootClocksClockId_SdmmcId,
-        NVBOOT_CLOCKS_7_1_DIVIDER_BY(ControllerClockDivisor, 0),
-#ifdef NV_SDMMC4
-        CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC4_0_SDMMC4_CLK_SRC_PLLP_OUT0);
-#else
-        CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC2_0_SDMMC2_CLK_SRC_PLLP_OUT0);
-#endif
-    // If the card clock divisor is 64, the register should be written with 32.
+	if (DevId == NvEmmc4)    
+		NvBootClocksConfigureClock(NvBootClocksClockId_Sdmmc4Id,
+        	NVBOOT_CLOCKS_7_1_DIVIDER_BY(ControllerClockDivisor, 0),
+		CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC4_0_SDMMC4_CLK_SRC_PLLP_OUT0);
+	else if (DevId == NvEmmc2)
+		NvBootClocksConfigureClock(NvBootClocksClockId_Sdmmc2Id,
+        	NVBOOT_CLOCKS_7_1_DIVIDER_BY(ControllerClockDivisor, 0),
+	        CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC2_0_SDMMC2_CLK_SRC_PLLP_OUT0);
+	else if (DevId == NvEmmc3)
+		NvBootClocksConfigureClock(NvBootClocksClockId_Sdmmc3Id,
+        	NVBOOT_CLOCKS_7_1_DIVIDER_BY(ControllerClockDivisor, 0),
+	        CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC3_0_SDMMC3_CLK_SRC_PLLP_OUT0);
+
+    /* If the card clock divisor is 64, the register should be written with 32. */
     StcReg = NV_FLD_SET_DRF_NUM(SDMMC, SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL,
                 SDCLK_FREQUENCYSELECT, (CardClockDivisor >> 1), StcReg);
     NV_SDMMC_WRITE(SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL, StcReg);
-    // Wait till clock is stable.
+    /* Wait till clock is stable. */
     NV_BOOT_CHECK_ERROR(HwSdmmcWaitForClkStable());
-    // Reload reg value after clock is stable.
+    /* Reload reg value after clock is stable. */
     NV_SDMMC_READ(SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL, StcReg);
-    // Enable card's clock after clock frequency is changed.
+    /* Enable card's clock after clock frequency is changed. */
     StcReg = NV_FLD_SET_DRF_DEF(SDMMC, SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL,
                 SD_CLOCK_EN, ENABLE, StcReg);
     /*
@@ -425,42 +387,41 @@ static NvBootError HwSdmmcSetCardClock(NvBootSdmmcCardClock ClockRate)
      */
     ClockCyclesRequired = QUOTIENT_CEILING( (s_SdmmcContext->ReadTimeOutInUs * 
                             SDMMC_PLL_FREQ_IN_MHZ), ControllerClockDivisor );
-    // TimeOutCounter value zero means that the time out is (1 << 13).
+    /* TimeOutCounter value zero means that the time out is (1 << 13). */
     while ( ClockCyclesRequired > (1 << (13 + TimeOutCounter)) )
     {
         TimeOutCounter++;
-        // This is max value. so break out from here.
+        /* This is max value. so break out from here. */
         if (TimeOutCounter == 0xE)
             break;
     }
-    // Recalculate the ReadTimeOutInUs based value that is set to register.
-    // We shouldn't timout in the code before the controller times out.
+    /* Recalculate the ReadTimeOutInUs based value that is set to register.
+       We shouldn't timout in the code before the controller times out. */
     s_SdmmcContext->ReadTimeOutInUs = (1 << (13 + TimeOutCounter));
     s_SdmmcContext->ReadTimeOutInUs = QUOTIENT_CEILING(
                                         s_SdmmcContext->ReadTimeOutInUs, 1000);
     s_SdmmcContext->ReadTimeOutInUs = s_SdmmcContext->ReadTimeOutInUs * 
                                       ContollerCycleTimeInNanoSec;
-    // The code should never time out before controller. Give some extra time for
-    // read time out. Add 50msecs.
+    /* The code should never time out before controller. Give some extra time for
+       read time out. Add 50msecs. */
     s_SdmmcContext->ReadTimeOutInUs += 50000;
     if (s_SdmmcContext->ReadTimeOutInUs < 200000)
         s_SdmmcContext->ReadTimeOutInUs = 200000;
     else if (s_SdmmcContext->ReadTimeOutInUs > 800000)
     {
-        //NV_ASSERT(NV_FALSE);
-        // Calculation seem to have gone wrong. Set it to 800msec, which
-        // is max timeout.
+        /* Calculation seem to have gone wrong. Set it to 800msec, which
+           is max timeout. */
         s_SdmmcContext->ReadTimeOutInUs = 800000;
     }
     
     StcReg = NV_FLD_SET_DRF_NUM(SDMMC, SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL,
                 DATA_TIMEOUT_COUNTER_VALUE, TimeOutCounter, StcReg);
     NV_SDMMC_WRITE(SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL, StcReg);
-    PRINT_SDMMC_MESSAGES("TimeOutCounter=%d, ClockCyclesRequired=%d, "
+    debug("TimeOutCounter=%d, ClockCyclesRequired=%d, "
         "CardCycleTimeInNanoSec=%d,\r\nContollerCycleTimeInNanoSec=%d\n", 
         TimeOutCounter, ClockCyclesRequired, CardCycleTimeInNanoSec, 
         ContollerCycleTimeInNanoSec);
-    PRINT_SDMMC_MESSAGES("Recalc ReadTimeOutInUs=%d, clk cycles in ns=%d\n", 
+    debug("Recalc ReadTimeOutInUs=%d, clk cycles in ns=%d\n", 
         s_SdmmcContext->ReadTimeOutInUs, ((1 << (13 + TimeOutCounter)) * 
         ContollerCycleTimeInNanoSec));
     return NvBootError_Success;
@@ -470,20 +431,17 @@ static void HwSdmmcSetDataWidth(NvBootSdmmcDataWidth DataWidth)
 {
     NvU32 PowerControlHostReg = 0;
     
-    PRINT_SDMMC_MESSAGES("%s: DataWidth: %c\n", __FUNCTION__, (DataWidth == NvBootSdmmcDataWidth_8Bit) ? '8' : '4');
+    debug("%s: DataWidth: %c\n", __FUNCTION__, (DataWidth == NvBootSdmmcDataWidth_8Bit) ? '8' : '4');
     NV_SDMMC_READ(POWER_CONTROL_HOST, PowerControlHostReg);
     PowerControlHostReg = NV_FLD_SET_DRF_NUM(SDMMC, POWER_CONTROL_HOST,
                             DATA_XFER_WIDTH, DataWidth, PowerControlHostReg);
-    // When 8-bit data width is enabled, the bit field DATA_XFER_WIDTH 
-    // value is not valid.
+    /* When 8-bit data width is enabled, the bit field DATA_XFER_WIDTH 
+       value is not valid. */
     PowerControlHostReg = NV_FLD_SET_DRF_NUM(SDMMC, POWER_CONTROL_HOST,
                             EXTENDED_DATA_TRANSFER_WIDTH, 
                             ((DataWidth == NvBootSdmmcDataWidth_8Bit) ? 1 : 0),
                             PowerControlHostReg);
     NV_SDMMC_WRITE(POWER_CONTROL_HOST, PowerControlHostReg);
-#if NVRM
-    s_SdmmcBitInfo->DataWidthUnderUse = DataWidth;
-#endif
 }
 
 static void HwSdmmcSetNumOfBlocks(NvU32 BlockLength, NvU32 NumOfBlocks)
@@ -503,117 +461,305 @@ static void HwSdmmcSetNumOfBlocks(NvU32 BlockLength, NvU32 NumOfBlocks)
                 HOST_DMA_BUFFER_SIZE, DMA4K) |
                NV_DRF_NUM(SDMMC, BLOCK_SIZE_BLOCK_COUNT,
                 XFER_BLOCK_SIZE_11_0, BlockLength);
-// jz
-//printf("%s: Before, BlockReg: 0x%08x\n", __FUNCTION__, BlockReg);
-//    BlockReg &= ~0x00007000;       // DMA buffer 4k
-//printf("%s: After, BlockReg: 0x%08x\n", __FUNCTION__, BlockReg);
 
     NV_SDMMC_WRITE(BLOCK_SIZE_BLOCK_COUNT, BlockReg);
 }
  
 static void HwSdmmcSetupDma(NvU8 *pBuffer, NvU32 NumOfBytes)
 {
-    // Program Single DMA base address.
+    /* Program Single DMA base address. */
     NV_SDMMC_WRITE(SYSTEM_ADDRESS, (NvU32)(pBuffer));
 }
 
-// This array indicates the response formats that need to be programmed to
-static NvBootError HwSdmmcInitController(void)
+static void HwSdmmcPadsConfig(NvEmmcDeviceId DevId)
+{
+    /* Set Pinmux and TriStates */
+    switch (DevId) {
+    case NvEmmc2:
+        /* sdio2: select config 1 */
+        CONFIG(A,B,DTA,SDIO2);
+        CONFIG(A,B,DTD,SDIO2);
+        break;
+
+    case NvEmmc3:
+        /* sdio3: */
+	/* SDIO3_CLK */
+        CONFIG(B,D,SDD,SDIO3);
+	/* SDIO3_CMD */
+        CONFIG(D,D,SDB,SDIO3);
+	/* SDIO3_DAT[3:0] */
+        CONFIG(B,D,SDC,SDIO3);
+        break;
+
+    case NvEmmc4:
+        /* sdio4: select config 2 - x8 on 2nd set of pins */
+        CONFIG(A,A,ATB,SDIO4);
+        CONFIG(A,B,GMA,SDIO4);
+        CONFIG(B,D,GME,SDIO4);
+        break;
+
+    default:
+        /* do nothing */
+        break;
+    }
+}
+
+void HwSdmmcResetConfig(NvEmmcDeviceId DevId, const NvBool Enable)
+{
+
+    NvU32 Reg;
+
+    debug("%s: set contrl %d in Reset: %d\n", 
+                        __FUNCTION__, DevId, Enable);
+
+    switch (DevId) {
+    case NvEmmc1:
+        NV_CLK_RST_READ(RST_DEVICES_L, Reg);
+
+        if (Enable == NV_TRUE) {
+            Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, RST_DEVICES_L,
+                                     SWR_SDMMC1_RST, ENABLE, Reg);
+        } else {
+            Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, RST_DEVICES_L,
+                                     SWR_SDMMC1_RST, DISABLE, Reg);
+        }
+
+        NV_CLK_RST_WRITE(RST_DEVICES_L, Reg);
+        break;
+
+    case NvEmmc2:
+        NV_CLK_RST_READ(RST_DEVICES_L, Reg);
+
+        if (Enable == NV_TRUE) {
+            Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, RST_DEVICES_L,
+                                     SWR_SDMMC2_RST, ENABLE, Reg);
+        } else {
+            Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, RST_DEVICES_L,
+                                     SWR_SDMMC2_RST, DISABLE, Reg);
+        }
+
+        NV_CLK_RST_WRITE(RST_DEVICES_L, Reg);
+        break;
+
+    case NvEmmc3:
+        NV_CLK_RST_READ(RST_DEVICES_U, Reg);
+
+        if (Enable == NV_TRUE) {
+            Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, RST_DEVICES_U,
+                                     SWR_SDMMC3_RST, ENABLE, Reg);
+        } else {
+            Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, RST_DEVICES_U,
+                                     SWR_SDMMC3_RST, DISABLE, Reg);
+        }
+
+        NV_CLK_RST_WRITE(RST_DEVICES_U, Reg);
+        break;
+
+    case NvEmmc4:
+        NV_CLK_RST_READ(RST_DEVICES_L, Reg);
+
+        if (Enable == NV_TRUE) {
+            Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, RST_DEVICES_L,
+                                     SWR_SDMMC4_RST, ENABLE, Reg);
+        } else {
+            Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, RST_DEVICES_L,
+                                     SWR_SDMMC4_RST, DISABLE, Reg);
+        }
+
+        NV_CLK_RST_WRITE(RST_DEVICES_L, Reg);
+        break;
+
+
+    default:
+        /* do nothing */
+        return;
+    }
+
+    /* wait stabilization time (always) */
+    NvBootUtilWaitUS(NVBOOT_RESET_STABILIZATION_DELAY) ;
+}
+
+void HwSdmmcEnableConfig(NvEmmcDeviceId DevId, const NvBool Enable)
+{
+
+    NvU32 Reg;
+
+    debug("%s: set contrl %d in Enable: %d\n", 
+                        __FUNCTION__, DevId, Enable);
+
+    switch (DevId) {
+    case NvEmmc1:
+        NV_CLK_RST_READ(CLK_OUT_ENB_L, Reg);
+
+        if (Enable == NV_TRUE) {
+            Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, CLK_OUT_ENB_L,
+                                     CLK_ENB_SDMMC1, ENABLE, Reg);
+        } else {
+            Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, CLK_OUT_ENB_L,
+                                     CLK_ENB_SDMMC1, DISABLE, Reg);
+        }
+        NV_CLK_RST_WRITE(CLK_OUT_ENB_L, Reg);
+        break;
+
+    case NvEmmc2:
+        NV_CLK_RST_READ(CLK_OUT_ENB_L, Reg);
+
+        if (Enable == NV_TRUE) {
+            Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, CLK_OUT_ENB_L,
+                                     CLK_ENB_SDMMC2, ENABLE, Reg);
+        } else {
+            Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, CLK_OUT_ENB_L,
+                                     CLK_ENB_SDMMC2, DISABLE, Reg);
+        }
+        NV_CLK_RST_WRITE(CLK_OUT_ENB_L, Reg);
+        break;
+
+    case NvEmmc3:
+        NV_CLK_RST_READ(CLK_OUT_ENB_U, Reg);
+
+        if (Enable == NV_TRUE) {
+            Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, CLK_OUT_ENB_U,
+                                     CLK_ENB_SDMMC3, ENABLE, Reg);
+        } else {
+            Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, CLK_OUT_ENB_U,
+                                     CLK_ENB_SDMMC3, DISABLE, Reg);
+        }
+        NV_CLK_RST_WRITE(CLK_OUT_ENB_U, Reg);
+        break;
+
+    case NvEmmc4:
+        NV_CLK_RST_READ(CLK_OUT_ENB_L, Reg);
+
+        if (Enable == NV_TRUE) {
+            Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, CLK_OUT_ENB_L,
+                                     CLK_ENB_SDMMC4, ENABLE, Reg);
+        } else {
+            Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, CLK_OUT_ENB_L,
+                                     CLK_ENB_SDMMC4, DISABLE, Reg);
+        }
+        NV_CLK_RST_WRITE(CLK_OUT_ENB_L, Reg);
+        break;
+
+    default:
+        /* do nothing */
+        return;
+    }
+
+    /* wait stabilization time (always) */
+    NvBootUtilWaitUS(NVBOOT_RESET_STABILIZATION_DELAY) ;
+}
+
+/* This array indicates the response formats that need to be programmed to */
+static NvBootError HwSdmmcInitController(NvEmmcDeviceId DevId)
 {
     NvU32 StcReg;
     NvBootError e;
     NvU32 CapabilityReg;
-    NvU32 PinmuxSelection;
     NvU32 IntStatusEnableReg;
     NvU32 PowerControlHostReg;
-    NvU32 RegData;
+    NvU32 RegVal;
 
-    NV_ASSERT(s_FuseInfo.PinmuxSelection <= 1);
-    if (s_FuseInfo.PinmuxSelection)
-    {
-        PRINT_SDMMC_MESSAGES("Setting Pinmux for Alt\n");
-        PinmuxSelection = NvBootPinmuxConfig_Sdmmc_Alt;
-    }
-    else if (s_SdmmcContext->DataWidth == NvBootSdmmcDataWidth_8Bit)
-    {
-        PRINT_SDMMC_MESSAGES("Setting Pinmux for 8-bit\n");
-        PinmuxSelection = NvBootPinmuxConfig_Sdmmc_Std_x8;
-    }
-    else
-    {
-        PRINT_SDMMC_MESSAGES("Setting Pinmux for 4-bit\n");
-        PinmuxSelection = NvBootPinmuxConfig_Sdmmc_Std_x4;
-    }
+	if (DevId == NvEmmc1)
+		NVBOOT_SDMMC_BASE_ADDRESS = NV_ADDRESS_MAP_SDMMC1_BASE;
+	else if (DevId == NvEmmc2)
+		NVBOOT_SDMMC_BASE_ADDRESS = NV_ADDRESS_MAP_SDMMC2_BASE;
+	else if (DevId == NvEmmc3)
+		NVBOOT_SDMMC_BASE_ADDRESS = NV_ADDRESS_MAP_SDMMC3_BASE;
+	else if (DevId == NvEmmc4)
+		NVBOOT_SDMMC_BASE_ADDRESS = NV_ADDRESS_MAP_SDMMC4_BASE;
 
-    // 0x70000080
-    NV_READ32_((NV_ADDRESS_MAP_APB_MISC_BASE +
-                     APB_MISC_PP_PIN_MUX_CTL_A_0), RegData );
+    HwSdmmcPadsConfig( DevId );
 
-    RegData = 0x0063231f;
-    NV_WRITE32((NV_ADDRESS_MAP_APB_MISC_BASE +
-                     APB_MISC_PP_PIN_MUX_CTL_A_0), RegData );
+    /* Keep the controller in Reset. */
+    HwSdmmcResetConfig( DevId, NV_TRUE );
 
-    // 0x70000084
-    NV_READ32_((NV_ADDRESS_MAP_APB_MISC_BASE +
-                     APB_MISC_PP_PIN_MUX_CTL_A_0 + 4), RegData );
+    /* Enable the clock. */
+    HwSdmmcEnableConfig( DevId, NV_TRUE );
 
-    RegData = 0x10100103;
-    NV_WRITE32((NV_ADDRESS_MAP_APB_MISC_BASE +
-                     APB_MISC_PP_PIN_MUX_CTL_A_0 + 4), RegData );
-
-    // 0x70000014
-    NV_READ32_((NV_ADDRESS_MAP_APB_MISC_BASE +
-                     APB_MISC_PP_TRISTATE_REG_A_0), RegData );
-
-#ifdef NV_SDMMC4
-    RegData = 0xc003eff0;
-#else
-    RegData = 0xc003a7f0;
-#endif
-    NV_WRITE32((NV_ADDRESS_MAP_APB_MISC_BASE +
-                     APB_MISC_PP_TRISTATE_REG_A_0), RegData );
-
-    // Keep the controller in Reset.
-    PRINT_SDMMC_MESSAGES("%s: set contrl in Reset\n", __FUNCTION__);
-    NvBootResetSetEnable(NvBootResetDeviceId_SdmmcId, NV_TRUE);
-
-    // Enable the clock.
-    PRINT_SDMMC_MESSAGES("%s: enable clock\n", __FUNCTION__);
-    NvBootClocksSetEnable(NvBootClocksClockId_SdmmcId, NV_TRUE);
-
-    // Configure the clock source with divider 18, which gives 24MHz.
-    PRINT_SDMMC_MESSAGES("Base Clock=%dMHz\n", 
+    /* Configure the clock source with divider 18, which gives 24MHz. */
+    debug("Base Clock=%dMHz\n", 
         QUOTIENT_CEILING(SDMMC_PLL_FREQ_IN_MHZ, 18));
-    NvBootClocksConfigureClock(NvBootClocksClockId_SdmmcId,
-        NVBOOT_CLOCKS_7_1_DIVIDER_BY(18, 0),
-#ifdef NV_SDMMC4
-        CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC4_0_SDMMC4_CLK_SRC_PLLP_OUT0);
-#else
-        CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC2_0_SDMMC2_CLK_SRC_PLLP_OUT0);
-#endif
 
-    // Enable the clock.
-//    NvBootClocksSetEnable(NvBootClocksClockId_SdmmcId, NV_TRUE);
+	if (DevId == NvEmmc1)
+		NvBootClocksConfigureClock(NvBootClocksClockId_Sdmmc1Id,
+		NVBOOT_CLOCKS_7_1_DIVIDER_BY(18, 0),
+		CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC1_0_SDMMC1_CLK_SRC_PLLP_OUT0);
+	else if (DevId == NvEmmc2)
+		NvBootClocksConfigureClock(NvBootClocksClockId_Sdmmc2Id,
+		NVBOOT_CLOCKS_7_1_DIVIDER_BY(18, 0),
+		CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC2_0_SDMMC2_CLK_SRC_PLLP_OUT0);
+	else if (DevId == NvEmmc3)
+		NvBootClocksConfigureClock(NvBootClocksClockId_Sdmmc3Id,
+		NVBOOT_CLOCKS_7_1_DIVIDER_BY(18, 0),
+		CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC3_0_SDMMC3_CLK_SRC_PLLP_OUT0);
+	else if (DevId == NvEmmc4)
+		NvBootClocksConfigureClock(NvBootClocksClockId_Sdmmc4Id,
+		NVBOOT_CLOCKS_7_1_DIVIDER_BY(18, 0),
+		CLK_RST_CONTROLLER_CLK_SOURCE_SDMMC4_0_SDMMC4_CLK_SRC_PLLP_OUT0);
 
-    // Remove the controller from Reset.
-    NvBootResetSetEnable(NvBootResetDeviceId_SdmmcId, NV_FALSE);
-    // Reset Controller's All registers.
+    /* Remove the controller from Reset. */
+    HwSdmmcResetConfig( DevId, NV_FALSE );
+
+    /* Reset Controller's All registers. */
     NV_BOOT_CHECK_ERROR(HwSdmmcResetController());
     
-    // Set Internal Clock Enable and SDCLK Frequency Select in the 
-    // Clock Control register.
+    /* Set Internal Clock Enable and SDCLK Frequency Select in the
+       Clock Control register. */
     StcReg = NV_DRF_DEF(SDMMC, SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL,
                 INTERNAL_CLOCK_EN, OSCILLATE) | 
              NV_DRF_DEF(SDMMC, SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL,
                 SDCLK_FREQUENCYSELECT, DIV64);
 
     NV_SDMMC_WRITE(SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL, StcReg);
-    // Wait till clock is stable.
+
+    /* Wait till clock is stable. */
     NV_BOOT_CHECK_ERROR(HwSdmmcWaitForClkStable());
-    // Reload reg value after clock is stable.
+    /* Reload reg value after clock is stable. */
     NV_SDMMC_READ(SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL, StcReg);
+
+	if (DevId == NvEmmc4) {
+		/* Harmony platform
+		   GMI_CS7 is GPIO I.06
+		   Z_ATA = Normal, not TriState */
+		RegVal = readl(NV_ADDRESS_MAP_APB_MISC_BASE + APB_MISC_PP_TRISTATE_REG_A_0);
+		RegVal &= ~0x1;
+		writel(RegVal, NV_ADDRESS_MAP_APB_MISC_BASE + APB_MISC_PP_TRISTATE_REG_A_0);
+
+		/* Set EN_VDDIO_SDMMC (GPIO I.06) */
+		tg2_gpio_direction_output(8, 6, 1);
+
+		/* GPIO_CNF, config pin as GPI for Card Detect (GPIO H.02) */
+		tg2_gpio_direction_input(7, 2);
+	}
+	else if (DevId == NvEmmc2) {
+		/* Harmony platform
+		   Z_DTB = Normal, not TriState */
+		RegVal = readl(NV_ADDRESS_MAP_APB_MISC_BASE + APB_MISC_PP_TRISTATE_REG_A_0);
+		RegVal &= ~0x1000;
+		writel(RegVal, NV_ADDRESS_MAP_APB_MISC_BASE + APB_MISC_PP_TRISTATE_REG_A_0);
+
+		/* Set EN_VDDIO_SD (GPIO T.03) */
+		tg2_gpio_direction_output(19, 3, 1);
+
+		/* GPIO_CNF, config pin as GPI for Card Detect (GPIO I.05) */
+		tg2_gpio_direction_input(8, 5);
+	}
+	else if (DevId == NvEmmc3) {
+		/* Seaboard platform
+		   GMI_CS7 is GPIO I.06
+		   Z_ATA = Normal, not TriState */
+		RegVal = readl(NV_ADDRESS_MAP_APB_MISC_BASE + APB_MISC_PP_TRISTATE_REG_A_0);
+		RegVal &= ~0x1;
+		writel(RegVal, NV_ADDRESS_MAP_APB_MISC_BASE + APB_MISC_PP_TRISTATE_REG_A_0);
+
+		/* Set EN_VDDIO_SD (GPIO I.06) */
+		tg2_gpio_direction_output(8, 6, 1);
+
+		/* GPIO_CNF, config pin as GPI for Card Detect (GPIO I.05) */
+		tg2_gpio_direction_input(8, 5);
+	}
     
-    // Find out what volatage is supported.
+    /* Find out what voltage is supported. */
     NV_SDMMC_READ(CAPABILITIES, CapabilityReg);
     PowerControlHostReg = 0;
     if (NV_DRF_VAL(SDMMC, CAPABILITIES, VOLTAGE_SUPPORT_3_3_V, CapabilityReg))
@@ -631,16 +777,17 @@ static NvBootError HwSdmmcInitController(void)
         PowerControlHostReg |= NV_DRF_DEF(SDMMC, POWER_CONTROL_HOST,
                                 SD_BUS_VOLTAGE_SELECT, V1_8);
     }
-    // Enable bus power.
+    /* Enable bus power. */
     PowerControlHostReg |= NV_DRF_DEF(SDMMC, POWER_CONTROL_HOST, SD_BUS_POWER, 
                             POWER_ON);
     NV_SDMMC_WRITE(POWER_CONTROL_HOST, PowerControlHostReg);
+
     s_SdmmcContext->HostSupportsHighSpeedMode = NV_FALSE;
     if (NV_DRF_VAL(SDMMC, CAPABILITIES, HIGH_SPEED_SUPPORT, CapabilityReg))
         s_SdmmcContext->HostSupportsHighSpeedMode = NV_TRUE;
-    PRINT_SDMMC_MESSAGES("HostSupportsHighSpeedMode=%d\n", 
+    debug("HostSupportsHighSpeedMode=%d\n", 
         s_SdmmcContext->HostSupportsHighSpeedMode);
-    // Enable Command complete, Transfer complete and various error events.
+    /* Enable Command complete, Transfer complete and various error events. */
     IntStatusEnableReg = 
         NV_DRF_DEF(SDMMC, INTERRUPT_STATUS_ENABLE, DATA_END_BIT_ERR, ENABLE) |
         NV_DRF_DEF(SDMMC, INTERRUPT_STATUS_ENABLE, DATA_CRC_ERR, ENABLE) |
@@ -655,8 +802,8 @@ static NvBootError HwSdmmcInitController(void)
         NV_DRF_DEF(SDMMC, INTERRUPT_STATUS_ENABLE, TRANSFER_COMPLETE, ENABLE) |
         NV_DRF_DEF(SDMMC, INTERRUPT_STATUS_ENABLE, COMMAND_COMPLETE, ENABLE);
     NV_SDMMC_WRITE(INTERRUPT_STATUS_ENABLE, IntStatusEnableReg);
-    // This method resets card clock divisor. So, set it again.
-    HwSdmmcSetCardClock(s_SdmmcContext->CurrentClockRate);
+    /* This method resets card clock divisor. So, set it again. */
+    HwSdmmcSetCardClock(DevId, s_SdmmcContext->CurrentClockRate);
     HwSdmmcSetDataWidth(s_SdmmcContext->DataWidth);
     return NvBootError_Success;
 }
@@ -677,11 +824,11 @@ HwSdmmcReadResponse(
         case SdmmcResponseType_R5:
         case SdmmcResponseType_R6:
         case SdmmcResponseType_R7:
-            // bits 39:8 of response are mapped to 31:0.
+            /* bits 39:8 of response are mapped to 31:0. */
             NV_SDMMC_READ(RESPONSE_R0_R1, *pTemp);
             break;
         case SdmmcResponseType_R2:
-            // bits 127:8 of response are mapped to 119:0.
+            /* bits 127:8 of response are mapped to 119:0. */
             NV_SDMMC_READ(RESPONSE_R0_R1, *pTemp);
             pTemp++;
             NV_SDMMC_READ(RESPONSE_R2_R3, *pTemp);
@@ -702,8 +849,6 @@ static NvBootError HwSdmmcWaitForDataLineReady(void)
     NvU32 DataLineActive;
     NvU32 TimeOut = s_SdmmcContext->ReadTimeOutInUs;
     
-// jz
-//printf ("%s: TimeOut: %d\n", __FUNCTION__, TimeOut);
     while (TimeOut)
     {
         NV_SDMMC_READ(PRESENT_STATE, PresentState);
@@ -715,7 +860,7 @@ static NvBootError HwSdmmcWaitForDataLineReady(void)
         TimeOut--;
         if (!TimeOut)
         {
-            PRINT_SDMMC_ERRORS("DataLineActive is not set to 0 and timed out\n");
+            printf("DataLineActive is not set to 0 and timed out\n");
             return NvBootError_HwTimeOut;
         }
     }
@@ -727,13 +872,12 @@ static NvBootError HwSdmmcWaitForCmdInhibitData(void)
     NvU32 PresentState;
     NvU32 CmdInhibitData;
     NvU32 TimeOut = s_SdmmcContext->ReadTimeOutInUs;
-// jz
-//printf("%s: TimeOut %d\n", __FUNCTION__, TimeOut);    
+    
     while (TimeOut)
     {
         NV_SDMMC_READ(PRESENT_STATE, PresentState);
-        // This bit is set to zero after busy line is deasserted.
-        // For response R1b, need to wait for this.
+        /* This bit is set to zero after busy line is deasserted.
+           For response R1b, need to wait for this. */
         CmdInhibitData = NV_DRF_VAL(SDMMC, PRESENT_STATE, CMD_INHIBIT_DAT, 
                             PresentState);
         if (!CmdInhibitData)
@@ -742,7 +886,7 @@ static NvBootError HwSdmmcWaitForCmdInhibitData(void)
         TimeOut--;
         if (!TimeOut)
         {
-            PRINT_SDMMC_ERRORS("CmdInhibitData is not set to 0 and timed out. Int State: 0x%08x\n", PresentState);
+            printf("CmdInhibitData is not set to 0 and timed out. Int State: 0x%08x\n", PresentState);
             return NvBootError_HwTimeOut;
         }
     }
@@ -755,14 +899,12 @@ static NvBootError HwSdmmcWaitForCmdInhibitCmd(void)
     NvU32 CmdInhibitCmd;
     NvU32 TimeOut = SDMMC_COMMAND_TIMEOUT_IN_US;
     
-    // jz
-//    NV_SDMMC_WRITE(INTERRUPT_STATUS_ENABLE, 0x007f0001); 
-      NV_SDMMC_READ(INTERRUPT_STATUS_ENABLE, PresentState);
+    NV_SDMMC_READ(INTERRUPT_STATUS_ENABLE, PresentState);
     while (TimeOut)
     {
         NV_SDMMC_READ(PRESENT_STATE, PresentState);
-        // This bit is set to zero after response is received. So, response 
-        // registers should be read only after this bit is cleared.
+        /* This bit is set to zero after response is received. So, response 
+           registers should be read only after this bit is cleared. */
         CmdInhibitCmd = NV_DRF_VAL(SDMMC, PRESENT_STATE, CMD_INHIBIT_CMD, 
                             PresentState);
         if (!CmdInhibitCmd)
@@ -771,7 +913,7 @@ static NvBootError HwSdmmcWaitForCmdInhibitCmd(void)
         TimeOut--;
         if (!TimeOut)
         {
-            PRINT_SDMMC_ERRORS("CmdInhibitCmd is not set to 0 and timed out\n");
+            printf("CmdInhibitCmd is not set to 0 and timed out\n");
             return NvBootError_HwTimeOut;
         }
     }
@@ -800,7 +942,7 @@ static NvBootError HwSdmmcWaitForCommandComplete(NvU32 *Status)
                         InterruptStatus);
         if (InterruptStatus & ErrorMask)
         {
-            PRINT_SDMMC_ERRORS("Errors in HwSdmmcWaitForCommandComplete, "
+            debug("Errors in HwSdmmcWaitForCommandComplete, "
                 "InterruptStatus = 0x%x\n", InterruptStatus);
             return NvBootError_DeviceError;
         }
@@ -811,7 +953,7 @@ static NvBootError HwSdmmcWaitForCommandComplete(NvU32 *Status)
         TimeOutCounter--;
         if (!TimeOutCounter)
         {
-            PRINT_SDMMC_ERRORS("Timed out in HwSdmmcWaitForCommandComplete\n");
+            printf("Timed out in HwSdmmcWaitForCommandComplete\n");
             return NvBootError_HwTimeOut;
         }
     }
@@ -826,7 +968,7 @@ static NvBootError HwSdmmcIssueAbortCommand(void)
     NvU32 InterruptStatus;
     NvU32* pSdmmcResponse = &s_SdmmcContext->SdmmcResponse[0];
     
-    PRINT_SDMMC_MESSAGES("\n     Sending Abort CMD%d\n", 
+    debug("\n     Sending Abort CMD%d\n", 
         SdmmcCommand_StopTransmission);
     
     CommandXferMode = 
@@ -843,25 +985,25 @@ static NvBootError HwSdmmcIssueAbortCommand(void)
     
     while (retries)
     {
-        // Clear Status bits what ever is set.
+        /* Clear Status bits what ever is set. */
         NV_SDMMC_READ(INTERRUPT_STATUS, InterruptStatus);
         NV_SDMMC_WRITE(INTERRUPT_STATUS, InterruptStatus);
-        // This redundant read is for debug purpose.
+        /* This redundant read is for debug purpose. */
         NV_SDMMC_READ(INTERRUPT_STATUS, InterruptStatus);
         NV_SDMMC_WRITE(ARGUMENT, 0);
         NV_SDMMC_WRITE(CMD_XFER_MODE, CommandXferMode);
-        // Wait for the command to be sent out.if it fails, retry.
+        /* Wait for the command to be sent out.if it fails, retry. */
         e = HwSdmmcWaitForCommandComplete(&InterruptStatus);
         if (e == NvBootError_Success)
             break;
-        HwSdmmcInitController();
+        HwSdmmcInitController(mmc_get_current_device_id());
         retries--;
     }
     if (retries)
     {
-        // Wait till response is received from card.
+        /* Wait till response is received from card. */
         NV_BOOT_CHECK_ERROR(HwSdmmcWaitForCmdInhibitCmd());
-        // Wait till busy line is deasserted by card. It is for R1b response.
+        /* Wait till busy line is deasserted by card. It is for R1b response. */
         NV_BOOT_CHECK_ERROR(HwSdmmcWaitForCmdInhibitData());
         HwSdmmcReadResponse(SdmmcResponseType_R1B, pSdmmcResponse);
     }
@@ -896,11 +1038,11 @@ static NvBootError HwSdmmcRecoverControllerFromErrors(NvBool IsDataCmd)
     NV_SDMMC_READ(SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL, StcReg);
     if (InterruptStatus & CommandError)
     {
-        // Reset Command line.
+        /* Reset Command line. */
         StcReg |= NV_DRF_DEF(SDMMC, SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL,
                     SW_RESET_FOR_CMD_LINE, RESETED);
         NV_SDMMC_WRITE(SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL, StcReg);
-        // Wait till Reset is completed.
+        /* Wait till Reset is completed. */
         while (TimeOut)
         {
             NV_SDMMC_READ(SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL, StcReg);
@@ -913,17 +1055,17 @@ static NvBootError HwSdmmcRecoverControllerFromErrors(NvBool IsDataCmd)
         }
         if (!TimeOut)
         {
-            PRINT_SDMMC_ERRORS("Reset Command line timed out.\n");
+            printf("Reset Command line timed out.\n");
             return NvBootError_HwTimeOut;
         }
     }
     if (InterruptStatus & DataError)
     {
-        // Reset Data line.
+        /* Reset Data line. */
         StcReg |= NV_DRF_DEF(SDMMC, SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL,
                     SW_RESET_FOR_DAT_LINE, RESETED);
         NV_SDMMC_WRITE(SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL, StcReg);
-        // Wait till Reset is completed.
+        /* Wait till Reset is completed. */
         while (TimeOut)
         {
             NV_SDMMC_READ(SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL, StcReg);
@@ -936,27 +1078,27 @@ static NvBootError HwSdmmcRecoverControllerFromErrors(NvBool IsDataCmd)
         }
         if (!TimeOut)
         {
-            PRINT_SDMMC_ERRORS("Reset Data line timed out.\n");
+            printf("Reset Data line timed out.\n");
             return NvBootError_HwTimeOut;
         }
     }
-    // Clear Interrupt Status
+    /* Clear Interrupt Status */
     NV_SDMMC_WRITE(INTERRUPT_STATUS, InterruptStatus);
-    // Issue abort command.
+    /* Issue abort command. */
     if (IsDataCmd)
         (void)HwSdmmcIssueAbortCommand();
-    // Wait for 40us as per spec.
+    /* Wait for 40us as per spec. */
     NvBootUtilWaitUS(40);
-    // Read Present State register.
+    /* Read Present State register. */
     NV_SDMMC_READ(PRESENT_STATE, PresentState);
     if ( (PresentState & DataStateMask) != DataStateMask )
     {
-        // Before give up, try full reset once.
-        HwSdmmcInitController();
+        /* Before give up, try full reset once. */
+        HwSdmmcInitController(mmc_get_current_device_id());
         NV_SDMMC_READ(PRESENT_STATE, PresentState);
         if ( (PresentState & DataStateMask) != DataStateMask)
         {
-            PRINT_SDMMC_ERRORS("Error Recovery Failed.\n");
+            printf("Error Recovery Failed.\n");
             return NvBootError_DeviceError;
         }
     }
@@ -973,11 +1115,11 @@ static void HwSdmmcAbortDataRead(void)
                             DEFAULT_MASK);
     
     NV_SDMMC_READ(SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL, StcReg);
-    // Reset Data line.
+    /* Reset Data line. */
     StcReg |= NV_DRF_DEF(SDMMC, SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL,
                 SW_RESET_FOR_DAT_LINE, RESETED);
     NV_SDMMC_WRITE(SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL, StcReg);
-    // Wait till Reset is completed.
+    /* Wait till Reset is completed. */
     while (TimeOut)
     {
         NV_SDMMC_READ(SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL, StcReg);
@@ -990,18 +1132,18 @@ static void HwSdmmcAbortDataRead(void)
     }
     if (!TimeOut)
     {
-        PRINT_SDMMC_ERRORS("AbortDataRead-Reset Data line timed out.\n");
+        printf("AbortDataRead-Reset Data line timed out.\n");
     }
-    // Read Present State register.
+    /* Read Present State register. */
     NV_SDMMC_READ(PRESENT_STATE, PresentState);
     if ( (PresentState & DataStateMask) != DataStateMask )
     {
-        // Before give up, try full reset once.
-        HwSdmmcInitController();
+        /* Before give up, try full reset once. */
+        HwSdmmcInitController(mmc_get_current_device_id());
         NV_SDMMC_READ(PRESENT_STATE, PresentState);
         if ( (PresentState & DataStateMask) != DataStateMask)
         {
-            PRINT_SDMMC_ERRORS("Error Recovery Failed.\n");
+            printf("Error Recovery Failed.\n");
         }
     }
 }
@@ -1017,8 +1159,8 @@ EmmcVerifyResponse(
     NvU32 AddressMisalign = NV_DRF_VAL(SDMMC, CS, ADDRESS_MISALIGN, pResp[0]);
     NvU32 BlockLengthError = NV_DRF_VAL(SDMMC, CS, BLOCK_LEN_ERROR, pResp[0]);
     NvU32 CommandCrcError = NV_DRF_VAL(SDMMC, CS, COM_CRC_ERROR, pResp[0]);
-    // For illegal commands, card does not respond. It can
-    // be known only through CMD13.
+    /* For illegal commands, card does not respond. It can
+       be known only through CMD13. */
     NvU32 IllegalCommand = NV_DRF_VAL(SDMMC, CS, ILLEGAL_CMD, pResp[0]);
     NvU32 CardInternalError = NV_DRF_VAL(SDMMC, CS, CC_ERROR, pResp[0]);
     NvU32 CardEccError = NV_DRF_VAL(SDMMC, CS, CARD_ECC_FAILED, pResp[0]);
@@ -1029,11 +1171,11 @@ EmmcVerifyResponse(
     {
         if (BeforeCommandExecution)
         {
-            // This is during response time.
+            /* This is during response time. */
             if ( AddressOutOfRange || AddressMisalign || BlockLengthError || 
                  CardInternalError )
             {
-                PRINT_SDMMC_ERRORS("ReadSingle Operation failed.\n");
+                printf("ReadSingle Operation failed.\n");
                 return NvBootError_DeviceResponseError;
             }
         }
@@ -1046,10 +1188,10 @@ EmmcVerifyResponse(
     {
         if ( BeforeCommandExecution && (BlockLengthError || CardInternalError) )
         {
-            // Either the argument of a SET_BLOCKLEN command exceeds the 
-            // maximum value allowed for the card, or the previously defined 
-            // block length is illegal for the current command 
-            PRINT_SDMMC_ERRORS("SetBlockLength Operation failed.\n");
+            /* Either the argument of a SET_BLOCKLEN command exceeds the 
+               maximum value allowed for the card, or the previously defined 
+               block length is illegal for the current command */
+            printf("SetBlockLength Operation failed.\n");
             return NvBootError_DeviceResponseError;
         }
     }
@@ -1057,9 +1199,9 @@ EmmcVerifyResponse(
     {
         if ( AfterCmdExecution && (SwitchError || CommandCrcError) )
         {
-            // If set, the card did not switch to the expected mode as 
-            // requested by the SWITCH command.
-            PRINT_SDMMC_ERRORS("Switch Operation failed.\n");
+            /* If set, the card did not switch to the expected mode as 
+               requested by the SWITCH command. */
+            printf("Switch Operation failed.\n");
             return NvBootError_DeviceResponseError;
         }
     }
@@ -1067,7 +1209,7 @@ EmmcVerifyResponse(
     {
         if (BeforeCommandExecution && CardInternalError)
         {
-            PRINT_SDMMC_ERRORS("Send Extneded CSD Operation failed.\n");
+            printf("Send Extneded CSD Operation failed.\n");
             return NvBootError_DeviceResponseError;
         }
     }
@@ -1075,27 +1217,26 @@ EmmcVerifyResponse(
     {
         if (AfterCmdExecution && AddressOutOfRange)
         {
-            PRINT_SDMMC_ERRORS("EsdSelectPartition Out of range error.\n");
+            printf("EsdSelectPartition Out of range error.\n");
             return NvBootError_DeviceResponseError;
         }
     }
     return NvBootError_Success;
 }
 
-// controller for various responses along with contstant arguments.
-//
-// EMMC does not have responses R6, R7. SD only has additional R6 and R7 
-// responses. EMMC R4 needs command and crc checks in response. 
-// SD R4 doesn't need command and crc checks in response.
-// Do we use R4 Response at all? No, it isn't as of now in this driver.
-//
-// This array indicates what responses need Command Index check.
-//  NR,R1,R2,R3,R4,R5,R6,R7,R1b
-// {0, 1, 0, 0, 0, 1, 1, 1, 1};
-// 
-// This array indicates what responses need Crc check.
-//  NR,R1,R2,R3,R4,R5,R6,R7,R1b
-// {0, 1, 1, 0, 0, 1, 1, 1, 1};
+/* controller for various responses along with contstant arguments.
+   EMMC does not have responses R6, R7. SD only has additional R6 and R7 
+   responses. EMMC R4 needs command and crc checks in response. 
+   SD R4 doesn't need command and crc checks in response.
+   Do we use R4 Response at all? No, it isn't as of now in this driver.
+
+   This array indicates what responses need Command Index check.
+   NR,R1,R2,R3,R4,R5,R6,R7,R1b
+   {0, 1, 0, 0, 0, 1, 1, 1, 1};
+ 
+   This array indicates what responses need Crc check.
+   NR,R1,R2,R3,R4,R5,R6,R7,R1b
+   {0, 1, 1, 0, 0, 1, 1, 1, 1}; */
 #define RESPONSE_DATA(type, index_check, crc_check)                        \
     ( NV_DRF_DEF(SDMMC, CMD_XFER_MODE, COMMAND_TYPE,       NORMAL)      | \
       NV_DRF_DEF(SDMMC, CMD_XFER_MODE, DATA_XFER_DIR_SEL,  READ)        | \
@@ -1105,15 +1246,15 @@ EmmcVerifyResponse(
 
 static const NvU32 s_ResponseDataArray[] =
 {
-    RESPONSE_DATA(NO_RESPONSE,        DISABLE, DISABLE), // None
-    RESPONSE_DATA(RESP_LENGTH_48,     ENABLE,  ENABLE ), // R1
-    RESPONSE_DATA(RESP_LENGTH_136,    DISABLE, ENABLE ), // R2
-    RESPONSE_DATA(RESP_LENGTH_48,     DISABLE, DISABLE), // R3
-    RESPONSE_DATA(RESP_LENGTH_48,     DISABLE, DISABLE), // R4
-    RESPONSE_DATA(RESP_LENGTH_48,     ENABLE,  ENABLE ), // R5
-    RESPONSE_DATA(RESP_LENGTH_48,     ENABLE,  ENABLE ), // R6
-    RESPONSE_DATA(RESP_LENGTH_48,     ENABLE,  ENABLE ), // R7
-    RESPONSE_DATA(RESP_LENGTH_48BUSY, ENABLE,  ENABLE )  // R1b
+    RESPONSE_DATA(NO_RESPONSE,        DISABLE, DISABLE), /* None */
+    RESPONSE_DATA(RESP_LENGTH_48,     ENABLE,  ENABLE ), /* R1 */
+    RESPONSE_DATA(RESP_LENGTH_136,    DISABLE, ENABLE ), /* R2 */
+    RESPONSE_DATA(RESP_LENGTH_48,     DISABLE, DISABLE), /* R3 */
+    RESPONSE_DATA(RESP_LENGTH_48,     DISABLE, DISABLE), /* R4 */
+    RESPONSE_DATA(RESP_LENGTH_48,     ENABLE,  ENABLE ), /* R5 */
+    RESPONSE_DATA(RESP_LENGTH_48,     ENABLE,  ENABLE ), /* R6 */
+    RESPONSE_DATA(RESP_LENGTH_48,     ENABLE,  ENABLE ), /* R7 */
+    RESPONSE_DATA(RESP_LENGTH_48BUSY, ENABLE,  ENABLE )  /* R1b */
 };
 
 static NvBootError
@@ -1131,10 +1272,10 @@ HwSdmmcSendCommand(
     NvU32* pSdmmcResponse = &s_SdmmcContext->SdmmcResponse[0];
     
     NV_ASSERT(ResponseType < SdmmcResponseType_Num);
-    PRINT_SDMMC_MESSAGES("Sending CMD%d\n", CommandIndex);
-    PRINT_SDMMC_MESSAGES("    Cmd Index=0x%x, Arg=0x%x, RespType=%d, data=%d\n",
+    debug("Sending CMD%d\n", CommandIndex);
+    debug("    Cmd Index=0x%x, Arg=0x%x, RespType=%d, data=%d\n",
         CommandIndex, CommandArg, ResponseType, IsDataCmd);
-    // Wait till Controller is ready.
+    /* Wait till Controller is ready. */
     NV_BOOT_CHECK_ERROR(HwSdmmcWaitForCmdInhibitCmd());
     
     CommandXferMode = 
@@ -1150,30 +1291,29 @@ HwSdmmcSendCommand(
 
     while (retries)
     {
-        // Clear Status bits what ever is set.
+        /* Clear Status bits what ever is set. */
         NV_SDMMC_READ(INTERRUPT_STATUS, InterruptStatus);
         NV_SDMMC_WRITE(INTERRUPT_STATUS, InterruptStatus);
-        // This redundant read is for debug purpose.
+        /* This redundant read is for debug purpose. */
         NV_SDMMC_READ(INTERRUPT_STATUS, InterruptStatus);
         NV_SDMMC_WRITE(ARGUMENT, CommandArg);
         NV_SDMMC_WRITE(CMD_XFER_MODE, CommandXferMode);
-        // Wait for the command to be sent out. If it fails, retry.
+        /* Wait for the command to be sent out. If it fails, retry. */
         e = HwSdmmcWaitForCommandComplete(&InterruptStatus);
         if (e == NvBootError_Success)
             break;
 
-        // Recover Controller from Errors.
+        /* Recover Controller from Errors. */
         HwSdmmcRecoverControllerFromErrors(IsDataCmd);
         retries--;
-// jz
-printf("%s: retry %d\n", __FUNCTION__, retries);
+	debug("%s: retry %d\n", __FUNCTION__, retries);
     }
     if (retries)
     {
-        // Wait till response is received from card.
+        /* Wait till response is received from card. */
         NV_BOOT_CHECK_ERROR(HwSdmmcWaitForCmdInhibitCmd());
         if (ResponseType == SdmmcResponseType_R1B)
-            // Wait till busy line is deasserted by card.
+            /* Wait till busy line is deasserted by card. */
             NV_BOOT_CHECK_ERROR(HwSdmmcWaitForCmdInhibitData());
         HwSdmmcReadResponse(ResponseType, pSdmmcResponse);
     }
@@ -1207,7 +1347,7 @@ static NvBootError EmmcSelectAccessRegion(SdmmcAccessRegion region)
     CmdArg |= EMMC_SWITCH_SELECT_PARTITION_ARG;
     NV_BOOT_CHECK_ERROR(EmmcSendSwitchCommand(CmdArg));
     s_SdmmcContext->CurrentAccessRegion = region;
-    PRINT_SDMMC_MESSAGES("Selected Region=%d(1->BP1, 2->BP2, 0->User)\n", 
+    debug("Selected Region=%d(1->BP1, 2->BP2, 0->User)\n", 
         region);
     return e;
 }
@@ -1219,15 +1359,15 @@ static NvBootError SdmmcSelectAccessRegion(NvU32* Block, NvU32* Page)
     NvU32 BlocksPerPartition = s_SdmmcContext->EmmcBootPartitionSize >> 
                                s_SdmmcContext->BlockSizeLog2;
     
-    // If boot partition size is zero, then the card is either eSD or 
-    // eMMC version is < 4.3.
+    /* If boot partition size is zero, then the card is either eSD or 
+       eMMC version is < 4.3. */
     if (s_SdmmcContext->EmmcBootPartitionSize == 0)
     {
         s_SdmmcContext->CurrentAccessRegion = SdmmcAccessRegion_UserArea;
         return e;
     }
-    // This will not work always, if the request is a multipage one.
-    // But this driver never gets multipage requests.
+    /* This will not work always, if the request is a multipage one.
+       But this driver never gets multipage requests. */
     if ( (*Block) < BlocksPerPartition )
     {
         region = SdmmcAccessRegion_BootPartition1;
@@ -1263,62 +1403,50 @@ NvBootSdmmcReadPage(
     
     NV_ASSERT(Page < (1 << s_SdmmcContext->PagesPerBlockLog2));
     NV_ASSERT(pBuffer != NULL);
-    PRINT_SDMMC_MESSAGES("Read Block=%d, Page=%d\n", Block, Page);
-#if NVRM
-    s_SdmmcBitInfo->NumPagesRead++;
-#endif
+    debug("Read Block=%d, Page=%d\n", Block, Page);
+
     if ( (s_IsBootModeDataValid == NV_TRUE) && (Block == 0) && (Page == 0) )
     {
-        // the 0th page of 0th block will read in boot mode, if boot mode is
-        // enabled. So, give it back from buffer.
+        /* the 0th page of 0th block will read in boot mode, if boot mode is
+           enabled. So, give it back from buffer. */
         NvBootUtilMemcpy(pBuffer, &s_SdmmcContext->SdmmcBootModeBuffer[0], 
             PageSize);
         return NvBootError_Success;
     }
     
-    // If data line ready times out, try to recover from errors.
+    /* If data line ready times out, try to recover from errors. */
     if (HwSdmmcWaitForDataLineReady() != NvBootError_Success)
         NV_BOOT_CHECK_ERROR(HwSdmmcRecoverControllerFromErrors(NV_TRUE));
-    // Select access region.This will intern changes block and page addresses
-    // based on the region the request falls in.
+    /* Select access region.This will intern changes block and page addresses
+       based on the region the request falls in. */
     NV_BOOT_CHECK_ERROR(SdmmcSelectAccessRegion(&Block2Access, &Page2Access));
-    PRINT_SDMMC_MESSAGES("Region=%d(1->BP1, 2->BP2, 0->UP)Block2Access=%d, "
+    debug("Region=%d(1->BP1, 2->BP2, 0->UP)Block2Access=%d, "
         "Page2Access=%d\n", s_SdmmcContext->CurrentAccessRegion, Block2Access, 
         Page2Access);
-    // Send SET_BLOCKLEN(CMD16) Command.
+    /* Send SET_BLOCKLEN(CMD16) Command. */
     NV_BOOT_CHECK_ERROR(HwSdmmcSendCommand(SdmmcCommand_SetBlockLength,
         PageSize, SdmmcResponseType_R1, NV_FALSE, NV_FALSE));
     NV_BOOT_CHECK_ERROR(EmmcVerifyResponse(SdmmcCommand_SetBlockLength, 
         NV_FALSE));
-    // Find out the Block to read from MoviNand.
+    /* Find out the Block to read from MoviNand. */
     ActualBlockToRead = (Block2Access << s_SdmmcContext->PagesPerBlockLog2) + 
                         Page2Access;
-    /*
-     * If block to read is beyond card's capacity, then some Emmc cards are 
-     * responding with error back and continue to work. Some are not responding 
-     * for this and for subsequent valid operations also.
-     */
-    //if (ActualBlockToRead >= s_SdmmcContext->NumOfBlocks)
-    //    return NvBootError_IllegalParameter;
-    // Set number of blocks to read to 1.
+
+    /* Set number of blocks to read to 1. */
     HwSdmmcSetNumOfBlocks(PageSize, 1);
-    // Set up command arg.
+    /* Set up command arg. */
     if (s_SdmmcContext->IsHighCapacityCard)
         CommandArg = ActualBlockToRead;
     else
         CommandArg = (ActualBlockToRead << s_SdmmcContext->PageSizeLog2);
-    PRINT_SDMMC_MESSAGES("ActualBlockToRead=%d, CommandArg=%d\n", 
+    debug("ActualBlockToRead=%d, CommandArg=%d\n", 
         ActualBlockToRead, CommandArg);
-    // Setup Dma.
+    /* Setup Dma. */
     HwSdmmcSetupDma(pBuffer, PageSize);
-    // Send command to card.
-// jz
-//printf("%s: send read cmd %d\n", __FUNCTION__, (int)SdmmcCommand_ReadSingle);
+    /* Send command to card. */
     NV_BOOT_CHECK_ERROR(HwSdmmcSendCommand(SdmmcCommand_ReadSingle,
                             CommandArg, SdmmcResponseType_R1, NV_TRUE, NV_FALSE));
-    // If response fails, return error. Nothing to clean up.
-// jz
-//printf("%s: verify cmd response from cmd %d\n", __FUNCTION__, (int)SdmmcCommand_ReadSingle);
+    /* If response fails, return error. Nothing to clean up. */
     NV_BOOT_CHECK_ERROR_CLEANUP(EmmcVerifyResponse(SdmmcCommand_ReadSingle, 
         NV_FALSE));
     s_SdmmcContext->DeviceStatus = NvBootDeviceStatus_ReadInProgress;
@@ -1351,15 +1479,14 @@ NvBootDeviceStatus NvBootSdmmcQueryStatus(void)
                                     DMA_INTERRUPT,GEN_INT);
     NvU32 DataTimeOutError = NV_DRF_DEF(SDMMC, INTERRUPT_STATUS, DATA_TIMEOUT_ERR,
                                 TIMEOUT);
-// jz    
-//printf("%s\n", __FUNCTION__);
+
     if (s_SdmmcContext->DeviceStatus == NvBootDeviceStatus_ReadInProgress)
     {
-        // Check whether Transfer is done.
+        /* Check whether Transfer is done. */
         NV_SDMMC_READ(INTERRUPT_STATUS, InterruptStatusReg);
         TransferDone = NV_DRF_VAL(SDMMC, INTERRUPT_STATUS, XFER_COMPLETE,
                             InterruptStatusReg);
-        // Check whether there are any errors.
+        /* Check whether there are any errors. */
         if (InterruptStatusReg & ErrorMask)
         {
             if ( (InterruptStatusReg & ErrorMask) == DataTimeOutError)
@@ -1367,17 +1494,14 @@ NvBootDeviceStatus NvBootSdmmcQueryStatus(void)
             else
             {
                 s_SdmmcContext->DeviceStatus = NvBootDeviceStatus_CrcFailure;
-#if NVRM
-                s_SdmmcBitInfo->NumCrcErrors++;
-#endif
             }
-            // Recover from errors here.
+            /* Recover from errors here. */
             (void)HwSdmmcRecoverControllerFromErrors(NV_TRUE);
         }
         else if (InterruptStatusReg & DmaBoundaryInterrupt)
         {
-            // Need to clear this DMA boundary interrupt and write SDMA address
-            // again. Otherwise controller doesn't go ahead.
+            /* Need to clear this DMA boundary interrupt and write SDMA address
+               again. Otherwise controller doesn't go ahead. */
             NV_SDMMC_WRITE(INTERRUPT_STATUS, DmaBoundaryInterrupt);
             NV_SDMMC_READ(SYSTEM_ADDRESS, SdmaAddress);
             NV_SDMMC_WRITE(SYSTEM_ADDRESS, SdmaAddress);
@@ -1388,7 +1512,7 @@ NvBootDeviceStatus NvBootSdmmcQueryStatus(void)
             NV_SDMMC_WRITE(INTERRUPT_STATUS, InterruptStatusReg);
             if (s_SdmmcContext->BootModeReadInProgress == NV_FALSE)
             {
-                // Check Whether there is any read ecc error.
+                /* Check Whether there is any read ecc error. */
                 e = HwSdmmcSendCommand(SdmmcCommand_SendStatus,
                         s_SdmmcContext->CardRca, SdmmcResponseType_R1, NV_FALSE, NV_FALSE);
                 if (e == NvBootError_Success)
@@ -1420,53 +1544,47 @@ NvBootError SdmmcWritePage(const NvU32 Block, const NvU32 Page, NvU8 *pBuffer)
 
     NV_ASSERT(Page < (1 << s_SdmmcContext->PagesPerBlockLog2));
     NV_ASSERT(pBuffer != NULL);
-    PRINT_SDMMC_MESSAGES("Write Block=%d, Page=%d\n", Block, Page);
+    debug("Write Block=%d, Page=%d\n", Block, Page);
 
     NV_SDMMC_READ(SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL, OrgStcReg);
     ModStcReg = NV_FLD_SET_DRF_NUM(SDMMC, SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL,
                 DATA_TIMEOUT_COUNTER_VALUE, 0xE, OrgStcReg);
     NV_SDMMC_WRITE(SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL, ModStcReg);
 
-    // If data line ready times out, try to recover from errors.
+    /* If data line ready times out, try to recover from errors. */
     if (HwSdmmcWaitForDataLineReady() != NvBootError_Success)
         NV_BOOT_CHECK_ERROR(HwSdmmcRecoverControllerFromErrors(NV_TRUE));
-    // Select access region.This will intern changes block and page addresses
-    // based on the region the request falls in.
+    /* Select access region.This will intern changes block and page addresses
+       based on the region the request falls in. */
     NV_BOOT_CHECK_ERROR(SdmmcSelectAccessRegion(&Block2Access, &Page2Access));
-    PRINT_SDMMC_MESSAGES("Region=%d(1->BP1, 2->BP2, 0->UP)Block2Access=%d, "
+    debug("Region=%d(1->BP1, 2->BP2, 0->UP)Block2Access=%d, "
         "Page2Access=%d\n", s_SdmmcContext->CurrentAccessRegion, Block2Access,
         Page2Access);
-     // Send SET_BLOCKLEN(CMD16) Command.
+    /* Send SET_BLOCKLEN(CMD16) Command. */
     NV_BOOT_CHECK_ERROR(HwSdmmcSendCommand(SdmmcCommand_SetBlockLength,
         (1 << s_SdmmcContext->PageSizeLog2), SdmmcResponseType_R1, NV_FALSE,
         NV_FALSE));
     NV_BOOT_CHECK_ERROR(EmmcVerifyResponse(SdmmcCommand_SetBlockLength,
         NV_FALSE));
-    // Find out the Block to read from MoviNand.
+    /* Find out the Block to read from MoviNand. */
     ActualBlockToRead = (Block2Access << s_SdmmcContext->PagesPerBlockLog2) +
                         Page2Access;
-    /*
-     * If block to write is beyond card's capacity, then some Emmc cards are 
-     * responding with error back and continue to work. Some are not responding 
-     * for this and for subsequent valid operations also.
-     */
-    //if (ActualBlockToRead >= s_SdmmcContext->NumOfBlocks)
-    //    return NvBootError_IllegalParameter;
-    // Set number of blocks to write to 1.
+
+    /* Set number of blocks to write to 1. */
     HwSdmmcSetNumOfBlocks(PageSize, 1);
-    // Set up command arg.
+    /* Set up command arg. */
     if (s_SdmmcContext->IsHighCapacityCard)
         CommandArg = ActualBlockToRead;
     else
         CommandArg = (ActualBlockToRead << s_SdmmcContext->PageSizeLog2);
-    PRINT_SDMMC_MESSAGES("ActualBlockToRead=%d, CommandArg=%d\n",
+    debug("ActualBlockToRead=%d, CommandArg=%d\n",
         ActualBlockToRead, CommandArg);
-    // Setup Dma.
+    /* Setup Dma. */
     HwSdmmcSetupDma(pBuffer, PageSize);
-    // Send command to card.
+    /* Send command to card. */
     NV_BOOT_CHECK_ERROR(HwSdmmcSendCommand((SdmmcCommand)SdmmcCommand_WriteSingle,
                             CommandArg, SdmmcResponseType_R1, NV_TRUE, NV_TRUE));
-    // If response fails, return error. Nothing to clean up.
+    /* If response fails, return error. Nothing to clean up. */
     NV_BOOT_CHECK_ERROR_CLEANUP(EmmcVerifyResponse((SdmmcCommand)SdmmcCommand_WriteSingle,
         NV_FALSE));
     s_SdmmcContext->DeviceStatus = NvBootDeviceStatus_ReadInProgress;
@@ -1480,13 +1598,13 @@ NvBootError SdmmcWritePage(const NvU32 Block, const NvU32 Page, NvU8 *pBuffer)
         else if ( (Status == NvBootDeviceStatus_ReadFailure) ||
                   (Status == NvBootDeviceStatus_DataTimeout) )
         {
-            PRINT_SDMMC_ERRORS(" Write failed. Block=%d\n", Block);
+            printf(" Write failed. Block=%d\n", Block);
             e = NvBootError_DeviceReadError;
             break;
         }
         else if (Status == NvBootDeviceStatus_CrcFailure)
         {
-            PRINT_SDMMC_ERRORS(" Write crc error B=%d, P=%d\n", Block, Page);
+            printf(" Write crc error B=%d, P=%d\n", Block, Page);
         }
     } while (1);
 
@@ -1512,7 +1630,7 @@ NvBootError SdmmcReadPage(const NvU32 Block, const NvU32 Page, NvU8 *pBuffer)
         else if ( (Status == NvBootDeviceStatus_ReadFailure) ||
                   (Status == NvBootDeviceStatus_DataTimeout) )
         {
-            PRINT_SDMMC_ERRORS (" Read failed. Block=%d\n", Block);
+            printf (" Read failed. Block=%d\n", Block);
             e = NvBootError_DeviceReadError;
             break;
         }
@@ -1520,57 +1638,101 @@ NvBootError SdmmcReadPage(const NvU32 Block, const NvU32 Page, NvU8 *pBuffer)
     return e;
 }
 
-static NvBool HwSdmmcIsCardPresent(void)
+static NvBool HwSdmmcIsCardPresent(NvEmmcDeviceId DevId)
 {
-    NvU32 CardStable;
-    NvU32 PresentState;
     NvU32 CardInserted = 0;
     NvU32 TimeOut = SDMMC_TIME_OUT_IN_US;
     
     while (TimeOut)
     {
-        NV_SDMMC_READ(PRESENT_STATE, PresentState);
-        CardStable = NV_DRF_VAL(SDMMC, PRESENT_STATE, CARD_STATE_STABLE, 
-                        PresentState);
-        if (CardStable)
-        {
-            CardInserted = NV_DRF_VAL(SDMMC, PRESENT_STATE, CARD_INSERTED, 
-                            PresentState);
-            break;
-        }
+	if (DevId == NvEmmc4)
+	{
+#ifdef CONFIG_TEGRA2_EMMC4_ALWAYS_INSERTED
+	/* Seaboard platform - doesn't have Card Detect pin */
+		CardInserted = 1;
+		break;
+#else
+	/* Harmony - HSMMC_CD (Card Detect) uses GMI_AD10 as GPI
+	   GMI_AD10 uses ATD Pad group, GPIO H.02 */
+		if (!tg2_gpio_get_value(7, 2))
+		{
+			CardInserted = 1;
+			break;
+		}
+#endif
+	}
+	else if (DevId == NvEmmc2)
+	{
+	/* Harmony - SDIO2_CD (Card Detect) uses GMI_IORDY as GPI
+	   GMI_IORDY uses ATC Pad group, GPIO I.05 */
+		if (!tg2_gpio_get_value(8, 5))
+		{
+			CardInserted = 1;
+			break;
+		}
+	}
+	else if (DevId == NvEmmc3)
+	{
+	/* Seaboard - SDIO3_CD (Card Detect) uses GMI_IORDY as GPI
+	   GMI_IORDY uses ATC Pad group, GPIO I.05 */
+		if (!tg2_gpio_get_value(8, 5))
+		{
+			CardInserted = 1;
+			break;
+		}
+	}
         NvBootUtilWaitUS(1);
         TimeOut--;
     }
-    PRINT_SDMMC_ERRORS("Card is %s stable\n", CardStable ? "":"not");
-    PRINT_SDMMC_ERRORS("Card is %s present\n", CardInserted ? "":"not");
+    debug("Card is %s present\n", CardInserted ? "":"not");
     return (CardInserted ? NV_TRUE : NV_FALSE);
 }
 
-void NvBootSdmmcShutdown(void)
-{
-    NvU32 StcReg;
-    NvU32 PowerControlHostReg;
-    
-    PRINT_SDMMC_MESSAGES("SdmmcShutdown\n");
 
-    // Stop the clock to SDMMC card.
+void NvBootSdmmcShutdown(NvEmmcDeviceId DevId)
+{
+	NvU32 StcReg;
+	NvU32 PowerControlHostReg;
+    
+    debug("SdmmcShutdown DevId= %d\n", DevId);
+    /* Stop the clock to SDMMC card. */
     NV_SDMMC_READ(SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL, StcReg);
     StcReg = NV_FLD_SET_DRF_DEF(SDMMC, SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL,
                 SD_CLOCK_EN, DISABLE, StcReg);
     NV_SDMMC_WRITE(SW_RESET_TIMEOUT_CTRL_CLOCK_CONTROL, StcReg);
-    // Disable the bus power.
+
+    /* Disable the bus power. */
     NV_SDMMC_READ(POWER_CONTROL_HOST, PowerControlHostReg);
     PowerControlHostReg = NV_FLD_SET_DRF_DEF(SDMMC, POWER_CONTROL_HOST, 
                             SD_BUS_POWER, POWER_OFF, PowerControlHostReg);
     NV_SDMMC_WRITE(POWER_CONTROL_HOST, PowerControlHostReg);
     
-    // Keep the controller in reset and disable the clock.
-    NvBootResetSetEnable(NvBootResetDeviceId_SdmmcId, NV_TRUE);
-    NvBootClocksSetEnable(NvBootClocksClockId_SdmmcId, NV_FALSE);
+    /* Keep the controller in reset and disable the clock. */
+	if (DevId == NvEmmc1)
+	{
+		NvBootResetSetEnable(NvBootResetDeviceId_Sdmmc1Id, NV_TRUE);
+		NvBootClocksSetEnable(NvBootClocksClockId_Sdmmc1Id, NV_FALSE);
+	}
+	else if (DevId == NvEmmc2)
+	{
+		NvBootResetSetEnable(NvBootResetDeviceId_Sdmmc2Id, NV_TRUE);
+		NvBootClocksSetEnable(NvBootClocksClockId_Sdmmc2Id, NV_FALSE);
+	}
+	else if (DevId == NvEmmc3)
+	{
+		NvBootResetSetEnable(NvBootResetDeviceId_Sdmmc3Id, NV_TRUE);
+		NvBootClocksSetEnable(NvBootClocksClockId_Sdmmc3Id, NV_FALSE);
+	}
+	else if (DevId == NvEmmc4)
+	{
+		NvBootResetSetEnable(NvBootResetDeviceId_Sdmmc4Id, NV_TRUE);
+		NvBootClocksSetEnable(NvBootClocksClockId_Sdmmc4Id, NV_FALSE);
+	}
+
     s_SdmmcContext = NULL;
 }
 
-static NvBootError EmmcReadDataInBootMode(NvU8* pBuffer, NvU32 NumOfBlocks)
+static NvBootError EmmcReadDataInBootMode(NvEmmcDeviceId DevId, NvU8* pBuffer, NvU32 NumOfBlocks)
 {
     NvBootError e;
     NvU32 BootControl;
@@ -1582,8 +1744,8 @@ static NvBootError EmmcReadDataInBootMode(NvU8* pBuffer, NvU32 NumOfBlocks)
     if (s_IsBootModeDataValid == NV_TRUE)
         return NvBootError_Success;
     HwSdmmcSetDataWidth(s_SdmmcContext->DataWidth);
-    // Set card clock to 20MHz.
-    HwSdmmcSetCardClock(NvBootSdmmcCardClock_20MHz);
+    /* Set card clock to 20MHz. */
+    HwSdmmcSetCardClock(DevId, NvBootSdmmcCardClock_20MHz);
     HwSdmmcSetNumOfBlocks(1 << SDMMC_MAX_PAGE_SIZE_LOG_2, NumOfBlocks);
     HwSdmmcSetupDma(pBuffer, NumOfBlocks << SDMMC_MAX_PAGE_SIZE_LOG_2);
     /*
@@ -1594,7 +1756,7 @@ static NvBootError EmmcReadDataInBootMode(NvU8* pBuffer, NvU32 NumOfBlocks)
      */
     NV_SDMMC_WRITE(VENDOR_BOOT_ACK_TIMEOUT, 0xF4240);
     NV_SDMMC_WRITE(VENDOR_BOOT_DAT_TIMEOUT, 0x1312D00);
-    // Setup Command Xfer reg.
+    /* Setup Command Xfer reg. */
     CommandXferMode = NV_DRF_DEF(SDMMC, CMD_XFER_MODE, DATA_PRESENT_SELECT, 
                         DATA_TRANSFER) |
                       NV_DRF_DEF(SDMMC, CMD_XFER_MODE, DATA_XFER_DIR_SEL, READ) |
@@ -1603,15 +1765,15 @@ static NvBootError EmmcReadDataInBootMode(NvU8* pBuffer, NvU32 NumOfBlocks)
     NV_SDMMC_WRITE_08(CMD_XFER_MODE, 0, (CommandXferMode & 0xF));
     NV_SDMMC_WRITE_08(CMD_XFER_MODE, 1, ((CommandXferMode >> 8) & 0xF));
     NV_SDMMC_WRITE_08(CMD_XFER_MODE, 2, ((CommandXferMode >> 16) & 0xF));
-    // Wait till Controller is ready.
+    /* Wait till Controller is ready. */
     NV_BOOT_CHECK_ERROR(HwSdmmcWaitForCmdInhibitCmd());
-    // Wait till busy line is deasserted.
+    /* Wait till busy line is deasserted. */
     NV_BOOT_CHECK_ERROR(HwSdmmcWaitForCmdInhibitData());
-    // Setup Boot Control reg.
+    /* Setup Boot Control reg. */
     BootControl = NV_DRF_DEF(SDMMC, VENDOR_BOOT_CNTRL, BOOT_ACK, ENABLE) | 
                   NV_DRF_DEF(SDMMC, VENDOR_BOOT_CNTRL, BOOT, ENABLE);
     NV_SDMMC_WRITE(VENDOR_BOOT_CNTRL, BootControl);
-    // Wait for data receive.
+    /* Wait for data receive. */
     s_SdmmcContext->DeviceStatus = NvBootDeviceStatus_ReadInProgress;
     s_SdmmcContext->ReadStartTime = NvBootUtilGetTimeUS();
     s_SdmmcContext->BootModeReadInProgress = NV_TRUE;
@@ -1625,7 +1787,7 @@ static NvBootError EmmcReadDataInBootMode(NvU8* pBuffer, NvU32 NumOfBlocks)
     {
         while (TimeOut)
         {
-            // Disable Boot mode.
+            /* Disable Boot mode. */
             BootControl = NV_DRF_DEF(SDMMC, VENDOR_BOOT_CNTRL, BOOT_ACK, 
                             DISABLE) |
                           NV_DRF_DEF(SDMMC, VENDOR_BOOT_CNTRL, BOOT, DISABLE);
@@ -1635,12 +1797,12 @@ static NvBootError EmmcReadDataInBootMode(NvU8* pBuffer, NvU32 NumOfBlocks)
                 break;
             TimeOut--;
         }
-        // Clear Status bits what ever is set.
+        /* Clear Status bits what ever is set. */
         NV_SDMMC_READ(INTERRUPT_STATUS, InterruptStatus);
         NV_SDMMC_WRITE(INTERRUPT_STATUS, InterruptStatus);
         return NvBootError_DeviceError;
     }
-    // Boot mode is succesful. Don't try to read in boot mode again.
+    /* Boot mode is successful. Don't try to read in boot mode again. */
     s_IsBootModeDataValid = NV_TRUE;
     return e;
 }
@@ -1666,8 +1828,8 @@ static void HwSdmmcCalculateCardClockDivisor(void)
          (s_SdmmcContext->CardSupportsHighSpeedMode == NV_FALSE) || 
          (s_SdmmcContext->SpecVersion < 4) )
     {
-        // Either card or host doesn't support high speed. So reduce the clock
-        // frequency if required.
+        /* Either card or host doesn't support high speed. So reduce the clock
+           frequency if required. */
         if (QUOTIENT_CEILING(SDMMC_PLL_FREQ_IN_MHZ, s_SdmmcContext->ClockDivisor) > 
             s_SdmmcContext->TranSpeedInMHz)
             s_SdmmcContext->ClockDivisor = 
@@ -1685,7 +1847,7 @@ static void HwSdmmcCalculateCardClockDivisor(void)
             s_SdmmcContext->TranSpeedInMHz)
             s_SdmmcContext->HighSpeedMode = NV_TRUE;
     }
-    PRINT_SDMMC_MESSAGES("ClockDivisor=%d, CardClockDivisor=%d, "
+    debug("ClockDivisor=%d, CardClockDivisor=%d, "
         "HighSpeedMode=%d\n", s_SdmmcContext->ClockDivisor, 
         s_SdmmcContext->CardClockDivisor, s_SdmmcContext->HighSpeedMode);
 }
@@ -1696,17 +1858,17 @@ static NvBool SdmmcIsCardInTransferState(void)
     NvU32 CardState;
     NvU32* pResp = &s_SdmmcContext->SdmmcResponse[0];
     
-    // Send SEND_STATUS(CMD13) Command.
+    /* Send SEND_STATUS(CMD13) Command. */
     NV_BOOT_CHECK_ERROR_CLEANUP(HwSdmmcSendCommand(SdmmcCommand_SendStatus,
         s_SdmmcContext->CardRca, SdmmcResponseType_R1, NV_FALSE, NV_FALSE));
-    // Extract the Card State from the Response.
+    /* Extract the Card State from the Response. */
     CardState = NV_DRF_VAL(SDMMC, CS, CURRENT_STATE, pResp[0]);
     if (CardState == SdmmcState_Tran) {
-        PRINT_SDMMC_MESSAGES("Indeed in Tran State\n");
+        debug("Indeed in Tran State\n");
         return NV_TRUE;
     }
 fail:
-    PRINT_SDMMC_MESSAGES("Not in Tran State\n");
+    debug("Not in Tran State\n");
     return NV_FALSE;
 }
 
@@ -1721,18 +1883,17 @@ static NvBootError EmmcGetOpConditions(void)
     
     if (Cmd1Arg != EmmcOcrVoltageRange_QueryVoltage)
         Cmd1Arg |= SDMMC_CARD_CAPACITY_MASK;
-    // jz
-    Cmd1Arg = 0x40ff8080;
+
     StartTime = NvBootUtilGetTimeUS();
-    // Send SEND_OP_COND(CMD1) Command.
+    /* Send SEND_OP_COND(CMD1) Command. */
     while (ElapsedTime <= SDMMC_OP_COND_TIMEOUT_IN_US)
     {
         NV_BOOT_CHECK_ERROR(HwSdmmcSendCommand(
             SdmmcCommand_EmmcSendOperatingConditions, Cmd1Arg,
             SdmmcResponseType_R3, NV_FALSE, NV_FALSE));
-        // Extract OCR from Response.
+        /* Extract OCR from Response. */
         OCRRegister = pSdmmcResponse[SDMMC_OCR_RESPONSE_WORD];
-        // Check for Card Ready.
+        /* Check for Card Ready. */
         if (OCRRegister & SDMMC_OCR_READY_MASK)
             break;
         if (Cmd1Arg == EmmcOcrVoltageRange_QueryVoltage)
@@ -1741,19 +1902,11 @@ static NvBootError EmmcGetOpConditions(void)
             {
                 Cmd1Arg = EmmcOcrVoltageRange_HighVoltage;
                 s_SdmmcContext->IsHighVoltageRange = NV_TRUE;
-#if NVRM
-                s_SdmmcBitInfo->DiscoveredVoltageRange = 
-                    EmmcOcrVoltageRange_HighVoltage;
-#endif
             }
             else if (OCRRegister & EmmcOcrVoltageRange_LowVoltage)
             {
                 Cmd1Arg = EmmcOcrVoltageRange_LowVoltage;
                 s_SdmmcContext->IsHighVoltageRange = NV_FALSE;
-#if NVRM
-                s_SdmmcBitInfo->DiscoveredVoltageRange = 
-                    EmmcOcrVoltageRange_LowVoltage;
-#endif
             }
             else
             {
@@ -1764,21 +1917,18 @@ static NvBootError EmmcGetOpConditions(void)
             StartTime = NvBootUtilGetTimeUS();
             continue;
         }
-        #if DEBUG_SDMMC
-        ElapsedTime += 10000;
-        #else
         ElapsedTime = NvBootUtilElapsedTimeUS(StartTime);
-        #endif
-        // Wait for ten milliseconds between commands. This to avoid 
-        // sending cmd1 too many times.
+
+        /* Wait for ten milliseconds between commands. This to avoid 
+           sending cmd1 too many times. */
         NvBootUtilWaitUS(10000);
     }
     if (ElapsedTime > SDMMC_OP_COND_TIMEOUT_IN_US)
     {
-        PRINT_SDMMC_ERRORS("Timeout during CMD1\n");
+        printf("Timeout during CMD1\n");
         return NvBootError_HwTimeOut;
     }
-    PRINT_SDMMC_MESSAGES("TimeTaken for CMD1=%dus\n", ElapsedTime);
+    debug("TimeTaken for CMD1=%dus\n", ElapsedTime);
     s_SdmmcContext->IsHighCapacityCard = ( (OCRRegister & 
                                            SDMMC_CARD_CAPACITY_MASK) ? 
                                            NV_TRUE : NV_FALSE );
@@ -1797,7 +1947,7 @@ static NvBootError EsdGetOpConditions(void)
     NvU32* pSdmmcResponse = &s_SdmmcContext->SdmmcResponse[0];
     NvU32 Cmd1Arg = s_OcrVoltageRange[s_FuseInfo.VoltageRange];
     
-    // Send SEND_IF_COND(CMD8) Command.
+    /* Send SEND_IF_COND(CMD8) Command. */
     if ( (s_FuseInfo.VoltageRange == NvBootSdmmcVoltageRange_QueryVoltage) || 
          (s_FuseInfo.VoltageRange == NvBootSdmmcVoltageRange_HighVoltage) )
         Cmd8Arg = ESD_HOST_HIGH_VOLTAGE_RANGE | ESD_HOST_CHECK_PATTERN;
@@ -1810,22 +1960,22 @@ static NvBootError EsdGetOpConditions(void)
     
     if (e != NvBootError_Success)
     {
-        // Ver2.00 or later SD Memory Card(voltage mismatch) 
-        // Or Ver1.xx SD Memory Card or MultiMediaCard.
-        PRINT_SDMMC_MESSAGES("V2.0 or later SD (vol mm) or V1 SD/MMC\n");
+        /* Ver2.00 or later SD Memory Card(voltage mismatch) 
+           Or Ver1.xx SD Memory Card or MultiMediaCard. */
+        debug("V2.0 or later SD (vol mm) or V1 SD/MMC\n");
     }
     else if ( ((pSdmmcResponse[0] & ESD_CMD8_RESPONSE_CHECK_PATTERN_MASK) |
               (pSdmmcResponse[0] & ESD_CMD8_RESPONSE_VHS_MASK)) == Cmd8Arg )
     {
-        // Ver2.xx SD Memory Card.
+        /* Ver2.xx SD Memory Card. */
         HighCapacitySupport = 1;
-        PRINT_SDMMC_MESSAGES("V2.xx SD Card\n");
+        debug("V2.xx SD Card\n");
     }
     else
     {
-        // Unusable Card. Try to Continue with identification and see 
-        // if it passes.
-        PRINT_SDMMC_MESSAGES("Unusable Card\n");
+        /* Unusable Card. Try to Continue with identification and see 
+           if it passes. */
+        debug("Unusable Card\n");
     }
     
     if (Cmd1Arg != EmmcOcrVoltageRange_QueryVoltage)
@@ -1833,15 +1983,15 @@ static NvBootError EsdGetOpConditions(void)
     StartTime = NvBootUtilGetTimeUS();
     while (ElapsedTime <= SDMMC_OP_COND_TIMEOUT_IN_US)
     {
-        // Send ESD_SEND_OP_COND(ACMD41) Command.
+        /* Send ESD_SEND_OP_COND(ACMD41) Command. */
         NV_BOOT_CHECK_ERROR(HwSdmmcSendCommand(SdmmcCommand_EsdAppCommand,
             0, SdmmcResponseType_R1, NV_FALSE, NV_FALSE));
         NV_BOOT_CHECK_ERROR(HwSdmmcSendCommand(
             SdmmcCommand_EsdAppSendOperatingCondition, Cmd1Arg,
             SdmmcResponseType_R3, NV_FALSE, NV_FALSE));
-        // Extract OCR from Response.
+        /* Extract OCR from Response. */
         OCRRegister = pSdmmcResponse[SDMMC_OCR_RESPONSE_WORD];
-        // Check for Card Ready.
+        /* Check for Card Ready. */
         if (OCRRegister & SDMMC_OCR_READY_MASK)
             break;
         if (Cmd1Arg == EmmcOcrVoltageRange_QueryVoltage)
@@ -1850,19 +2000,11 @@ static NvBootError EsdGetOpConditions(void)
             {
                 Cmd1Arg = EmmcOcrVoltageRange_HighVoltage;
                 s_SdmmcContext->IsHighVoltageRange = NV_TRUE;
-#if NVRM
-                s_SdmmcBitInfo->DiscoveredVoltageRange = 
-                    EmmcOcrVoltageRange_HighVoltage;
-#endif
             }
             else if (OCRRegister & EmmcOcrVoltageRange_LowVoltage)
             {
                 Cmd1Arg = EmmcOcrVoltageRange_LowVoltage;
                 s_SdmmcContext->IsHighVoltageRange = NV_FALSE;
-#if NVRM
-                s_SdmmcBitInfo->DiscoveredVoltageRange = 
-                    EmmcOcrVoltageRange_LowVoltage;
-#endif
             }
             else
             {
@@ -1873,21 +2015,18 @@ static NvBootError EsdGetOpConditions(void)
             StartTime = NvBootUtilGetTimeUS();
             continue;
         }
-        #if DEBUG_SDMMC
-        ElapsedTime += 10000;
-        #else
         ElapsedTime = NvBootUtilElapsedTimeUS(StartTime);
-        #endif
-        // Wait for ten milliseconds between commands. This to avoid 
-        // sending cmd1 too many times.
+
+        /* Wait for ten milliseconds between commands. This to avoid 
+           sending cmd1 too many times. */
         NvBootUtilWaitUS(10000);
     }
     if (ElapsedTime > SDMMC_OP_COND_TIMEOUT_IN_US)
     {
-        PRINT_SDMMC_ERRORS("Timeout during ACMD41\n");
+        printf("Timeout during ACMD41\n");
         return NvBootError_HwTimeOut;
     }
-    PRINT_SDMMC_MESSAGES("TimeTaken for CMD1=%dus\n", ElapsedTime);
+    debug("TimeTaken for CMD1=%dus\n", ElapsedTime);
     CardCapacityStatus = (OCRRegister & SDMMC_CARD_CAPACITY_MASK);
     s_SdmmcContext->IsHighCapacityCard = 
     ( (HighCapacitySupport && CardCapacityStatus) ? NV_TRUE : NV_FALSE );
@@ -1902,10 +2041,10 @@ static NvBootError SdmmcGetCsd(void)
     NvU32 CSizeMulti;
     NvU32* pResp = &s_SdmmcContext->SdmmcResponse[0];
     
-    // Send SEND_CSD(CMD9) Command.
+    /* Send SEND_CSD(CMD9) Command. */
     NV_BOOT_CHECK_ERROR(HwSdmmcSendCommand(SdmmcCommand_SendCsd,
         s_SdmmcContext->CardRca, SdmmcResponseType_R2, NV_FALSE, NV_FALSE));
-    // Extract the page size log2 from Response data.
+    /* Extract the page size log2 from Response data. */
     s_SdmmcContext->PageSizeLog2 = NV_DRF_VAL(EMMC, CSD, READ_BL_LEN, pResp[2]);
     s_SdmmcContext->PageSizeLog2ForCapacity = s_SdmmcContext->PageSizeLog2;
     s_SdmmcContext->BlockSizeLog2 = NVBOOT_SDMMC_BLOCK_SIZE_LOG2;
@@ -1914,33 +2053,33 @@ static NvBootError SdmmcGetCsd(void)
      * for Card capacity calculation. For Read/Write operations, We must use 
      * 512 byte page size only.
      */
-    // Restrict the reads to (1 << EMMC_MAX_PAGE_SIZE_LOG_2) byte reads.
+    /* Restrict the reads to (1 << EMMC_MAX_PAGE_SIZE_LOG_2) byte reads. */
     if (s_SdmmcContext->PageSizeLog2 > SDMMC_MAX_PAGE_SIZE_LOG_2)
         s_SdmmcContext->PageSizeLog2 = SDMMC_MAX_PAGE_SIZE_LOG_2;
     if (s_SdmmcContext->PageSizeLog2 == 0)
         return NvBootError_DeviceError;
     s_SdmmcContext->PagesPerBlockLog2 = (s_SdmmcContext->BlockSizeLog2 -
                                            s_SdmmcContext->PageSizeLog2);
-    // Extract the Spec Version from Response data.
+    /* Extract the Spec Version from Response data. */
     s_SdmmcContext->SpecVersion = NV_DRF_VAL(EMMC, CSD, SPEC_VERS, pResp[3]);
     s_SdmmcContext->taac = NV_DRF_VAL(EMMC, CSD, TAAC, pResp[3]);
     s_SdmmcContext->nsac = NV_DRF_VAL(EMMC, CSD, NSAC, pResp[3]);
     s_SdmmcContext->TranSpeed = NV_DRF_VAL(EMMC, CSD, TRAN_SPEED, pResp[2]);
     
-    // For <= Emmc v4.0, v4.1, v4.2 and < Esd v1.10.
+    /* For <= Emmc v4.0, v4.1, v4.2 and < Esd v1.10. */
     s_SdmmcContext->TranSpeedInMHz = 20;
-    // For Emmc v4.3 and Esd 1.10 onwards.
+    /* For Emmc v4.3 and Esd 1.10 onwards. */
     if (s_SdmmcContext->TranSpeed == EMMC_CSD_V4_3_TRAN_SPEED)
     {
-        // For Esd, it is 25MHz.
+        /* For Esd, it is 25MHz. */
         s_SdmmcContext->TranSpeedInMHz = 25;
         if (s_FuseInfo.CardType == NvBootSdmmcCardType_Emmc)
-            // For Emmc, it is 26MHz.
+            /* For Emmc, it is 26MHz. */
             s_SdmmcContext->TranSpeedInMHz = 26;
     }
     if (s_SdmmcContext->SpecVersion >= 4)
         s_SdmmcContext->CardSupportsHighSpeedMode = NV_TRUE;
-    // Fund out number of blocks in card.
+    /* Found out number of blocks in card. */
     CSize = NV_DRF_VAL(EMMC, CSD, C_SIZE_0, pResp[1]);
     CSize |= (NV_DRF_VAL(EMMC, CSD, C_SIZE_1, pResp[2]) << 
              EMMC_CSD_C_SIZE_1_LEFT_SHIFT_OFFSET);
@@ -1948,9 +2087,9 @@ static NvBootError SdmmcGetCsd(void)
     if ( (CSize == EMMC_CSD_MAX_C_SIZE) && 
          (CSizeMulti == EMMC_CSD_MAX_C_SIZE_MULTI) )
     {
-        // Capacity is > 2GB and should be calculated from ECSD fields, 
-        // which is done in EmmcGetExtCSD() method.
-        PRINT_SDMMC_MESSAGES("SdmmcGetCsd:Capacity is > 2GB\n")
+        /* Capacity is > 2GB and should be calculated from ECSD fields, 
+           which is done in EmmcGetExtCSD() method. */
+        debug("SdmmcGetCsd:Capacity is > 2GB\n")
     }
     else
     {
@@ -1958,20 +2097,20 @@ static NvBootError SdmmcGetCsd(void)
         s_SdmmcContext->NumOfBlocks = (CSize + 1) * Mult * 
                                (1 << (s_SdmmcContext->PageSizeLog2ForCapacity - 
                                 s_SdmmcContext->PageSizeLog2));
-        PRINT_SDMMC_MESSAGES("Csd NumOfBlocks=%d\n", 
+        debug("Csd NumOfBlocks=%d\n", 
             s_SdmmcContext->NumOfBlocks);
     }
     
-    PRINT_SDMMC_MESSAGES("Page size from Card=0x%x, 0x%x\n", 
+    debug("Page size from Card=0x%x, 0x%x\n", 
         s_SdmmcContext->PageSizeLog2, (1 << s_SdmmcContext->PageSizeLog2));
-    PRINT_SDMMC_MESSAGES("Emmc SpecVersion=0x%x\n", s_SdmmcContext->SpecVersion);
-    PRINT_SDMMC_MESSAGES("taac=0x%x\n", s_SdmmcContext->taac);
-    PRINT_SDMMC_MESSAGES("nsac=0x%x\n", s_SdmmcContext->nsac);
-    PRINT_SDMMC_MESSAGES("TranSpeed=0x%x\n", s_SdmmcContext->TranSpeed);
-    PRINT_SDMMC_MESSAGES("TranSpeedInMHz=%d\n", s_SdmmcContext->TranSpeedInMHz);
-    PRINT_SDMMC_MESSAGES("CardCommandClasses=0x%x\n", NV_DRF_VAL(EMMC, CSD, 
+    debug("Emmc SpecVersion=0x%x\n", s_SdmmcContext->SpecVersion);
+    debug("taac=0x%x\n", s_SdmmcContext->taac);
+    debug("nsac=0x%x\n", s_SdmmcContext->nsac);
+    debug("TranSpeed=0x%x\n", s_SdmmcContext->TranSpeed);
+    debug("TranSpeedInMHz=%d\n", s_SdmmcContext->TranSpeedInMHz);
+    debug("CardCommandClasses=0x%08x\n", NV_DRF_VAL(EMMC, CSD, 
         CCC, pResp[2]));
-    PRINT_SDMMC_MESSAGES("CSize=0x%x, CSizeMulti=0x%x\n", CSize, CSizeMulti);
+    debug("CSize=0x%x, CSizeMulti=0x%x\n", CSize, CSizeMulti);
     return e;
 }
 
@@ -1980,21 +2119,21 @@ static NvBootError EsdGetScr(void)
     NvBootError e;
     NvBootDeviceStatus DevStatus;
     
-    // Send SET_BLOCKLEN(CMD16) Command.
+    /* Send SET_BLOCKLEN(CMD16) Command. */
     NV_BOOT_CHECK_ERROR(HwSdmmcSendCommand(SdmmcCommand_SetBlockLength,
         ESD_SCR_DATA_LENGTH, SdmmcResponseType_R1, NV_FALSE, NV_FALSE));
     NV_BOOT_CHECK_ERROR(EmmcVerifyResponse(SdmmcCommand_SetBlockLength, 
         NV_FALSE));
     HwSdmmcSetNumOfBlocks(ESD_SCR_DATA_LENGTH, 1);
-    // Setup Dma.
+    /* Setup Dma. */
     HwSdmmcSetupDma((NvU8*)s_SdmmcContext->SdmmcInternalBuffer, 
         ESD_SCR_DATA_LENGTH);
-    // Send SEND_SCR(ACMD51) to get SCR, which gives card's spec version.
+    /* Send SEND_SCR(ACMD51) to get SCR, which gives card's spec version. */
     NV_BOOT_CHECK_ERROR(HwSdmmcSendCommand(SdmmcCommand_EsdAppCommand,
         s_SdmmcContext->CardRca, SdmmcResponseType_R1, NV_FALSE, NV_FALSE));
     NV_BOOT_CHECK_ERROR(HwSdmmcSendCommand(SdmmcCommand_EsdAppSendScr,
                             0, SdmmcResponseType_R1, NV_TRUE, NV_FALSE));
-    // If response fails, return error. Nothing to clean up.
+    /* If response fails, return error. Nothing to clean up. */
     NV_BOOT_CHECK_ERROR(EmmcVerifyResponse(SdmmcCommand_EsdAppSendScr, NV_FALSE));
     s_SdmmcContext->DeviceStatus = NvBootDeviceStatus_ReadInProgress;
     s_SdmmcContext->ReadStartTime = NvBootUtilGetTimeUS();
@@ -2005,32 +2144,32 @@ static NvBootError EsdGetScr(void)
               (DevStatus == NvBootDeviceStatus_ReadInProgress) );
     if (DevStatus != NvBootDeviceStatus_Idle)
         return NvBootError_DeviceError;
-    // Extract the Sd Spec Version from Response data.
+    /* Extract the Sd Spec Version from Response data. */
     s_SdmmcContext->SpecVersion = NV_DRF_VAL(ESD, SCR, SD_SPEC, 
         s_SdmmcContext->SdmmcInternalBuffer[ESD_SCR_SD_SPEC_BYTE_OFFSET]);
-    PRINT_SDMMC_MESSAGES("Sd SpecVersion=0x%x\n", s_SdmmcContext->SpecVersion);
+    debug("Sd SpecVersion=0x%x\n", s_SdmmcContext->SpecVersion);
     if (s_SdmmcContext->SpecVersion >= 1)
         s_SdmmcContext->CardSupportsHighSpeedMode = NV_TRUE;
     return NvBootError_Success;
 }
 
-static void EsdEnableHighSpeedMode(void)
+static void EsdEnableHighSpeedMode(NvEmmcDeviceId DevId)
 {
     NvBootError e;
     NvBootDeviceStatus DevStatus = NvBootDeviceStatus_Idle;
     
-    // Clear controller's high speed bit.
+    /* Clear controller's high speed bit. */
     HwSdmmcEnableHighSpeed(NV_FALSE);
     if (s_SdmmcContext->HighSpeedMode)
     {
-        // Boost clock frequency to 20MHz as enable high speed command involves 
-        // reading 512 bytes from card.
-        HwSdmmcSetCardClock(NvBootSdmmcCardClock_20MHz);
+        /* Boost clock frequency to 20MHz as enable high speed command involves 
+           reading 512 bytes from card. */
+        HwSdmmcSetCardClock(DevId, NvBootSdmmcCardClock_20MHz);
         HwSdmmcSetNumOfBlocks((1 << s_SdmmcContext->PageSizeLog2), 1);
-        // Setup Dma.
+        /* Setup Dma. */
         HwSdmmcSetupDma((NvU8*)s_SdmmcContext->SdmmcInternalBuffer, 
             (1 << s_SdmmcContext->PageSizeLog2));
-        // Send SWITCH(CMD6) command to select High Speed Mode.
+        /* Send SWITCH(CMD6) command to select High Speed Mode. */
         NV_BOOT_CHECK_ERROR_CLEANUP(EmmcSendSwitchCommand(ESD_HIGHSPEED_SET));
         s_SdmmcContext->DeviceStatus = NvBootDeviceStatus_ReadInProgress;
         s_SdmmcContext->ReadStartTime = NvBootUtilGetTimeUS();
@@ -2042,9 +2181,9 @@ static void EsdEnableHighSpeedMode(void)
         if (DevStatus == NvBootDeviceStatus_Idle)
             return;
     fail:
-        // High speed mode enable failed.
+        /* High speed mode enable failed. */
         s_SdmmcContext->CardSupportsHighSpeedMode = NV_FALSE;
-        // Find out clock divider for card clock again.
+        /* Find out clock divider for card clock again. */
         HwSdmmcCalculateCardClockDivisor();
     }
 }
@@ -2060,16 +2199,10 @@ void EsdSelectbootPartition(void)
         s_SdmmcContext->CardRca, SdmmcResponseType_R1, NV_FALSE, NV_FALSE));
     NV_BOOT_CHECK_ERROR_CLEANUP(EmmcVerifyResponse(
         SdmmcCommand_EsdSelectPartition, NV_TRUE));
-    PRINT_SDMMC_MESSAGES("Boot Partition Select Successful.\n");
-#if NVRM
-    s_SdmmcBitInfo->BootFromBootPartition = 1;
-#endif
+    debug("Boot Partition Select Successful.\n");
     return;
 fail:
-#if NVRM
-    s_SdmmcBitInfo->BootFromBootPartition = 0;
-#endif
-    PRINT_SDMMC_MESSAGES("Boot Partition Select Failed.\n");
+    debug("Boot Partition Select Failed.\n");
 }
 
 static NvBootError EmmcSetBusWidth(void)
@@ -2077,8 +2210,8 @@ static NvBootError EmmcSetBusWidth(void)
     NvU32 CmdArg;
     NvBootError e = NvBootError_Success;
     
-    // Send SWITCH(CMD6) Command to select bus width.
-    PRINT_SDMMC_MESSAGES("Change Data width to %d(0->1bit, 1->4bit,"
+    /* Send SWITCH(CMD6) Command to select bus width. */
+    debug("Change Data width to %d(0->1bit, 1->4bit,"
         " 2->8-bit)\n", s_SdmmcContext->DataWidth);
     CmdArg = EMMC_SWITCH_BUS_WIDTH_ARG | 
              (s_SdmmcContext->DataWidth << EMMC_SWITCH_BUS_WIDTH_OFFSET);
@@ -2087,151 +2220,120 @@ static NvBootError EmmcSetBusWidth(void)
     return e;
 }
 
-static NvBootError EmmcIdentifyCard(void)
+static NvBootError EmmcIdentifyCard(NvEmmcDeviceId DevId)
 {
     NvBootError e = NvBootError_Success;
     
-    PRINT_SDMMC_MESSAGES("\r\n%s\n", __FUNCTION__);
-    // Set Clock rate to 375KHz for identification of card.
-    HwSdmmcSetCardClock(NvBootSdmmcCardClock_Identification);
-    // Send GO_IDLE_STATE(CMD0) Command.
+    debug("\r\n%s\n", __FUNCTION__);
+    /* Set Clock rate to 375KHz for identification of card. */
+    HwSdmmcSetCardClock(DevId, NvBootSdmmcCardClock_Identification);
+    /* Send GO_IDLE_STATE(CMD0) Command. */
     NV_BOOT_CHECK_ERROR(HwSdmmcSendCommand(SdmmcCommand_GoIdleState,
         0, SdmmcResponseType_NoResponse, NV_FALSE, NV_FALSE));
-    // This sends SEND_OP_COND(CMD1) Command and finds out address mode and 
-    // capacity status.
+    /* This sends SEND_OP_COND(CMD1) Command and finds out address mode and 
+       capacity status. */
     NV_BOOT_CHECK_ERROR(EmmcGetOpConditions());
-    // Send ALL_SEND_CID(CMD2) Command.
+    /* Send ALL_SEND_CID(CMD2) Command. */
     NV_BOOT_CHECK_ERROR(HwSdmmcSendCommand(SdmmcCommand_AllSendCid,
         0, SdmmcResponseType_R2, NV_FALSE, NV_FALSE));
-#if NVRM
-    // Copy card identification data to sdmmc bit info.
-    NvBootUtilMemcpy(s_SdmmcBitInfo->Cid, s_SdmmcContext->SdmmcResponse, 
-        sizeof(s_SdmmcBitInfo->Cid));
-#endif
-    // Set RCA to Card Here. It should be greater than 1 as JEDSD spec.
+
+    /* Set RCA to Card Here. It should be greater than 1 as JEDSD spec. */
     s_SdmmcContext->CardRca = (2 << SDMMC_RCA_OFFSET);
-    // Send SET_RELATIVE_ADDR(CMD3) Command.
+    /* Send SET_RELATIVE_ADDR(CMD3) Command. */
     NV_BOOT_CHECK_ERROR(HwSdmmcSendCommand(SdmmcCommand_EmmcSetRelativeAddress,
         s_SdmmcContext->CardRca, SdmmcResponseType_R1, NV_FALSE, NV_FALSE));
-    // Get Card specific data. We can get it at this stage of identification.
+    /* Get Card specific data. We can get it at this stage of identification. */
     NV_BOOT_CHECK_ERROR(SdmmcGetCsd());
-    // Send SELECT/DESELECT_CARD(CMD7) Command to place the card in tran state.
+    /* Send SELECT/DESELECT_CARD(CMD7) Command to place the card in tran state. */
     NV_BOOT_CHECK_ERROR(HwSdmmcSendCommand(SdmmcCommand_SelectDeselectCard,
         s_SdmmcContext->CardRca, SdmmcResponseType_R1, NV_FALSE, NV_FALSE));
-    // Card should be in transfer state now. Confirm it.
+    /* Card should be in transfer state now. Confirm it. */
     if (SdmmcIsCardInTransferState() == NV_FALSE)
         return NvBootError_DeviceError;
-    PRINT_SDMMC_MESSAGES("Card identification is Successful\n");
-    PRINT_SDMMC_MESSAGES("Config Card\n");
-    // Find out clock divider for card clock and high speed mode requirement.
+    debug("Card identification is Successful\n");
+    debug("Config Card\n");
+    /* Find out clock divider for card clock and high speed mode requirement. */
     HwSdmmcCalculateCardClockDivisor();
 
-#if 0 // the following code will cause mmc read failure. jz    
-    if (s_SdmmcContext->SpecVersion >= 4) // v4.xx
-    {
-        // Bus width can only be changed to 4-bit/8-bit after required power class 
-        // is set. To get Power class, we need to read Ext CSD. As we don't know 
-        // the power class required for 4-bit/8-bit, we need to read Ext CSD 
-        // with 1-bit data width.
-        PRINT_SDMMC_MESSAGES("Set Data width to 1-bit for ECSD\n");
-        HwSdmmcSetDataWidth(NvBootSdmmcDataWidth_1Bit);
-        // Set data clock rate to 20MHz.
-        HwSdmmcSetCardClock(NvBootSdmmcCardClock_20MHz);
-        // It is valid for v4.xx and above cards only.
-        // EmmcGetExtCsd() Finds out boot partition size also.
-        NV_BOOT_CHECK_ERROR(EmmcGetExtCsd());
-        // Select the power class now.
-        NV_BOOT_CHECK_ERROR(EmmcSetPowerClass());
-        // Enable the High Speed Mode, if required.
-        EmmcEnableHighSpeed();
-    }
-#endif
-    
-    // Set the clock for data transfer.
-    HwSdmmcSetCardClock(NvBootSdmmcCardClock_DataTransfer);
-    // Set bus width.
+    /* Set the clock for data transfer. */
+    HwSdmmcSetCardClock(DevId, NvBootSdmmcCardClock_DataTransfer);
+    /* Set bus width. */
     NV_BOOT_CHECK_ERROR(EmmcSetBusWidth());
     
-    // Select boot partition1 here.
+    /* Select boot partition1 here. */
     if (s_SdmmcContext->EmmcBootPartitionSize != 0)
         NV_BOOT_CHECK_ERROR(EmmcSelectAccessRegion(
             SdmmcAccessRegion_BootPartition1));
-#if NVRM
-    s_SdmmcBitInfo->BootFromBootPartition = 
-                                  s_SdmmcContext->EmmcBootPartitionSize ? 1 : 0;
-#endif
+
     return e;
 }
 
-static NvBootError EsdIdentifyCard(void)
+static NvBootError EsdIdentifyCard(NvEmmcDeviceId DevId)
 {
     NvBootError e;
     NvU32* pSdmmcResponse = &s_SdmmcContext->SdmmcResponse[0];
     
-    PRINT_SDMMC_MESSAGES("\n%s\n", __FUNCTION__);
-    // Set Clock rate to 375KHz for identification of card.
-    HwSdmmcSetCardClock(NvBootSdmmcCardClock_Identification);
-    // Send GO_IDLE_STATE(CMD0) Command.
-PRINT_SDMMC_MESSAGES("\n%s: SendCmd0\n", __FUNCTION__);
+    debug("\n%s\n", __FUNCTION__);
+    /* Set Clock rate to 375KHz for identification of card. */
+    HwSdmmcSetCardClock(DevId, NvBootSdmmcCardClock_Identification);
+    /* Send GO_IDLE_STATE(CMD0) Command. */
+debug("\n%s: SendCmd0\n", __FUNCTION__);
     NV_BOOT_CHECK_ERROR(HwSdmmcSendCommand(SdmmcCommand_GoIdleState,
         0, SdmmcResponseType_NoResponse, NV_FALSE, NV_FALSE));
 
-    // Sends SEND_IF_COND(CMD8) Command and ACMD41.
-PRINT_SDMMC_MESSAGES("\n%s: SendCmd8\n", __FUNCTION__);
+    /* Sends SEND_IF_COND(CMD8) Command and ACMD41. */
+debug("\n%s: SendCmd8\n", __FUNCTION__);
     NV_BOOT_CHECK_ERROR(EsdGetOpConditions());
-    // Send ALL_SEND_CID(CMD2) Command.
-PRINT_SDMMC_MESSAGES("\n%s: SendCmd2\n", __FUNCTION__);
+    /* Send ALL_SEND_CID(CMD2) Command. */
+debug("\n%s: SendCmd2\n", __FUNCTION__);
     NV_BOOT_CHECK_ERROR(HwSdmmcSendCommand(SdmmcCommand_AllSendCid,
         0, SdmmcResponseType_R2, NV_FALSE, NV_FALSE));
-#if NVRM
-    // Copy card identification data to sdmmc bit info.
-    NvBootUtilMemcpy(s_SdmmcBitInfo->Cid, s_SdmmcContext->SdmmcResponse, 
-        sizeof(s_SdmmcBitInfo->Cid));
-#endif
-    // Get RCA Here.
-    // Send SEND_RELATIVE_ADDR(CMD3) Command.
-PRINT_SDMMC_MESSAGES("\n%s: SendCmd3\n", __FUNCTION__);
+
+    /* Get RCA Here.
+       Send SEND_RELATIVE_ADDR(CMD3) Command. */
+debug("\n%s: SendCmd3\n", __FUNCTION__);
     NV_BOOT_CHECK_ERROR(HwSdmmcSendCommand(SdmmcCommand_EsdSendRelativeAddress,
         0, SdmmcResponseType_R6, NV_FALSE, NV_FALSE));
     s_SdmmcContext->CardRca = (pSdmmcResponse[0] >> 16);
     s_SdmmcContext->CardRca = (s_SdmmcContext->CardRca << SDMMC_RCA_OFFSET);
-    // Get Card specific data. We can get it at this stage of identification.
+    /* Get Card specific data. We can get it at this stage of identification. */
     NV_BOOT_CHECK_ERROR(SdmmcGetCsd());
-    // Send SELECT/DESELECT_CARD(CMD7) Command.
-PRINT_SDMMC_MESSAGES("\n%s: SendCmd7\n", __FUNCTION__);
+    /* Send SELECT/DESELECT_CARD(CMD7) Command. */
+debug("\n%s: SendCmd7\n", __FUNCTION__);
     NV_BOOT_CHECK_ERROR(HwSdmmcSendCommand(SdmmcCommand_SelectDeselectCard,
         s_SdmmcContext->CardRca, SdmmcResponseType_R1B, NV_FALSE, NV_FALSE));
-    // Card should be in transfer state now. Verify it.
+    /* Card should be in transfer state now. Verify it. */
     if (SdmmcIsCardInTransferState() == NV_FALSE)
         return NvBootError_DeviceError;
-    PRINT_SDMMC_MESSAGES("Card is identification is  Successful\n");
-    PRINT_SDMMC_MESSAGES("Config Card\n");
-    PRINT_SDMMC_MESSAGES("Set Data width to 1-bit for SCR\n");
+    debug("Card is identification is  Successful\n");
+    debug("Config Card\n");
+    debug("Set Data width to 1-bit for SCR\n");
     HwSdmmcSetDataWidth(NvBootSdmmcDataWidth_1Bit);
-    // Get Sd card's SCR.
+    /* Get Sd card's SCR. */
     NV_BOOT_CHECK_ERROR(EsdGetScr());
-    // Send SWITCH(ACMD6) Command to select bus width.
+    /* Send SWITCH(ACMD6) Command to select bus width. */
     NV_BOOT_CHECK_ERROR(HwSdmmcSendCommand(SdmmcCommand_EsdAppCommand,
         s_SdmmcContext->CardRca, SdmmcResponseType_R1, NV_FALSE, NV_FALSE));
     NV_BOOT_CHECK_ERROR( EmmcSendSwitchCommand(
         ((s_SdmmcContext->DataWidth == NvBootSdmmcDataWidth_4Bit) ? 
         ESD_DATA_WIDTH_4BIT : ESD_DATA_WIDTH_1BIT)) );
     HwSdmmcSetDataWidth(s_SdmmcContext->DataWidth);
-    // It finds out clock divider for card clock and high speed mode support.
+    /* It finds out clock divider for card clock and high speed mode support. */
     HwSdmmcCalculateCardClockDivisor();
-    // Enable the High Speed Mode, if required.
-    EsdEnableHighSpeedMode();
-    // Set data clock rate.
-    HwSdmmcSetCardClock(NvBootSdmmcCardClock_DataTransfer);
+    /* Enable the High Speed Mode, if required. */
+    EsdEnableHighSpeedMode(DevId);
+    /* Set data clock rate. */
+    HwSdmmcSetCardClock(DevId, NvBootSdmmcCardClock_DataTransfer);
     s_SdmmcContext->EmmcBootPartitionSize = 0;
-    // Select Boot Partition here, if it exists. If doesn't exist user area will
-    // be accessed.
+    /* Select Boot Partition here, if it exists. If doesn't exist user area will
+       be accessed. */
     EsdSelectbootPartition();
     return e;
 }
 
 NvBootError
 NvBootSdmmcInit(
+    NvEmmcDeviceId DevId,
     const NvBootSdmmcParams *Params,
     NvBootSdmmcContext *Context)
 {
@@ -2243,12 +2345,7 @@ NvBootSdmmcInit(
     NV_ASSERT( (Params->DataWidth == NvBootSdmmcDataWidth_4Bit) ||
         (Params->DataWidth == NvBootSdmmcDataWidth_8Bit) );
 
-// for debug only    
-//    SdmmcGetParamsTest();
-//    return e;
-
-
-    // Stash the pointer to the context structure.
+    /* Stash the pointer to the context structure. */
     s_SdmmcContext = Context;
     s_SdmmcContext->taac = 0;
     s_SdmmcContext->nsac = 0;
@@ -2262,48 +2359,44 @@ NvBootSdmmcInit(
     s_SdmmcContext->CurrentAccessRegion = SdmmcAccessRegion_Unknown;
     s_SdmmcContext->BootModeReadInProgress = NV_FALSE;
 
-    // Initialize the Hsmmc Hw controller.
-    NV_BOOT_CHECK_ERROR(HwSdmmcInitController());
+    /* Initialize the Hsmmc Hw controller. */
+    NV_BOOT_CHECK_ERROR(HwSdmmcInitController(DevId));
 
-    // Check whether card is present. If not, return from here itself.
-    if (HwSdmmcIsCardPresent() == NV_FALSE)
+    /* Check whether card is present. If not, return from here itself. */
+    if (HwSdmmcIsCardPresent(DevId) == NV_FALSE)
     {
-        NvBootSdmmcShutdown();
+        NvBootSdmmcShutdown(DevId);
         return NvBootError_DeviceError;
     }
 
     if (s_FuseInfo.DisableBootMode == NV_FALSE)
     {
-        PRINT_SDMMC_MESSAGES("BootMode Enabled\n");
+        debug("BootMode Enabled\n");
 
-        e = EmmcReadDataInBootMode(&s_SdmmcContext->SdmmcBootModeBuffer[0], 1);
+        e = EmmcReadDataInBootMode(DevId, &s_SdmmcContext->SdmmcBootModeBuffer[0], 1);
 
         if (e != NvBootError_Success)
         {
-            // Reset data line.
-            NV_BOOT_CHECK_ERROR(HwSdmmcInitController());
+            /* Reset data line. */
+            NV_BOOT_CHECK_ERROR(HwSdmmcInitController(DevId));
         }
     }
 
     if (s_FuseInfo.CardType == NvBootSdmmcCardType_Emmc)
     {
-        PRINT_SDMMC_MESSAGES("Emmc Identify Card\n");
-        e = EmmcIdentifyCard();
+        debug("Emmc Identify Card\n");
+        e = EmmcIdentifyCard(DevId);
     }
     if ( (s_FuseInfo.CardType == NvBootSdmmcCardType_Esd) || 
          (e != NvBootError_Success) )
     {
-        PRINT_SDMMC_MESSAGES("Esd Identify Card\n");
+        debug("Esd Identify Card\n");
         s_SdmmcContext->DataWidth = NvBootSdmmcDataWidth_4Bit;
         s_FuseInfo.CardType = NvBootSdmmcCardType_Esd;
-        NV_BOOT_CHECK_ERROR(EsdIdentifyCard());
+        NV_BOOT_CHECK_ERROR(EsdIdentifyCard(DevId));
     }
     s_SdmmcContext->DeviceStatus = NvBootDeviceStatus_Idle;
 
-    PRINT_SDMMC_MESSAGES("\n%s: return %d\n", __FUNCTION__, e);
-#ifdef NVRM
-    s_SdmmcBitInfo->DiscoveredCardType = s_FuseInfo.CardType;
-    s_SdmmcBitInfo->BootModeReadSuccessful = s_IsBootModeDataValid;
-#endif
+    debug("\n%s: return %d\n", __FUNCTION__, e);
     return e;
 }

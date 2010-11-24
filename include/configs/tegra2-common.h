@@ -123,6 +123,7 @@
 
 #define CONFIG_MMC			1
 #define CONFIG_TEGRA2_MMC		1
+#define TEGRA2_MMC_DEFAULT_DEVICE	"0"
 #define CONFIG_DOS_PARTITION		1
 #define CONFIG_EFI_PARTITION		1
 
@@ -215,7 +216,8 @@
 	"console=ttyS0,115200n8\0" \
 	"mem=" TEGRA2_SYSMEM "\0" \
 	"smpflag=smp\0" \
-	"videospec=tegrafb\0"
+	"videospec=tegrafb\0" \
+	"mmcdev=" TEGRA2_MMC_DEFAULT_DEVICE "\0"
 
 #define CONFIG_IPADDR		10.0.0.2
 #define CONFIG_SERVERIP		10.0.0.1
@@ -280,8 +282,9 @@
 		"yrdm /flash/boot/${bootfile} ${loadaddr}\\; " \
 		"yumount /flash\\; " \
 		"bootm ${loadaddr}\0" \
-	"mmcboot=ext2load mmc 0:3 ${loadaddr} /boot/${bootfile}; " \
-		"setenv bootargs root=/dev/mmcblk0p3 rw rootwait " \
+	"mmcboot=mmc init ${mmcdev}; " \
+		"ext2load mmc ${mmcdev}:3 ${loadaddr} /boot/${bootfile}; " \
+		"setenv bootargs root=/dev/mmcblk${mmcdev}p3 rw rootwait " \
                 "${mem} " \
                 "video=${videospec} " \
 		"console=${console} " \

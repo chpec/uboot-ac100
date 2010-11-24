@@ -29,20 +29,49 @@
 #define debug(fmt,args...)
 #endif
 
-static block_dev_desc_t mmc_blk_dev;
+/* MMC_DEV_INSTANCES, NvEmmcx_x defined in header file like tegra2_harmony.h, tegra2_seaboard.h */
+NvEmmcDeviceId mmc_device_id[5] = {
+	NvEmmcx_0,
+	NvEmmcx_1,
+	NvEmmcx_2,
+	NvEmmcx_3,
+	0
+};
 
-
-#ifdef NVRM
-/* HardCode the Device ID and Instance */
-static NvU32 BlockDevInstance = 1; 
-static NvDdkBlockDevHandle hBlockDevHandle;
-static NvDdkBlockDevInfo BlockDevInfo;
-static NvRmDeviceHandle s_RmDevice = NULL; 
-#endif   // NVRM
+static block_dev_desc_t mmc_blk_dev[MMC_DEV_INSTANCES];
+static int mmc_current_dev_index = -1;
+static NvBootSdmmcContext s_Context;
 
 block_dev_desc_t *mmc_get_dev(int dev)
 {
-	return &mmc_blk_dev;
+	if (dev >= MMC_DEV_INSTANCES)
+		return NULL;
+
+	if (mmc_current_dev_index != dev)
+		return NULL;
+
+	return &mmc_blk_dev[dev];
+}
+
+NvEmmcDeviceId mmc_get_device_id(int dev)
+{
+	if (dev < MMC_DEV_INSTANCES) {
+	    return mmc_device_id[dev];
+        }
+
+        /* undefined device */
+	return NvUnknownId;
+}
+
+NvEmmcDeviceId mmc_get_current_device_id(void)
+{
+        return mmc_get_device_id(mmc_current_dev_index);
+}
+
+inline
+void mmc_set_current_device(int dev)
+{
+        mmc_current_dev_index = dev;
 }
 
 void nv_debug_dump (unsigned char *buffer, unsigned int size)
@@ -78,10 +107,15 @@ mmc_bread(int dev, unsigned long start, lbaint_t blkcnt,
     unsigned int i, block_2_read, page_2_read;
     unsigned int pages_2_read, pages_per_block, page_size;
 
-    pages_2_read = blkcnt;      // TODO: change to generic code. 
-                                // here assume page_size == block_size.
-    pages_per_block = 32;	// TODO: change to generic code.
-    page_size = DUMMY_PAGE_SIZE;            // TODO:
+    if (mmc_current_dev_index != dev) {
+        printf("Read Failed. Please issue 'mmc init %d' first\n", dev); 
+    	return 0;
+    }
+
+    pages_2_read = blkcnt;      /* TODO: change to generic code. */
+                                /* here assume page_size == block_size. */
+    pages_per_block = 32;	/* TODO: change to generic code. */
+    page_size = DUMMY_PAGE_SIZE;            /* TODO: */
 
     for (i=0; i < pages_2_read; i++) {
          block_2_read = (start + i)/pages_per_block;
@@ -92,10 +126,6 @@ mmc_bread(int dev, unsigned long start, lbaint_t blkcnt,
          };
 
          memcpy((unsigned char *)buffer, p_buffer, page_size);
-#if 0
-         nv_debug_dump (buff, page_size);
-         nv_debug_dump ((unsigned char *)buffer, page_size);
-#endif
          buffer += page_size;
     }
     return blkcnt;
@@ -115,19 +145,19 @@ mmc_bwrite(int dev,unsigned long start,lbaint_t blkcnt,
     unsigned int i, block_2_write, page_2_write;
     unsigned int pages_2_write, pages_per_block, page_size;
 
-    pages_2_write = blkcnt;      // TODO: change to generic code. 
-                                // here assume page_size == block_size.
-    pages_per_block = 32;	// TODO: change to generic code.
-    page_size = DUMMY_PAGE_SIZE;            // TODO:
+    if (mmc_current_dev_index != dev) {
+        printf("Write Failed. Please issue 'mmc init %d' first\n", dev); 
+    	return 0;
+    }
+
+    pages_2_write = blkcnt;     /* TODO: change to generic code. */
+                                /* here assume page_size == block_size. */
+    pages_per_block = 32;	/* TODO: change to generic code. */
+    page_size = DUMMY_PAGE_SIZE;            /* TODO: */
 
     for (i=0; i < pages_2_write; i++) {
          block_2_write = (start + i)/pages_per_block;
          page_2_write = ((start + i) % pages_per_block);
-
-#if 0
-    printf(" %s:start 0x%x (%d), blks %d, buff_addr %p, l_buff %p\n", __FUNCTION__,
-                (int)start, i, (int)blkcnt, (char *)buffer, p_buffer);
-#endif
 
          memcpy(p_buffer, (unsigned char *)buffer, page_size);
          if (SdmmcWritePage(block_2_write, page_2_write, p_buffer)) {
@@ -142,47 +172,64 @@ fail :
     return i;
 }
 
-static NvBootSdmmcContext s_SdmmcContext;
-int mmc_legacy_init(int verbose)
+int mmc_legacy_init(int dev)
 {
     NvBootSdmmcParams *Params;
     NvU32 BlockSize;
     NvU32 PageSize;
+    NvU32 ParamIndex = 0;
+
+    mmc_set_current_device(dev);
 
     p_buffer = (unsigned char *)dummy_buffer;
 
-    // init SD/MMC
-    NvBootSdmmcGetParams(0x30, &Params);
-    if (NvBootSdmmcInit(Params, &s_SdmmcContext)) {
+    /* init SD/MMC */
+    switch (mmc_get_device_id(dev)) {
+    case NvEmmc4:
+        ParamIndex = 0x30;
+        break;
+    case NvEmmc2:
+        ParamIndex = 0x12;
+        break;
+    case NvEmmc3:
+        ParamIndex = 0x12;
+        break;
+    default:
+        printf("[%s:%d] Invalid device number %d\n", __FUNCTION__, __LINE__, dev); 
 	goto fail;
     }
 
-    NvBootSdmmcGetBlockSizes(Params, &BlockSize, &PageSize);
+    NvBootSdmmcGetParams(ParamIndex, &Params);
+    if (NvBootSdmmcInit(mmc_get_device_id(dev), Params, &s_Context)) {
+	goto fail;
+    }
 
-//    printf("BlockSize: %d, PageSize: %d\n", BlockSize, PageSize);
+    NvBootSdmmcGetBlockSizes(mmc_get_device_id(dev), Params, &BlockSize, &PageSize);
 
-    mmc_blk_dev.blksz = (1 << PageSize);       
+    mmc_blk_dev[dev].blksz = (1 << PageSize);       
 
-    mmc_blk_dev.if_type = IF_TYPE_MMC;
-    mmc_blk_dev.part_type = PART_TYPE_DOS;
-    mmc_blk_dev.dev = 0;
-    mmc_blk_dev.lun = 0;
-    mmc_blk_dev.type = 0;
+    mmc_blk_dev[dev].if_type = IF_TYPE_MMC;
+    mmc_blk_dev[dev].part_type = PART_TYPE_DOS;
+    mmc_blk_dev[dev].dev = dev;
+    mmc_blk_dev[dev].lun = 0;
+    mmc_blk_dev[dev].type = 0;
 
     /* This needs to be probed, go with something sufficiently large to read
      * the partition table for now
      */
-    mmc_blk_dev.lba = 0x10000000;
-    mmc_blk_dev.removable = 0;
+    mmc_blk_dev[dev].lba = 0x10000000;
+    mmc_blk_dev[dev].removable = 0;
 
     /* Block Readsi/Writes should use the SD Block Driver Read/Write interface */
-    mmc_blk_dev.block_read = mmc_bread;
-    mmc_blk_dev.block_write = mmc_bwrite;
-    printf("EMMC Probed Successfully\n");
-    init_part(&mmc_blk_dev);
+    mmc_blk_dev[dev].block_read = mmc_bread;
+    mmc_blk_dev[dev].block_write = mmc_bwrite;
+    printf("EMMC %d Probed Successfully\n", dev);
+    init_part(&mmc_blk_dev[dev]);
     return 0;
 
 fail :
-    printf("[%s:%d] EMMC Probe Failed\n", __FUNCTION__, __LINE__); 
+    printf("[%s:%d] EMMC %d Probe Failed\n", __FUNCTION__, __LINE__, dev); 
+    mmc_set_current_device(-1);
     return -1 ; 
 }
+

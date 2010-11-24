@@ -67,6 +67,7 @@
 #define CONFIG_CONS_INDEX		1
 
 #define CONFIG_TEGRA2_MMC		1
+#define TEGRA2_MMC_DEFAULT_DEVICE	"0"
 
 #define CONFIG_SYS_NO_FLASH
 
@@ -129,9 +130,9 @@
 		"source ${scriptaddr};" \
 		"read ${devtype} 0:${kernelpart} ${scriptaddr} 0 10;" \
 		"source ${scriptaddr};\0" \
-	"mmcboot=mmc init;" \
+	"mmcboot=mmc init " TEGRA2_MMC_DEFAULT_DEVICE ";" \
 		"setenv devtype mmc;" \
-		"setenv devname mmcblk0p;" \
+		"setenv devname mmcblk" TEGRA2_MMC_DEFAULT_DEVICE "p;" \
 		"run scriptboot;\0" \
 	"usbboot=usb start;" \
 		"setenv devtype usb;" \

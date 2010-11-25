@@ -31,6 +31,7 @@
 #include <asm/arch/nvbl_memmap_nvap.h>
 #include <asm/arch/nvbl_arm_cpsr.h>
 #include <asm/arch/nvbl_arm_cp15.h>
+#include <asm/arch/nvboot_sdram_param.h>
 
 #define _AND_ &
 
@@ -45,6 +46,7 @@
 #define AHB_PA_BASE         0x6000C004  // Base address for arahb_arbc.h registers
 #define EVP_PA_BASE         0x6000F000  // Base address for arevp.h registers
 #define CSITE_PA_BASE       0x70040000  // Base address for arcsite.h registers
+#define ARM_PREF_BASE       0x50040000
 
 #define NV_PMC_REGR(pCar, reg)          NV_READ32( (((NvUPtr)(pCar)) + APBDEV_PMC_##reg##_0))
 #define NV_PMC_REGW(pCar, reg, val)     NV_WRITE32((((NvUPtr)(pCar)) + APBDEV_PMC_##reg##_0), (val))
@@ -99,8 +101,6 @@
 #define SCU_CONTROL_0_SCU_ENABLE_RANGE                  0:0
 #define SCU_INVALID_ALL_0                       _MK_ADDR_CONST(0xc)
 
-#define ARM_PREF_BASE  0x50040000
-
 #define NV_SCU_REGR(reg)      NV_READ32(ARM_PREF_BASE + SCU_##reg##_0)
 #define NV_SCU_REGW(reg, val) NV_WRITE32((ARM_PREF_BASE + SCU_##reg##_0), (val))
 
@@ -123,4 +123,5 @@ void cpu_init_crit(void);
 void PostZz(void);
 void PostYy(void);
 void PostXx(void);
+void NvBlPrintU32(NvU32);
 

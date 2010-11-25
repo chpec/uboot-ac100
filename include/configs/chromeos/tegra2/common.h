@@ -121,6 +121,23 @@
 #define CONFIG_SYS_I2C_SPEED		100000
 #endif
 
+/* Enable Warmboot code and lp0_vec */
+#define CONFIG_TEGRA2_LP0		1
+
+#ifdef CONFIG_TEGRA2_LP0
+/* make sure the following 2 defines have the same values
+ * (_STR is the string of TEGRA_LP0_DEFAULT_ADDR)
+ */
+#define TEGRA_LP0_DEFAULT_ADDR		0x1C406000
+#define TEGRA_LP0_DEFAULT_ADDR_STR	"0x1C406000"
+
+/* make sure the following 2 defines have the same values
+ * (_STR is the string of TEGRA_LP0_SIZE)
+ */
+#define TEGRA_LP0_SIZE			0x2000
+#define TEGRA_LP0_SIZE_STR		"0x2000"
+#endif
+
 #define CONFIG_LOADADDR			0x40C000
 #define CONFIG_BOOTDELAY		2	/* 2s to break to prompt */
 #define CONFIG_TEGRA_ENV_SETTINGS	\

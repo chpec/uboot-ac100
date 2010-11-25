@@ -20,6 +20,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  */
+
+#include <common.h>
 #include "ap20.h"
 
 #define NV_ASSERT(p) \
@@ -30,6 +32,179 @@
          uart_post('d');  \
     };               \
 }
+
+#ifdef CONFIG_TEGRA2_LP0
+/** Scratch register macros **/
+
+/** NV_SF_NUM - define a new scratch register value.
+
+	@param s scratch register name (APBDEV_PMC_s)
+	@param f register field
+	@param n defined value for the field
+ */
+#define NV_SF_NUM(s,f,n) \
+	(((n)& NV_FIELD_MASK(APBDEV_PMC_##s##_0_##f##_RANGE)) << \
+		NV_FIELD_SHIFT(APBDEV_PMC_##s##_0_##f##_RANGE))
+
+
+/** NV_FLD_SET_SR_NUM - modify a scratch register field.
+
+	@param s scratch register name (APBDEV_PMC_s)
+	@param f register field
+	@param n numeric field value
+ */
+#define NV_FLD_SET_SF_NUM(s,f,n) \
+	((s & ~NV_FIELD_SHIFTMASK(APBDEV_PMC_##s##_0_##f##_RANGE))\
+		| NV_SF_NUM(s,f,n))
+
+
+/** NV_SDRF_NUM - define a new scratch register value.
+
+	@param s scratch register name (APBDEV_PMC_s)
+	@param d register domain (hardware block)
+	@param r register name
+	@param f register field
+	@param n defined value for the field
+ */
+#define NV_SDRF_NUM(s,d,r,f,n) \
+	(((n)& NV_FIELD_MASK(APBDEV_PMC_##s##_0_##d##_##r##_0_##f##_RANGE)) << \
+		NV_FIELD_SHIFT(APBDEV_PMC_##s##_0_##d##_##r##_0_##f##_RANGE))
+
+
+/** NV_FLD_SET_SDRF_NUM - modify a scratch register field.
+
+	@param s scratch register name (APBDEV_PMC_s)
+	@param d register domain (hardware block)
+	@param r register name
+	@param f register field
+	@param n numeric field value
+ */
+#define NV_FLD_SET_SDRF_NUM(s,d,r,f,n) \
+	((s & ~NV_FIELD_SHIFTMASK(APBDEV_PMC_##s##_0_##d##_##r##_0_##f##_RANGE))\
+		| NV_SDRF_NUM(s,d,r,f,n))
+
+
+/** SCRATCH_REGS() - PMC scratch registers (list of SCRATCH_REG() macros).
+	SCRATCH_REG(s) - PMC scratch register name:
+
+	@param s Scratch register name (APBDEV_PMC_s)
+ */
+#define SCRATCH_REGS() \
+		SCRATCH_REG(SCRATCH2)   \
+		SCRATCH_REG(SCRATCH4)   \
+		SCRATCH_REG(SCRATCH24)  \
+		/* End-of-List*/
+
+#define SCRATCH_REG(s) static NvU32 s = 0;
+SCRATCH_REGS()
+#undef SCRATCH_REG
+
+#define REGS() \
+		/* CLK_RST Group */ \
+		REG(SCRATCH2, CLK_RST_CONTROLLER, OSC_CTRL, XOBP) \
+		REG(SCRATCH2, CLK_RST_CONTROLLER, PLLM_BASE, PLLM_DIVM) \
+		REG(SCRATCH2, CLK_RST_CONTROLLER, PLLM_BASE, PLLM_DIVN) \
+		REG(SCRATCH2, CLK_RST_CONTROLLER, PLLM_BASE, PLLM_DIVP) \
+		REG(SCRATCH2, CLK_RST_CONTROLLER, PLLM_MISC, PLLM_CPCON) \
+		REG(SCRATCH2, CLK_RST_CONTROLLER, PLLM_MISC, PLLM_LFCON) \
+		/**/ \
+		/* EMC Group */ \
+		REG2(SCRATCH4, EMC, FBIO_SPARE, CFG_FBIO_SPARE_WB0) \
+		/* APB_MISC Group */ \
+		REG3(SCRATCH2, APB_MISC, GP_XM2CFGAPADCTRL, CFG2TMC_XM2CFGA_PREEMP_EN) \
+		REG3(SCRATCH2, APB_MISC, GP_XM2CFGDPADCTRL, CFG2TMC_XM2CFGD_SCHMT_EN) \
+		/**/ \
+		/* BCT SdramParams Group*/ \
+		RAM(SCRATCH2, MEMORY_TYPE, MemoryType) \
+		/**/ \
+		RAM(SCRATCH4, EMC_CLOCK_DIVIDER, EmcClockDivider) \
+		CONSTANT(SCRATCH4, PLLM_STABLE_TIME, ~0) /* Stuff the maximum value */ \
+		CONSTANT(SCRATCH4, PLLX_STABLE_TIME, ~0) /* Stuff the maximum value */ \
+		/**/ \
+		RAM(SCRATCH24, EMC_AUTO_CAL_WAIT, EmcAutoCalWait) \
+		RAM(SCRATCH24, EMC_PIN_PROGRAM_WAIT, EmcPinProgramWait) \
+		RAM(SCRATCH24, WARMBOOT_WAIT, WarmBootWait)
+
+/*Correct names */
+#define APBDEV_PMC_SCRATCH2_0_CLK_RST_CONTROLLER_OSC_CTRL_0_XOBP_RANGE\
+	APBDEV_PMC_SCRATCH2_0_CLK_RST_OSC_CTRL_XOBP_RANGE
+#define APBDEV_PMC_SCRATCH2_0_CLK_RST_CONTROLLER_PLLM_BASE_0_PLLM_DIVM_RANGE\
+	APBDEV_PMC_SCRATCH2_0_CLK_RST_PLLM_BASE_PLLM_DIVM_RANGE
+#define APBDEV_PMC_SCRATCH2_0_CLK_RST_CONTROLLER_PLLM_BASE_0_PLLM_DIVN_RANGE\
+	APBDEV_PMC_SCRATCH2_0_CLK_RST_PLLM_BASE_PLLM_DIVN_RANGE
+#define APBDEV_PMC_SCRATCH2_0_CLK_RST_CONTROLLER_PLLM_BASE_0_PLLM_DIVP_RANGE\
+	APBDEV_PMC_SCRATCH2_0_CLK_RST_PLLM_BASE_PLLM_DIVP_RANGE
+#define APBDEV_PMC_SCRATCH2_0_CLK_RST_CONTROLLER_PLLM_MISC_0_PLLM_CPCON_RANGE\
+	APBDEV_PMC_SCRATCH2_0_CLK_RST_PLLM_MISC_CPCON_RANGE
+#define APBDEV_PMC_SCRATCH2_0_CLK_RST_CONTROLLER_PLLM_MISC_0_PLLM_LFCON_RANGE\
+	APBDEV_PMC_SCRATCH2_0_CLK_RST_PLLM_MISC_LFCON_RANGE
+
+#define SDRAM_PARAMS_BASE_ADDR (0x40000000 + 0x100 + 0x88)
+
+void NvBlSaveSdramParams(void)
+{
+	NvU32			reg;		/* Module register contents */
+	NvU32			val;		/* Register field contents */
+	NvBootSdramParams	sdram_params;
+
+	memcpy (&sdram_params, (char *)SDRAM_PARAMS_BASE_ADDR,
+				sizeof(NvBootSdramParams));
+
+	/* REG(s,d,r,f)
+	 *   s = destination Scratch register
+	 *   d = Device name
+	 *   r = Register name
+	 *   f = register Field
+	 */
+	#define REG(s,d,r,f)  \
+		reg = NV_CAR_REGR(CLK_RST_PA_BASE, r); \
+		val = NV_DRF_VAL(d,r,f,reg); \
+		s = NV_FLD_SET_SDRF_NUM(s,d,r,f,val);
+
+	#define REG2(s,d,r,f)  \
+		reg = NV_EMC_REGR(EMC_PA_BASE, r); \
+		val = NV_DRF_VAL(d,r,f,reg); \
+		s = NV_FLD_SET_SDRF_NUM(s,d,r,f,val);
+
+	#define REG3(s,d,r,f)  \
+		reg = NV_MISC_REGR(MISC_PA_BASE, r);\
+		val = NV_DRF_VAL(d,r,f,reg); \
+		s = NV_FLD_SET_SDRF_NUM(s,d,r,f,val);
+
+	/* RAM(s,f,n)
+	 *   s = destination Scratch register
+	 *   f = register Field
+	 *   v = bct Variable
+	 */
+	#define RAM(s,f,v) \
+		s = NV_FLD_SET_SF_NUM(s,f,sdram_params.v);
+
+	/* Define the transformation macro that will stuff a PMC scratch
+	 * register with a constant value.
+	 */
+
+	/* CONSTANT(s,f,n)
+	 *   s = destination Scratch register
+	 *   f = register Field
+	 *   v = constant Value
+	 */
+	#define CONSTANT(s,f,v) \
+		s = NV_FLD_SET_SF_NUM(s,f,v);
+
+	/*Instantiate all of the register transformations. */
+	REGS()
+	#undef RAM
+	#undef CONSTANT
+
+	/* Generate writes to the PMC scratch registers to copy the local
+	 * variables to the actual registers.
+	 */
+	#define SCRATCH_REG(s)\
+		NV_PMC_REGW(PMC_PA_BASE, s, s);
+	SCRATCH_REGS()
+	#undef SCRATCH_REG
+}
+#endif
 
 void NvBlAvpStallUs(NvU32 MicroSec)
 {
@@ -542,7 +717,6 @@ NV_NAKED void NvBlStartUpAvp_AP20( void )
 
 // we're hard coding the entry point for all AOS images
 NvU32 cpu_boot_stack = NVAP_LIMIT_PA_IRAM_CPU_EARLY_BOOT_STACK;
-extern NvU32 _armboot_start;
 NvU32 proc_tag = PG_UP_TAG_0_PID_CPU _AND_ 0xFF;
 NvU32 avp_boot_stack = NVAP_LIMIT_PA_IRAM_AVP_EARLY_BOOT_STACK;
 NvU32 deadbeef = 0xdeadbeef;
@@ -756,6 +930,11 @@ void NvBlInitPmcScratch(void)
         else
             NV_WRITE32(pPmc+i, 0);
     }
+
+#ifdef CONFIG_TEGRA2_LP0
+    // Save Sdram params to PMC 2, 4, and 24 for WB0
+    NvBlSaveSdramParams();
+#endif
 }
 
 NvU32 s_ChipId;
@@ -763,11 +942,10 @@ volatile NvU32 s_bFirstBoot = 1;
 
 void cpu_start( void )
 {
-    volatile NvU32 *jtagReg = (NvU32*)0x70000024;
     NvU32 reg;
 
     // enable JTAG
-    *jtagReg = 192;
+    NV_MISC_REGW( MISC_PA_BASE, PP_CONFIG_CTL, 0xc0);
 
     reg = NV_MISC_REGR( MISC_PA_BASE, GP_HIDREV );
 

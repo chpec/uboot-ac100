@@ -138,6 +138,7 @@
 
 #define TEGRAPARTS_DEFAULT		"system:3680:2bc0:800"
 #define TEGRABOOT_DEFAULT 		"nand"
+
 #undef CONFIG_YAFFS2			/* YAFFS2 Support		*/
 #define CONFIG_YAFFS2_TAG_NO_ECC /* Disable YAFFS2 ECC calculation */
 				 /* This is required in order to reduce nand
@@ -208,6 +209,26 @@
 #define CONFIG_USB_ETHER_ASIX
 #define CONFIG_USB_ETHER_SMSC95XX
 
+/* Enable Warmboot code and lp0_vec */
+#define CONFIG_TEGRA2_LP0		1
+
+#ifdef CONFIG_TEGRA2_LP0
+#define TEGRA_LP0_DEFAULT_ADDR	0x1C406000  /* inside carveout memory region */
+#define TEGRA_LP0_SIZE		0x2000	    /* 8KB */
+
+/* make sure the following has the same value of TEGRA_LP0_DEFAULT_ADDR */
+#define TEGRA_LP0_DEFAULT_ADDR_STR	"0x1C406000"
+/* make sure the following has the same value of TEGRA_LP0_SIZE */
+#define TEGRA_LP0_SIZE_STR		"0x2000"
+#define AT				"@"
+#define LP0_VEC				"lp0_vec="
+#else
+#define TEGRA_LP0_DEFAULT_ADDR_STR	" "
+#define TEGRA_LP0_SIZE_STR		" "
+#define AT				" "
+#define LP0_VEC				" "
+#endif
+
 /* Environment information */
 #define CONFIG_DEFAULT_ENV_SETTINGS \
 	"tegraparts=" TEGRAPARTS_DEFAULT "\0" \
@@ -217,7 +238,8 @@
 	"mem=" TEGRA2_SYSMEM "\0" \
 	"smpflag=smp\0" \
 	"videospec=tegrafb\0" \
-	"mmcdev=" TEGRA2_MMC_DEFAULT_DEVICE "\0"
+	"mmcdev=" TEGRA2_MMC_DEFAULT_DEVICE "\0" \
+	"lp0_vec=" LP0_VEC TEGRA_LP0_SIZE_STR AT TEGRA_LP0_DEFAULT_ADDR_STR "\0"
 
 #define CONFIG_IPADDR		10.0.0.2
 #define CONFIG_SERVERIP		10.0.0.1
@@ -274,6 +296,7 @@
 		"console=${console} " \
 		"usbcore.old_scheme_first=1 " \
 		"tegraboot=${tegraboot} " \
+                "${lp0_vec} " \
 		"tegrap earlyprintk; "\
 		"bootm ${loadaddr}\0" \
 	"nandboot=setenv bootcmd  " \
@@ -290,6 +313,7 @@
 		"console=${console} " \
 		"usbcore.old_scheme_first=1 " \
 		"tegraboot=${tegraboot} " \
+                "${lp0_vec} " \
 		"tegrap earlyprintk; "\
 		"bootm ${loadaddr}\0" \
 	"nfsboot=setenv bootcmd " \

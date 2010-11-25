@@ -37,6 +37,10 @@ COBJS	+= ../common/sdmmc/nvboot_clocks.o
 COBJS	+= ../common/sdmmc/nvboot_pads.o
 COBJS	+= ../common/sdmmc/nvboot_pinmux.o
 COBJS	+= ../common/sdmmc/nvboot_pinmux_tables.o
+ifdef CONFIG_TEGRA2_LP0
+COBJS   += ../common/crypto/aes_ref.o
+COBJS   += ../common/crypto/crypto.o
+endif
 
 SRCS	:= $(COBJS:.o=.c)
 OBJS	:= $(addprefix $(obj),$(COBJS))

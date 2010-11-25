@@ -64,6 +64,11 @@
 #include "../drivers/net/lan91c96.h"
 #endif
 
+#ifdef CONFIG_TEGRA2_LP0
+/* to get prototype of prepare_wb_code */
+#include <asm/arch/warmboot.h>
+#endif
+
 DECLARE_GLOBAL_DATA_PTR;
 
 ulong monitor_flash_len;
@@ -319,6 +324,10 @@ void start_armboot (void)
 	/* create memory heap for tegra2 */
 	mem_malloc_init (CONFIG_STACKBASE - CONFIG_SYS_MALLOC_LEN,
 			CONFIG_SYS_MALLOC_LEN);
+#if defined(CONFIG_TEGRA2_LP0)
+	/* prepare the WB code to LP0 location */
+	prepare_wb_code(TEGRA_LP0_DEFAULT_ADDR, TEGRA_LP0_SIZE);
+#endif
 #else
     #if defined(CONFIG_STACK_BASE)
 	/* _STACK_BASE is defined in the board-specific linker script

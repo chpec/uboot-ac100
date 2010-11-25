@@ -26,9 +26,13 @@
 include $(TOPDIR)/config.mk
 
 LIB	=  $(obj)lib$(SOC).a
-
 SOBJS	:= lowlevel_init.o
 COBJS	:= sys_info.o board.o interrupts.o ap20.o
+
+ifdef CONFIG_TEGRA2_LP0
+SOBJS	+= warmboot_avp.o
+COBJS	+= warmboot.o
+endif
 
 SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
 OBJS	:= $(addprefix $(obj),$(COBJS) $(SOBJS))

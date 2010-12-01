@@ -1,5 +1,5 @@
 #
-#  (C) Copyright 2010     
+#  (C) Copyright 2010
 #  NVIDIA Corporation <www.nvidia.com>
 #
 #
@@ -25,6 +25,7 @@
 include $(TOPDIR)/config.mk
 
 $(shell mkdir -p $(obj)../common/sdmmc)
+$(shell mkdir -p $(obj)../common/crypto)
 
 LIB	= $(obj)lib$(BOARD).a
 

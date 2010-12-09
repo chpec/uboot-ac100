@@ -56,7 +56,7 @@
 #define CONFIG_I2C2_PIN_MUX		1
 #define CONFIG_I2C3_PIN_MUX		1
 
-#define MMC_DEV_INSTANCES 2 
+#define MMC_DEV_INSTANCES 2
 #define NvEmmcx_0	NvEmmc4
 #define NvEmmcx_1	NvEmmc2
 #define NvEmmcx_2	0
@@ -67,5 +67,11 @@
 #define NvUSBx_1	USB_EHCI_TEGRA_BASE_ADDR_USB1
 #define NvUSBx_2	0
 #define NvUSBx_3	0
+
+/* LCD Settings */
+#ifdef CONFIG_LCD
+#define LCD_vl_col	1024
+#define LCD_vl_row	600
+#endif
 
 #endif /* __CONFIG_H */

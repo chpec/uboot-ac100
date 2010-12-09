@@ -26,6 +26,10 @@ include $(TOPDIR)/config.mk
 
 $(shell mkdir -p $(obj)../common/sdmmc)
 $(shell mkdir -p $(obj)../common/crypto)
+ifdef CONFIG_TEGRA2_LCD
+$(shell mkdir -p $(obj)../common/lcd)
+$(shell mkdir -p $(obj)../common/lcd/gpinit)
+endif
 
 LIB	= $(obj)lib$(BOARD).a
 
@@ -44,6 +48,15 @@ COBJS	+= ../common/sdmmc/nvboot_pinmux_tables.o
 ifdef CONFIG_TEGRA2_LP0
 COBJS   += ../common/crypto/aes_ref.o
 COBJS   += ../common/crypto/crypto.o
+endif
+ifdef CONFIG_TEGRA2_LCD
+COBJS	+= gpinit.o
+COBJS	+= ../common/lcd/gpinit/gp-util.o
+COBJS	+= ../common/lcd/gpinit/gp-dc.o
+COBJS	+= ../common/lcd/gpinit/gp-clk.o
+COBJS	+= ../common/lcd/gpinit/gp-pinmux.o
+COBJS	+= ../common/lcd/gpinit/gp-pinmux-t2-tables.o
+COBJS	+= ../common/lcd/nvboot_lcd.o
 endif
 
 SRCS	:= $(COBJS:.o=.c)

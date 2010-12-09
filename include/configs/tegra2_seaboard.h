@@ -41,8 +41,8 @@
 #define CONFIG_CONSOLE_MUX		1
 #define CONFIG_SYS_CONSOLE_IS_IN_ENV	1
 #define CONFIG_STD_DEVICES_SETTINGS	"stdin=serial,tegra-kbc\0" \
-					"stdout=serial\0" \
-					"stderr=serial\0"
+					"stdout=serial,lcd\0" \
+					"stderr=serial,lcd\0"
 
 /* UARTD: default */
 #define CONFIG_SYS_NS16550_COM1		NV_ADDRESS_MAP_APB_UARTD_BASE
@@ -83,7 +83,7 @@
 /* Define this if device is always on EMMC4 controller and no Card Detect pin */
 #define CONFIG_TEGRA2_EMMC4_ALWAYS_INSERTED	1
 
-#define MMC_DEV_INSTANCES 2 
+#define MMC_DEV_INSTANCES 2
 #define NvEmmcx_0	NvEmmc4
 #define NvEmmcx_1	NvEmmc3
 #define NvEmmcx_2	0
@@ -99,5 +99,11 @@
  * The expected time is 2 ms. Please refer to page 28 of EHCI 1.0 specification.
  */
 #define CONFIG_USB_RESET_CLEARED_MS	3 * 1000
+
+/* LCD Settings */
+#ifdef CONFIG_LCD
+#define LCD_vl_col	1366
+#define LCD_vl_row	768
+#endif
 
 #endif /* __CONFIG_H */

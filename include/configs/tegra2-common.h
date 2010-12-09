@@ -408,15 +408,13 @@
  *  LCDC configuration
  */
 
-#undef CONFIG_LCD
+#define CONFIG_LCD
 
 #ifdef CONFIG_LCD
-#   define CONFIG_TEGRA2_LCD
-#   define LCD_BPP             LCD_COLOR16
-#   define LCD_FB_ADDR         0x1C022000   /* FB could be passed from bl */
-#   define LCD_vl_col          1024
-#   define LCD_vl_row          600
-#   define CONFIG_SYS_WHITE_ON_BLACK       /*Console colors*/
+#define CONFIG_TEGRA2_LCD
+#define LCD_BPP             LCD_COLOR16
+#define LCD_FB_ADDR         0x1C022000   /* FB could be passed from bl */
+#define CONFIG_SYS_WHITE_ON_BLACK       /*Console colors*/
 #endif
 
 /*

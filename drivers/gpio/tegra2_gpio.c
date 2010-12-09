@@ -32,6 +32,9 @@ enum {
 	TEGRA2_CMD_INPUT,
 };
 
+#define GPIO_PORT(x)		((x) >> 3)
+#define GPIO_BIT(x)		((x) & 0x7)
+
 /* Config port:bit as GPIO, not SFPIO (default) */
 void __set_config(unsigned port, unsigned bit, int type)
 {
@@ -98,6 +101,12 @@ int tg2_gpio_direction_input(unsigned port, unsigned bit)
 	return 0;
 }
 
+int tg2_gpio_direction_input_ex(unsigned offset)
+{
+	tg2_gpio_direction_input(GPIO_PORT(offset), GPIO_BIT(offset));
+	return 0;
+}
+
 /* set GPIO port:bit as an output, with polarity 'value' */
 int tg2_gpio_direction_output(unsigned port, unsigned bit, int value)
 {
@@ -112,6 +121,12 @@ int tg2_gpio_direction_output(unsigned port, unsigned bit, int value)
 	/* Configure GPIO direction as output. */
 	__set_direction(port, bit, 1);
 
+	return 0;
+}
+
+int tg2_gpio_direction_output_ex(unsigned offset, int value)
+{
+	tg2_gpio_direction_output(GPIO_PORT(offset), GPIO_BIT(offset), value);
 	return 0;
 }
 

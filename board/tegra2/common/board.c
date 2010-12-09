@@ -128,6 +128,10 @@ int board_init(void)
 	/* board id for Linux */
 	gd->bd->bi_arch_number = LINUX_MACH_TYPE;
 
+#ifdef CONFIG_TEGRA2_LCD
+	gd->fb_base = LCD_FB_ADDR;
+#endif
+
 	board_spi_init();		/* do this early so UART mux is OK */
 	board_usb_init();
 

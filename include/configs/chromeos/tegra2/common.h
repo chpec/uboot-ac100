@@ -185,4 +185,17 @@
 #define PHYS_SDRAM_1		TEGRA2_SDRC_CS0
 #define PHYS_SDRAM_1_SIZE	SZ_512M
 
+/*
+ *  LCDC configuration
+ */
+
+#define CONFIG_LCD
+
+#ifdef CONFIG_LCD
+#define CONFIG_TEGRA2_LCD
+#define LCD_BPP             LCD_COLOR16
+#define LCD_FB_ADDR         0x1C022000   /* FB could be passed from bl */
+#define CONFIG_SYS_WHITE_ON_BLACK       /*Console colors*/
+#endif
+
 #endif //__configs_chromeos_tegra2_common_h__

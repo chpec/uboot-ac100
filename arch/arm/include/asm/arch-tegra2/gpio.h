@@ -34,6 +34,8 @@
 
 int tg2_gpio_direction_input(unsigned port, unsigned bit);
 int tg2_gpio_direction_output(unsigned port, unsigned bit, int value);
+int tg2_gpio_direction_input_ex(unsigned offset);
+int tg2_gpio_direction_output_ex(unsigned offset, int value);
 int tg2_gpio_get_value(unsigned port, unsigned bit);
 void tg2_gpio_set_value(unsigned port, unsigned bit, int value);
 

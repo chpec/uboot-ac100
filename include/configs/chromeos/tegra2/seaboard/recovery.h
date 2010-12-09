@@ -47,15 +47,15 @@
 	"platform_extras=mem=384M@0M nvmem=128M@384M mem=512M@512M "\
 	"lp0_vec="TEGRA_LP0_SIZE_STR"@"TEGRA_LP0_DEFAULT_ADDR_STR "\0" \
 	"stdin=serial,tegra-kbc\0" \
-	"stdout=serial\0" \
-	"stderr=serial\0"
+	"stdout=serial,lcd\0" \
+	"stderr=serial,lcd\0"
 #else
 #define CONFIG_EXTRA_ENV_SETTINGS	\
 	CONFIG_TEGRA_ENV_SETTINGS	\
 	"platform_extras=mem=384M@0M nvmem=128M@384M mem=512M@512M\0" \
 	"stdin=serial,tegra-kbc\0" \
-	"stdout=serial\0" \
-	"stderr=serial\0"
+	"stdout=serial,lcd\0" \
+	"stderr=serial,lcd\0"
 #endif
 
 #define LINUX_MACH_TYPE			MACH_TYPE_TEGRA_SEABOARD
@@ -91,13 +91,13 @@
 #define CONFIG_ENV_OFFSET	0x0	/* DANGER! for test, use offset != 0 */
 #endif
 
-/* 
- * These config switches are for SD/MMC controller support 
+/*
+ * These config switches are for SD/MMC controller support
  */
 /* Define this if device is always on EMMC4 controller and no Card Detect pin */
 #define CONFIG_TEGRA2_EMMC4_ALWAYS_INSERTED     1
 
-#define MMC_DEV_INSTANCES 2 
+#define MMC_DEV_INSTANCES 2
 #define NvEmmcx_0       NvEmmc4
 #define NvEmmcx_1       NvEmmc3
 #define NvEmmcx_2       0
@@ -109,10 +109,16 @@
 #define NvUSBx_2	0
 #define NvUSBx_3	0
 
-/* 
+/*
  * USB1 takes 3 ms to clear Port Reset bit after issuing a Port Reset.
  * The expected time is 2 ms. Please refer to page 28 of EHCI 1.0 specification.
  */
 #define CONFIG_USB_RESET_CLEARED_MS     3 * 1000
+
+/* LCD Settings */
+#ifdef CONFIG_LCD
+#define LCD_vl_col	1366
+#define LCD_vl_row	768
+#endif
 
 #endif //__configs_chromeos_tegra2_seaboard_recovery_h__

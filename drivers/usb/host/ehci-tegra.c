@@ -36,6 +36,20 @@
 
 #include <asm/errno.h>
 
+/* USB_CONTROLLER_INSTANCES, NvUSBx_x defined in header file like tegra2_harmony.h, tegra2_seaboard.h */
+int USB_base_addr[5] = {
+	NvUSBx_0,
+	NvUSBx_1,
+	NvUSBx_2,
+	NvUSBx_3,
+	0
+};
+int USB_EHCI_TEGRA_BASE_ADDR=NvUSBx_0;
+
+#if LINUX_MACH_TYPE == MACH_TYPE_TEGRA_SEABOARD
+void usb1_set_host_mode(void);
+#endif
+
 /*
  * Create the appropriate control structures to manage
  * a new EHCI host controller.
@@ -60,6 +74,9 @@ int ehci_hcd_init(void)
  */
 int ehci_hcd_stop(void)
 {
+#if LINUX_MACH_TYPE == MACH_TYPE_TEGRA_SEABOARD
+        usb1_set_host_mode();
+#endif
 	ehci_writel(&hcor->or_usbcmd, 0);
 	udelay(1000);
 	ehci_writel(&hcor->or_usbcmd, 2);

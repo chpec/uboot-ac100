@@ -35,6 +35,10 @@
 static int usb_stor_curr_dev = -1; /* current device */
 #endif
 
+#ifndef CONFIG_USB_CONTROLLER_INSTANCES
+#define CONFIG_USB_CONTROLLER_INSTANCES		1
+#endif
+
 /* some display routines (info command) */
 char *usb_get_class_desc(unsigned char dclass)
 {
@@ -521,6 +525,18 @@ int do_usb(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	if ((strncmp(argv[1], "reset", 5) == 0) ||
 		 (strncmp(argv[1], "start", 5) == 0)) {
 		usb_stop();
+		if (argc == 3) {
+			i = simple_strtoul(argv[2], NULL, 10);
+			if (i >= CONFIG_USB_CONTROLLER_INSTANCES) {
+				printf("unknown controller\n");
+				return 1;
+			}
+#ifdef CONFIG_TEGRA2
+			extern int USB_EHCI_TEGRA_BASE_ADDR;
+			extern int USB_base_addr[];
+			USB_EHCI_TEGRA_BASE_ADDR = USB_base_addr[i];
+#endif
+		}
 		printf("(Re)start USB...\n");
 		i = usb_init();
 #ifdef CONFIG_USB_STORAGE
@@ -703,7 +719,7 @@ int do_usb(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 U_BOOT_CMD(
 	usb,	5,	1,	do_usb,
 	"USB sub-system",
-	"reset - reset (rescan) USB controller\n"
+	"reset [con] - reset (rescan) USB controller\n"
 	"usb stop [f]  - stop USB [f]=force stop\n"
 	"usb tree  - show USB device tree\n"
 	"usb info [dev] - show available USB devices\n"

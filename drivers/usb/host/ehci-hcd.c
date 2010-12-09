@@ -28,6 +28,10 @@
 
 #include "ehci.h"
 
+#ifndef CONFIG_USB_RESET_CLEARED_MS
+#define CONFIG_USB_RESET_CLEARED_MS	2 * 1000
+#endif
+
 int rootdev;
 struct ehci_hccr *hccr;	/* R/O registers, not need for volatile */
 volatile struct ehci_hcor *hcor;
@@ -733,6 +737,9 @@ ehci_submit_root(struct usb_device *dev, unsigned long pipe, void *buffer,
 			} else {
 				int ret;
 
+				/* clear Connect Status and Connect Status 
+				   Change bits for later check */
+				reg |= (EHCI_PS_CSC | EHCI_PS_CS);
 				reg |= EHCI_PS_PR;
 				reg &= ~EHCI_PS_PE;
 				ehci_writel(status_reg, reg);
@@ -744,19 +751,27 @@ ehci_submit_root(struct usb_device *dev, unsigned long pipe, void *buffer,
 				wait_ms(50);
 				/* terminate the reset */
 				ehci_writel(status_reg, reg & ~EHCI_PS_PR);
+
 				/*
 				 * A host controller must terminate the reset
 				 * and stabilize the state of the port within
 				 * 2 milliseconds
 				 */
 				ret = handshake(status_reg, EHCI_PS_PR, 0,
-						2 * 1000);
+						CONFIG_USB_RESET_CLEARED_MS);
+
 				if (!ret)
 					portreset |=
 						1 << le16_to_cpu(req->index);
+#ifndef CONFIG_USB_EHCI_TEGRA
+				/*
+				 * avoid misleading error messages on resetting
+				 * tegra USB1 controller 
+				 */
 				else
 					printf("port(%d) reset error\n",
 					le16_to_cpu(req->index) - 1);
+#endif
 			}
 			break;
 		default:

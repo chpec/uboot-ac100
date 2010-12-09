@@ -188,7 +188,9 @@
 #define CONFIG_USB_EHCI_TEGRA
 
 #ifdef CONFIG_USB_EHCI_TEGRA
-#   define USB_EHCI_TEGRA_BASE_ADDR         0xC5008000   /* USB3 base address */
+#   define CONFIG_USB_CONTROLLER_INSTANCES	 2
+#   define USB_EHCI_TEGRA_BASE_ADDR_USB3         0xC5008000   /* USB3 base address */
+#   define USB_EHCI_TEGRA_BASE_ADDR_USB1         0xC5000000   /* USB1 base address */
 #endif
 
 /*

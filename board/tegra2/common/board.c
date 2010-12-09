@@ -32,75 +32,77 @@
 #include <asm/arch/tegra2.h>
 #include "sdmmc/nvboot_clocks_int.h"
 #include "board.h"
+#include <asm/arch/gpio.h>
 
-///////////////////////////////////////////////////////////////////////////////
-// PLL CONFIGURATION & PARAMETERS for different clock generators:
-//-----------------------------------------------------------------------------
-// Reference frequency     13.0MHz         19.2MHz         12.0MHz     26.0MHz
-// ----------------------------------------------------------------------------
-// PLLU_ENABLE_DLY_COUNT   02 (02h)        03 (03h)        02 (02h)    04 (04h)
-// PLLU_STABLE_COUNT       51 (33h)        75 (4Bh)        47 (2Fh)   102 (66h)
-// PLL_ACTIVE_DLY_COUNT    05 (05h)        06 (06h)        04 (04h)    09 (09h)
-// XTAL_FREQ_COUNT        127 (7Fh)       187 (BBh)       118 (76h)   254 (FEh)
-///////////////////////////////////////////////////////////////////////////////
+/******************************************************************************
+ * PLL CONFIGURATION & PARAMETERS for different clock generators:
+ *-----------------------------------------------------------------------------
+ * Reference frequency     13.0MHz         19.2MHz         12.0MHz     26.0MHz
+ * ----------------------------------------------------------------------------
+ * PLLU_ENABLE_DLY_COUNT   02 (02h)        03 (03h)        02 (02h)    04 (04h)
+ * PLLU_STABLE_COUNT       51 (33h)        75 (4Bh)        47 (2Fh)   102 (66h)
+ * PLL_ACTIVE_DLY_COUNT    05 (05h)        06 (06h)        04 (04h)    09 (09h)
+ * XTAL_FREQ_COUNT        127 (7Fh)       187 (BBh)       118 (76h)   254 (FEh)
+ *****************************************************************************/
 static const UsbPllDelayParams s_UsbPllDelayParams[NvBootClocksOscFreq_Num] =
 {
-    //ENABLE_DLY,  STABLE_CNT,  ACTIVE_DLY,  XTAL_FREQ_CNT
-    {0x02,         0x33,        0x05,        0x7F}, // For NvBootClocksOscFreq_13,
-    {0x03,         0x4B,        0x06,        0xBB}, // For NvBootClocksOscFreq_19_2
-    {0x02,         0x2F,        0x04,        0x76}, // For NvBootClocksOscFreq_12
-    {0x04,         0x66,        0x09,        0xFE}  // For NvBootClocksOscFreq_26
+    /* ENABLE_DLY,  STABLE_CNT,  ACTIVE_DLY,  XTAL_FREQ_CNT */
+    {0x02,         0x33,        0x05,        0x7F}, /* For ClocksOscFreq_13, */
+    {0x03,         0x4B,        0x06,        0xBB}, /* For ClocksOscFreq_19_2*/
+    {0x02,         0x2F,        0x04,        0x76}, /* For ClocksOscFreq_12 */
+    {0x04,         0x66,        0x09,        0xFE}  /* For ClocksOscFreq_26 */
 };
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-//  PLLU configuration information (reference clock is osc/clk_m and PLLU-FOs are fixed at 12MHz/60MHz/480MHz).
-//
-//  reference frequency         13.0MHz         19.2MHz         12.0MHz         26.0MHz
-//  ---------------------------------------------------------------------------------------
-//      DIVN                    960 (3c0h)      200 (0c8h)      960 (3c0h)      960 (3c0h)
-//      DIVM                    13 ( 0dh)        4 ( 04h)       12 ( 0ch)       26 ( 1ah)
-// Filter frequency (MHz)       1               4.8             6           2
-// CPCON                        1100b           0011b           1100b       1100b
-// LFCON0                       0               0               0           0
-///////////////////////////////////////////////////////////////////////////////
+/******************************************************************************
+ * PLLU configuration information (reference clock is osc/clk_m and PLLU-FOs 
+ * are fixed at 12MHz/60MHz/480MHz).
+ *
+ *  reference frequency     13.0MHz      19.2MHz      12.0MHz      26.0MHz
+ *  ----------------------------------------------------------------------
+ *      DIVN                960 (3c0h)   200 (0c8h)   960 (3c0h)   960 (3c0h)
+ *      DIVM                13 ( 0dh)      4 ( 04h)    12 ( 0ch)    26 ( 1ah)
+ * Filter frequency (MHz)   1            4.8            6            2
+ * CPCON                    1100b        0011b        1100b       1100b
+ * LFCON0                   0            0            0           0
+ *****************************************************************************/
 static const UsbPllClockParams s_UsbPllBaseInfo[NvBootClocksOscFreq_Num] =
 {
-    //DivN, DivM, DivP, CPCON,  LFCON
-    {0x3C0, 0x0D, 0x00, 0xC,      0}, // For NvBootClocksOscFreq_13,
-    {0x0C8, 0x04, 0x00, 0x3,      0}, // For NvBootClocksOscFreq_19_2
-    {0x3C0, 0x0C, 0x00, 0xC,      0}, // For NvBootClocksOscFreq_12
-    {0x3C0, 0x1A, 0x00, 0xC,      0}  // For NvBootClocksOscFreq_26
+    /* DivN, DivM, DivP, CPCON,  LFCON */
+    {0x3C0, 0x0D, 0x00, 0xC,      0}, /* For NvBootClocksOscFreq_13, */
+    {0x0C8, 0x04, 0x00, 0x3,      0}, /* For NvBootClocksOscFreq_19_2 */
+    {0x3C0, 0x0C, 0x00, 0xC,      0}, /* For NvBootClocksOscFreq_12 */
+    {0x3C0, 0x1A, 0x00, 0xC,      0}  /* For NvBootClocksOscFreq_26 */
 };
 
-///////////////////////////////////////////////////////////////////////////////
-// Debounce values IdDig, Avalid, Bvalid, VbusValid, VbusWakeUp, and SessEnd.
-// Each of these signals have their own debouncer and for each of those one out
-// of 2 debouncing times can be chosen (BIAS_DEBOUNCE_A or BIAS_DEBOUNCE_B.)
-//
-// The values of DEBOUNCE_A and DEBOUNCE_B are calculated as follows:
-// 0xffff -> No debouncing at all
-// <n> ms = <n> *1000 / (1/19.2MHz) / 4
-// So to program a 1 ms debounce for BIAS_DEBOUNCE_A, we have:
-// BIAS_DEBOUNCE_A[15:0] = 1000 * 19.2 / 4  = 4800 = 0x12c0
-// We need to use only DebounceA for BOOTROM. We dont need the DebounceB
-// values, so we can keep those to default.
-///////////////////////////////////////////////////////////////////////////////
+/******************************************************************************
+ * Debounce values IdDig, Avalid, Bvalid, VbusValid, VbusWakeUp, and SessEnd.
+ * Each of these signals have their own debouncer and for each of those one out
+ * of 2 debouncing times can be chosen (BIAS_DEBOUNCE_A or BIAS_DEBOUNCE_B.)
+ *
+ * The values of DEBOUNCE_A and DEBOUNCE_B are calculated as follows:
+ * 0xffff -> No debouncing at all
+ * <n> ms = <n> *1000 / (1/19.2MHz) / 4
+ * So to program a 1 ms debounce for BIAS_DEBOUNCE_A, we have:
+ * BIAS_DEBOUNCE_A[15:0] = 1000 * 19.2 / 4  = 4800 = 0x12c0
+ * We need to use only DebounceA for BOOTROM. We dont need the DebounceB
+ * values, so we can keep those to default.
+ *****************************************************************************/
 static const NvU32 s_UsbBiasDebounceATime[NvBootClocksOscFreq_Num] =
 {
     /* Ten milli second delay for BIAS_DEBOUNCE_A */
-    0x7EF4,  // For NvBootClocksOscFreq_13,
-    0xBB80,  // For NvBootClocksOscFreq_19_2
-    0x7530,  // For NvBootClocksOscFreq_12
-    0xFDE8   // For NvBootClocksOscFreq_26
+    0x7EF4,  /* For NvBootClocksOscFreq_13, */
+    0xBB80,  /* For NvBootClocksOscFreq_19_2 */
+    0x7530,  /* For NvBootClocksOscFreq_12 */
+    0xFDE8   /* For NvBootClocksOscFreq_26 */
 };
 
 static const NvU32 s_UsbBiasTrkLengthTime[NvBootClocksOscFreq_Num] =
 {
     /* 20 micro seconds delay after bias cell operation */
-    5,  // For NvBootClocksOscFreq_13,
-    7,  // For NvBootClocksOscFreq_19_2
-    5,  // For NvBootClocksOscFreq_12
-    9   // For NvBootClocksOscFreq_26
+    5,  /* For NvBootClocksOscFreq_13, */
+    7,  /* For NvBootClocksOscFreq_19_2 */
+    5,  /* For NvBootClocksOscFreq_12 */
+    9   /* For NvBootClocksOscFreq_26 */
 };
 
 /* UTMIP Idle Wait Delay */
@@ -181,8 +183,8 @@ NvBlAvpClockSetDivider(NvBool Enable, NvU32 Dividened, NvU32 Divisor)
 
     if (Enable)
     {
-        // Set up divider for SCLK.
-        // SCLK is used for AVP, AHB, and APB.
+        /* Set up divider for SCLK. */
+        /* SCLK is used for AVP, AHB, and APB. */
         val = NV_DRF_DEF(CLK_RST_CONTROLLER, SUPER_SCLK_DIVIDER,
                          SUPER_SDIV_ENB, ENABLE)
               | NV_DRF_NUM(CLK_RST_CONTROLLER, SUPER_SCLK_DIVIDER,
@@ -193,7 +195,7 @@ NvBlAvpClockSetDivider(NvBool Enable, NvU32 Dividened, NvU32 Divisor)
     }
     else
     {
-        // Disable divider for SCLK.
+        /* Disable divider for SCLK. */
         val = NV_DRF_DEF(CLK_RST_CONTROLLER, SUPER_SCLK_DIVIDER,
                          SUPER_SDIV_ENB, DISABLE);
         NV_CLK_RST_WRITE(SUPER_SCLK_DIVIDER, val);
@@ -400,28 +402,36 @@ void debug_trace(int i)
     uart_post('.');
 }
 
-void UsbfResetController(NvU32 UsbBase)
+void usbf_reset_controller(NvU32 UsbBase)
 {
 	int RegVal = 0;
 
 	if (UsbBase == NV_ADDRESS_MAP_USB_BASE)
 	{
 		/* Enable clock to the USB controller */
-		RegVal= readl(NV_ADDRESS_MAP_CAR_BASE+CLK_RST_CONTROLLER_CLK_OUT_ENB_L_0);
+		RegVal= readl(NV_ADDRESS_MAP_CAR_BASE +
+				CLK_RST_CONTROLLER_CLK_OUT_ENB_L_0);
 		RegVal |= Bit22;
-		writel(RegVal, NV_ADDRESS_MAP_CAR_BASE+CLK_RST_CONTROLLER_CLK_OUT_ENB_L_0);
+		writel(RegVal, NV_ADDRESS_MAP_CAR_BASE +
+				CLK_RST_CONTROLLER_CLK_OUT_ENB_L_0);
 
 		/* Reset the USB controller */
-		RegVal= readl(NV_ADDRESS_MAP_CAR_BASE+CLK_RST_CONTROLLER_RST_DEVICES_L_0);
+		RegVal= readl(NV_ADDRESS_MAP_CAR_BASE +
+				CLK_RST_CONTROLLER_RST_DEVICES_L_0);
 		RegVal |= Bit22;
-		writel(RegVal, NV_ADDRESS_MAP_CAR_BASE+CLK_RST_CONTROLLER_RST_DEVICES_L_0);
+		writel(RegVal, NV_ADDRESS_MAP_CAR_BASE +
+				CLK_RST_CONTROLLER_RST_DEVICES_L_0);
 		udelay(2);
-		RegVal= readl(NV_ADDRESS_MAP_CAR_BASE+CLK_RST_CONTROLLER_RST_DEVICES_L_0);
+		RegVal= readl(NV_ADDRESS_MAP_CAR_BASE +
+				CLK_RST_CONTROLLER_RST_DEVICES_L_0);
 		RegVal &= ~Bit22;
-		writel(RegVal, NV_ADDRESS_MAP_CAR_BASE+CLK_RST_CONTROLLER_RST_DEVICES_L_0);
+		writel(RegVal, NV_ADDRESS_MAP_CAR_BASE +
+				CLK_RST_CONTROLLER_RST_DEVICES_L_0);
 		udelay(2);
 
-		/* Set USB1_NO_LEGACY_MODE to 1 */
+		/* Set USB1_NO_LEGACY_MODE to 1, registers are accessible 
+		 * under base address 
+		*/
 		RegVal= readl(UsbBase+USB1_LEGACY_CTRL);
 		RegVal |= Bit0;
 		writel(RegVal, UsbBase+USB1_LEGACY_CTRL);
@@ -429,21 +439,25 @@ void UsbfResetController(NvU32 UsbBase)
 	else if(UsbBase == NV_ADDRESS_MAP_USB3_BASE)
 	{
 		/* Enable clock to the USB3 controller */
-		RegVal= readl(NV_ADDRESS_MAP_CAR_BASE+CLK_RST_CONTROLLER_CLK_OUT_ENB_L_0+4);
+		RegVal= readl(NV_ADDRESS_MAP_CAR_BASE +
+				CLK_RST_CONTROLLER_CLK_OUT_ENB_L_0+4);
 		RegVal |= Bit27;
-		writel(RegVal, NV_ADDRESS_MAP_CAR_BASE+CLK_RST_CONTROLLER_CLK_OUT_ENB_L_0+4);
+		writel(RegVal, NV_ADDRESS_MAP_CAR_BASE +
+				CLK_RST_CONTROLLER_CLK_OUT_ENB_L_0+4);
 
 		/* Reset USB3 controller */
-		RegVal= readl(NV_ADDRESS_MAP_CAR_BASE+CLK_RST_CONTROLLER_RST_DEVICES_L_0+4);
-		if (RegVal & Bit27)
-		{
-			writel(RegVal, NV_ADDRESS_MAP_CAR_BASE+CLK_RST_CONTROLLER_RST_DEVICES_L_0+4);
-			udelay(2);
-			RegVal= readl(NV_ADDRESS_MAP_CAR_BASE+CLK_RST_CONTROLLER_RST_DEVICES_L_0+4);
-			RegVal &= ~Bit27;
-			writel(RegVal, NV_ADDRESS_MAP_CAR_BASE+CLK_RST_CONTROLLER_RST_DEVICES_L_0+4);
-			udelay(2);
-		}
+		RegVal= readl(NV_ADDRESS_MAP_CAR_BASE +
+				CLK_RST_CONTROLLER_RST_DEVICES_L_0+4);
+		RegVal |= Bit27;
+		writel(RegVal, NV_ADDRESS_MAP_CAR_BASE +
+				CLK_RST_CONTROLLER_RST_DEVICES_L_0+4);
+		udelay(2);
+		RegVal= readl(NV_ADDRESS_MAP_CAR_BASE +
+				CLK_RST_CONTROLLER_RST_DEVICES_L_0+4);
+		RegVal &= ~Bit27;
+		writel(RegVal, NV_ADDRESS_MAP_CAR_BASE +
+				CLK_RST_CONTROLLER_RST_DEVICES_L_0+4);
+		udelay(2);
 	}
 
 	/*
@@ -465,6 +479,30 @@ void UsbfResetController(NvU32 UsbBase)
 		writel(RegVal, UsbBase+USB_SUSP_CTRL);
 	}
 
+}
+
+void usb1_set_host_mode(void)
+{
+	int RegVal;
+
+	/* Check whether remote host from USB1 is driving VBus */
+	/* If not driving, we set GPIO USB1_VBus_En */
+	RegVal= readl(NV_ADDRESS_MAP_USB_BASE+USB_PHY_VBUS_SENSORS_0);
+
+	/* driven by remote host. do nothing here */
+	if (RegVal & Bit26)
+		return; 
+
+	/* Seaboard platform uses PAD SLXK (GPIO D.00) as USB1_VBus_En */
+	/* Config as GPIO */
+	tg2_gpio_direction_output(3, 0, 1);
+
+	/* Z_SLXK = 0, normal, not tristate */
+	RegVal= readl(NV_ADDRESS_MAP_APB_MISC_BASE + 
+			APB_MISC_PP_TRISTATE_REG_B_0);
+	RegVal &= ~Bit7;
+	writel(RegVal, NV_ADDRESS_MAP_APB_MISC_BASE + 
+			APB_MISC_PP_TRISTATE_REG_B_0);
 }
 
 void board_usb_init(void)
@@ -492,137 +530,138 @@ void board_usb_init(void)
 	/* Initialize USB1 & USB3 controllers */
 	for (i = 0; i < 2; i++)
 	{
-        /* Select the correct base address for the ith controller. */
-        UsbBase = (i) ? NV_ADDRESS_MAP_USB3_BASE : NV_ADDRESS_MAP_USB_BASE;
+        	/* Select the correct base address for the ith controller. */
+        	UsbBase = (i) ? NV_ADDRESS_MAP_USB3_BASE :
+				NV_ADDRESS_MAP_USB_BASE;
 
-        /* Reset the usb controller. */
-        UsbfResetController(UsbBase);
+        	/* Reset the usb controller. */
+        	usbf_reset_controller(UsbBase);
 
-        /* Stop crystal clock by setting UTMIP_PHY_XTAL_CLOCKEN low */
-	RegVal= readl(UsbBase+UTMIP_MISC_CFG1);
-	RegVal &= ~Bit30;
-	writel(RegVal, UsbBase+UTMIP_MISC_CFG1);
+        	/* Stop crystal clock by setting UTMIP_PHY_XTAL_CLOCKEN low */
+		RegVal= readl(UsbBase+UTMIP_MISC_CFG1);
+		RegVal &= ~Bit30;
+		writel(RegVal, UsbBase+UTMIP_MISC_CFG1);
 
-        /* Follow the crystal clock disable by >100ns delay. */
-	udelay(1);
+        	/* Follow the crystal clock disable by >100ns delay. */
+		udelay(1);
 
-        /*
-         * To Use the A Session Valid for cable detection logic,
-         * VBUS_WAKEUP mux must be switched to actually use a_sess_vld
-         * threshold.  This is done by setting VBUS_SENSE_CTL bit in
-         * USB_LEGACY_CTRL register.
-         */
-        if (UsbBase == NV_ADDRESS_MAP_USB_BASE)
-        {
-		RegVal= readl(UsbBase+USB1_LEGACY_CTRL);
-		RegVal |= (Bit2+Bit1);
-		writel(RegVal, UsbBase+USB1_LEGACY_CTRL);
-        }
+        	/*
+         	 * To Use the A Session Valid for cable detection logic,
+         	 * VBUS_WAKEUP mux must be switched to actually use a_sess_vld
+         	 * threshold.  This is done by setting VBUS_SENSE_CTL bit in
+         	 * USB_LEGACY_CTRL register.
+         	 */
+        	if (UsbBase == NV_ADDRESS_MAP_USB_BASE)
+        	{
+			RegVal= readl(UsbBase+USB1_LEGACY_CTRL);
+			RegVal |= (Bit2+Bit1);
+			writel(RegVal, UsbBase+USB1_LEGACY_CTRL);
+        	}
 
-	/* PLL Delay CONFIGURATION settings
-	 * The following parameters control the bring up of the plls:
-	 */
-	RegVal= readl(UsbBase+UTMIP_MISC_CFG1);
-	RegVal &= 0xFFFC003F;
-	RegVal |= (s_UsbPllDelayParams[OscFreq].StableCount << 6);
+		/* PLL Delay CONFIGURATION settings
+	 	 * The following parameters control the bring up of the plls:
+	 	 */
+		RegVal= readl(UsbBase+UTMIP_MISC_CFG1);
+		RegVal &= 0xFFFC003F;
+		RegVal |= (s_UsbPllDelayParams[OscFreq].StableCount << 6);
 
-	RegVal &= 0xFF83FFFF;
-	RegVal |= (s_UsbPllDelayParams[OscFreq].ActiveDelayCount << 18);
-	writel(RegVal, UsbBase+UTMIP_MISC_CFG1);
+		RegVal &= 0xFF83FFFF;
+		RegVal |= (s_UsbPllDelayParams[OscFreq].ActiveDelayCount << 18);
+		writel(RegVal, UsbBase+UTMIP_MISC_CFG1);
 
-	/* Set PLL enable delay count and Crystal frequency count */
-	RegVal= readl(UsbBase+UTMIP_PLL_CFG1);
-	RegVal &= 0x08FFFFFF;
-	RegVal |= (s_UsbPllDelayParams[OscFreq].EnableDelayCount <<27);
+		/* Set PLL enable delay count and Crystal frequency count */
+		RegVal= readl(UsbBase+UTMIP_PLL_CFG1);
+		RegVal &= 0x08FFFFFF;
+		RegVal |= (s_UsbPllDelayParams[OscFreq].EnableDelayCount <<27);
 
-	RegVal &= 0xFFFFF000;
-	RegVal |= (s_UsbPllDelayParams[OscFreq].XtalFreqCount);
-	writel(RegVal, UsbBase+UTMIP_PLL_CFG1);
+		RegVal &= 0xFFFFF000;
+		RegVal |= (s_UsbPllDelayParams[OscFreq].XtalFreqCount);
+		writel(RegVal, UsbBase+UTMIP_PLL_CFG1);
 
-	/* Setting the tracking length time. */
-	RegVal= readl(UsbBase+UTMIP_BIAS_CFG1);
-	RegVal &= 0xFFFFFF07;
-	RegVal |= (s_UsbBiasTrkLengthTime[OscFreq] <<3);
-	writel(RegVal, UsbBase+UTMIP_BIAS_CFG1);
+		/* Setting the tracking length time. */
+		RegVal= readl(UsbBase+UTMIP_BIAS_CFG1);
+		RegVal &= 0xFFFFFF07;
+		RegVal |= (s_UsbBiasTrkLengthTime[OscFreq] <<3);
+		writel(RegVal, UsbBase+UTMIP_BIAS_CFG1);
 
-	/* Program Debounce time for VBUS to become valid. */
-	RegVal= readl(UsbBase+UTMIP_DEBOUNCE_CFG0);
-	RegVal &= 0xFFFF0000;
-	RegVal |= s_UsbBiasDebounceATime[OscFreq];
-	writel(RegVal, UsbBase+UTMIP_DEBOUNCE_CFG0);
+		/* Program Debounce time for VBUS to become valid. */
+		RegVal= readl(UsbBase+UTMIP_DEBOUNCE_CFG0);
+		RegVal &= 0xFFFF0000;
+		RegVal |= s_UsbBiasDebounceATime[OscFreq];
+		writel(RegVal, UsbBase+UTMIP_DEBOUNCE_CFG0);
 
-	/* Set UTMIP_FS_PREAMBLE_J to 1 */
-	RegVal= readl(UsbBase+UTMIP_TX_CFG0);
-	RegVal |= Bit19;
-	writel(RegVal, UsbBase+UTMIP_TX_CFG0);
+		/* Set UTMIP_FS_PREAMBLE_J to 1 */
+		RegVal= readl(UsbBase+UTMIP_TX_CFG0);
+		RegVal |= Bit19;
+		writel(RegVal, UsbBase+UTMIP_TX_CFG0);
 
-	/* Disable Batery charge enabling bit set to '1' for disable */
-	RegVal= readl(UsbBase+UTMIP_BAT_CHRG_CFG0);
-	RegVal |= Bit0;
-	writel(RegVal, UsbBase+UTMIP_BAT_CHRG_CFG0);
+		/* Disable Battery charge enabling bit set to '1' for disable */
+		RegVal= readl(UsbBase+UTMIP_BAT_CHRG_CFG0);
+		RegVal |= Bit0;
+		writel(RegVal, UsbBase+UTMIP_BAT_CHRG_CFG0);
 
-	/* Set UTMIP_XCVR_LSBIAS_SEL to 0 */
-	RegVal= readl(UsbBase+UTMIP_XCVR_CFG0);
-	RegVal &= ~Bit21;
-	writel(RegVal, UsbBase+UTMIP_XCVR_CFG0);
+		/* Set UTMIP_XCVR_LSBIAS_SEL to 0 */
+		RegVal= readl(UsbBase+UTMIP_XCVR_CFG0);
+		RegVal &= ~Bit21;
+		writel(RegVal, UsbBase+UTMIP_XCVR_CFG0);
 
-	/* Set bit 3 of UTMIP_SPARE_CFG0 to 1 */
-	RegVal= readl(UsbBase+UTMIP_SPARE_CFG0);
-	RegVal |= Bit3;
-	writel(RegVal, UsbBase+UTMIP_SPARE_CFG0);
+		/* Set bit 3 of UTMIP_SPARE_CFG0 to 1 */
+		RegVal= readl(UsbBase+UTMIP_SPARE_CFG0);
+		RegVal |= Bit3;
+		writel(RegVal, UsbBase+UTMIP_SPARE_CFG0);
 
-        /* Configure the UTMIP_IDLE_WAIT and UTMIP_ELASTIC_LIMIT
-         * Setting these fields, together with default values of the other
-         * fields, results in programming the registers below as follows:
-         *         UTMIP_HSRX_CFG0 = 0x9168c000
-         *         UTMIP_HSRX_CFG1 = 0x13
-         */
+        	/* Configure the UTMIP_IDLE_WAIT and UTMIP_ELASTIC_LIMIT
+         	 * Setting these fields, together with default values of the
+		 * other fields, results in programming the registers below as
+		 * follows:
+         	 *         UTMIP_HSRX_CFG0 = 0x9168c000
+         	 *         UTMIP_HSRX_CFG1 = 0x13
+         	 */
 
-	/* Set PLL enable delay count and Crystal frequency count */
-	RegVal= readl(UsbBase+UTMIP_HSRX_CFG0);
-	RegVal &= 0xFFF07FFF;
-	RegVal |= s_UtmipIdleWaitDelay << 15;
+		/* Set PLL enable delay count and Crystal frequency count */
+		RegVal= readl(UsbBase+UTMIP_HSRX_CFG0);
+		RegVal &= 0xFFF07FFF;
+		RegVal |= s_UtmipIdleWaitDelay << 15;
 
-	RegVal &= 0xFFFF83FF;
-	RegVal |= s_UtmipElasticLimit << 10;
-	writel(RegVal, UsbBase+UTMIP_HSRX_CFG0);
+		RegVal &= 0xFFFF83FF;
+		RegVal |= s_UtmipElasticLimit << 10;
+		writel(RegVal, UsbBase+UTMIP_HSRX_CFG0);
 
-	/* Configure the UTMIP_HS_SYNC_START_DLY */
-	RegVal= readl(UsbBase+UTMIP_HSRX_CFG1);
-	RegVal &= 0xFFFFFFC1;
-	RegVal |= s_UtmipHsSyncStartDelay << 1;
-	writel(RegVal, UsbBase+UTMIP_HSRX_CFG1);
+		/* Configure the UTMIP_HS_SYNC_START_DLY */
+		RegVal= readl(UsbBase+UTMIP_HSRX_CFG1);
+		RegVal &= 0xFFFFFFC1;
+		RegVal |= s_UtmipHsSyncStartDelay << 1;
+		writel(RegVal, UsbBase+UTMIP_HSRX_CFG1);
 
-	/* Preceed  the crystal clock disable by >100ns delay. */
-        udelay(1);
+		/* Preceed  the crystal clock disable by >100ns delay. */
+        	udelay(1);
 
-	/* Resuscitate  crystal clock by setting UTMIP_PHY_XTAL_CLOCKEN */
-	RegVal= readl(UsbBase+UTMIP_MISC_CFG1);
-	RegVal |= Bit30;
-	writel(RegVal, UsbBase+UTMIP_MISC_CFG1);
-	}
+		/* Resuscitate crystal clock by setting UTMIP_PHY_XTAL_CLOCKEN
+		 */
+		RegVal= readl(UsbBase+UTMIP_MISC_CFG1);
+		RegVal |= Bit30;
+		writel(RegVal, UsbBase+UTMIP_MISC_CFG1);
 
-	/* Finished the per-controller init. */
+		/* Finished the per-controller init. */
 
-	/* De-assert UTMIP_RESET in USB3_IF_USB_SUSP_CTRL register
-	 * to bring out of reset.
-	 */
-	RegVal= readl(UsbBase+USB_SUSP_CTRL);
-	RegVal &= ~Bit11;
-	writel(RegVal, UsbBase+USB_SUSP_CTRL);
+		/* De-assert UTMIP_RESET to bring out of reset. */
+		RegVal= readl(UsbBase+USB_SUSP_CTRL);
+		RegVal &= ~Bit11;
+		writel(RegVal, UsbBase+USB_SUSP_CTRL);
 
-	loop_count = 100000;
-	while (loop_count)
-	{
-	/* Wait for the phy clock to become valid in 100 ms */
-	PhyClkValid = readl(UsbBase+USB_SUSP_CTRL) & Bit7;
-	if (PhyClkValid)
-		break;
-	udelay(1);
-	loop_count--;
-	}
+		loop_count = 100000;
+		while (loop_count)
+		{
+			/* Wait for the phy clock to become valid in 100 ms */
+			PhyClkValid = readl(UsbBase+USB_SUSP_CTRL) & Bit7;
+			if (PhyClkValid)
+				break;
+			udelay(1);
+			loop_count--;
+		} /* while */
+	} /* for */
 
-	/* Disable by writing IC_ENB1  in USB2_CONTROLLER_2_USB2D_ICUSB_CTRL_0. */
+	/* Disable by writing IC_ENB1 in USB2_CONTROLLER_2_USB2D_ICUSB_CTRL_0.*/
 	RegVal= readl(NV_ADDRESS_MAP_USB3_BASE+ICUSB_CTRL);
 	RegVal &= ~Bit3;
 	writel(RegVal, NV_ADDRESS_MAP_USB3_BASE+ICUSB_CTRL);
@@ -632,29 +671,16 @@ void board_usb_init(void)
 	RegVal &= ~(Bit31+Bit30+Bit29);
 	writel(RegVal, NV_ADDRESS_MAP_USB3_BASE+PORTSC1);
 
-	/* Deassert power down state */
-	RegVal= readl(UsbBase+UTMIP_XCVR_CFG0);
+	/* Deassert power down state for USB3 */
+	RegVal= readl(NV_ADDRESS_MAP_USB3_BASE+UTMIP_XCVR_CFG0);
 	RegVal &= ~(Bit18+Bit16+Bit14);
-	writel(RegVal, UsbBase+UTMIP_XCVR_CFG0);
+	writel(RegVal, NV_ADDRESS_MAP_USB3_BASE+UTMIP_XCVR_CFG0);
 
-	RegVal= readl(UsbBase+UTMIP_XCVR_CFG1);
+	RegVal= readl(NV_ADDRESS_MAP_USB3_BASE+UTMIP_XCVR_CFG1);
 	RegVal &= ~(Bit4+Bit2+Bit0);
-	writel(RegVal, UsbBase+UTMIP_XCVR_CFG1);
-#if 0
-	/* Hold the reset for UTMIP3. */
-	RegVal= readl(UsbBase+USB_SUSP_CTRL);
-	RegVal |= Bit11;
-	writel(RegVal, UsbBase+USB_SUSP_CTRL);
+	writel(RegVal, NV_ADDRESS_MAP_USB3_BASE+UTMIP_XCVR_CFG1);
 
-	loop_count = 100000;
-	while (loop_count)
-	{
-        //Wait for the phy clock to become 0 in 100 ms
-        PhyClkValid = readl(UsbBase+USB_SUSP_CTRL) & Bit7;
-	if (!PhyClkValid)
-		break;
-        udelay(1);
-        loop_count--;
-	}
+#if LINUX_MACH_TYPE == MACH_TYPE_TEGRA_SEABOARD
+	usb1_set_host_mode();
 #endif
 }

@@ -67,7 +67,6 @@
 #define CONFIG_CONS_INDEX		1
 
 #define CONFIG_TEGRA2_MMC		1
-#define TEGRA2_MMC_DEFAULT_DEVICE	"0"
 
 #define CONFIG_SYS_NO_FLASH
 
@@ -145,21 +144,26 @@
 #define CONFIG_TEGRA_ENV_SETTINGS	\
 	"scriptaddr=0x408000\0" \
 	"script_img=/u-boot/boot.scr.uimg\0" \
-	"scriptboot=fatload ${devtype} 0:c ${scriptaddr} ${script_img};" \
+	"scriptboot=fatload ${devtype} ${devnum}:c ${scriptaddr} ${script_img};" \
 		"source ${scriptaddr};" \
-		"read ${devtype} 0:${kernelpart} ${scriptaddr} 0 10;" \
+		"read ${devtype} ${devnum}:${kernelpart} ${scriptaddr} 0 10;" \
 		"source ${scriptaddr};\0" \
-	"mmcboot=mmc init " TEGRA2_MMC_DEFAULT_DEVICE ";" \
+	"mmc0boot=setenv devnum 0;" \
+		"run mmcboot;\0" \
+	"mmc1boot=setenv devnum 1;" \
+		"run mmcboot;\0" \
+	"mmcboot=mmc init ${devnum};" \
 		"setenv devtype mmc;" \
-		"setenv devname mmcblk" TEGRA2_MMC_DEFAULT_DEVICE "p;" \
+	        "setenv devname mmcblk${devnum}p;" \
 		"run scriptboot;\0" \
 	"usbboot=usb start;" \
 		"setenv devtype usb;" \
+	        "setenv devnum 0;" \
 		"setenv devname sda;" \
 		"run scriptboot;\0"
 
 #undef CONFIG_BOOTCOMMAND
-#define CONFIG_BOOTCOMMAND		"run usbboot ; run mmcboot"
+#define CONFIG_BOOTCOMMAND		"run usbboot ; run mmc1boot ; run mmc0boot"
 
 #define CONFIG_SYS_LOAD_ADDR		0xA00800
 

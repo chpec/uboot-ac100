@@ -156,14 +156,20 @@
 		"setenv devtype mmc;" \
 	        "setenv devname mmcblk${devnum}p;" \
 		"run scriptboot;\0" \
-	"usbboot=usb start;" \
-		"setenv devtype usb;" \
-	        "setenv devnum 0;" \
+	"usb0boot=usb start 0;" \
+		"run usbboot;\0" \
+	"usb1boot=usb start 1;" \
+		"run usbboot;\0" \
+	"usbboot=setenv devtype usb;" \
+		"setenv devnum 0;" \
 		"setenv devname sda;" \
 		"run scriptboot;\0"
 
 #undef CONFIG_BOOTCOMMAND
-#define CONFIG_BOOTCOMMAND		"run usbboot ; run mmc1boot ; run mmc0boot"
+#define CONFIG_BOOTCOMMAND		"run usb0boot ; " \
+					"run usb1boot ; " \
+					"run mmc1boot ; " \
+					"run mmc0boot"
 
 #define CONFIG_SYS_LOAD_ADDR		0xA00800
 

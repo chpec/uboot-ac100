@@ -2983,7 +2983,7 @@ extern unsigned int __machine_arch_type;
 #define MACH_TYPE_EA20                 3002
 #define MACH_TYPE_AWM2                 3003
 #define MACH_TYPE_TI8148EVM            3004
-#define MACH_TYPE_TEGRA_SEABOARD       3005
+#define MACH_TYPE_SEABOARD             3005
 #define MACH_TYPE_LINKSTATION_CHLV2    3006
 #define MACH_TYPE_TERA_PRO2_RACK       3007
 #define MACH_TYPE_RUBYS                3008
@@ -38694,16 +38694,16 @@ extern unsigned int __machine_arch_type;
 # define machine_is_ti8148evm()	(0)
 #endif
 
-#ifdef CONFIG_MACH_TEGRA_SEABOARD
+#ifdef CONFIG_MACH_SEABOARD
 # ifdef machine_arch_type
 #  undef machine_arch_type
 #  define machine_arch_type	__machine_arch_type
 # else
-#  define machine_arch_type	MACH_TYPE_TEGRA_SEABOARD
+#  define machine_arch_type	MACH_TYPE_SEABOARD
 # endif
-# define machine_is_tegra_seaboard()	(machine_arch_type == MACH_TYPE_TEGRA_SEABOARD)
+# define machine_is_seaboard()	(machine_arch_type == MACH_TYPE_SEABOARD)
 #else
-# define machine_is_tegra_seaboard()	(0)
+# define machine_is_seaboard()	(0)
 #endif
 
 #ifdef CONFIG_MACH_LINKSTATION_CHLV2

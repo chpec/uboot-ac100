@@ -58,7 +58,7 @@
 	"stderr=serial,lcd\0"
 #endif
 
-#define LINUX_MACH_TYPE			MACH_TYPE_TEGRA_SEABOARD
+#define LINUX_MACH_TYPE			MACH_TYPE_SEABOARD
 #define CONFIG_SYS_BOARD_ODMDATA	0x300d8011  //lp1, 1GB
 
 #define CONFIG_I2CP_PIN_MUX		1

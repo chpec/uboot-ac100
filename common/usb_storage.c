@@ -158,9 +158,10 @@ struct us_data {
 static struct us_data usb_stor[USB_MAX_STOR_DEV];
 
 
+/* start our error numbers after the USB ones */
 #define USB_STOR_TRANSPORT_GOOD	   0
-#define USB_STOR_TRANSPORT_FAILED -1
-#define USB_STOR_TRANSPORT_ERROR  -2
+#define USB_STOR_TRANSPORT_FAILED (USB_ENEXTFREE)
+#define USB_STOR_TRANSPORT_ERROR  (USB_ENEXTFREE-1)
 
 int usb_stor_get_info(struct usb_device *dev, struct us_data *us,
 		      block_dev_desc_t *dev_desc);
@@ -213,6 +214,7 @@ int usb_stor_scan(int mode)
 {
 	unsigned char i;
 	struct usb_device *dev;
+	int result;
 
 	/* GJ */
 	memset(usb_stor_buf, 0, sizeof(usb_stor_buf));
@@ -244,8 +246,25 @@ int usb_stor_scan(int mode)
 			/* ok, it is a storage devices
 			 * get info and fill it in
 			 */
-			if (usb_stor_get_info(dev, &usb_stor[usb_max_devs],
-						&usb_dev_desc[usb_max_devs]) == 1)
+			result = usb_stor_get_info(dev,
+					&usb_stor[usb_max_devs],
+					&usb_dev_desc[usb_max_devs]);
+			if (result == USB_EDEVCRITICAL) {
+				/*
+				 * Something there, but failed badly.
+				 * Retry one more time. This happens
+				 * sometimes with some USB sticks,
+				 * e.g. Patriot Rage ID 13fe:3800
+				 */
+				printf (".");
+
+				/* ignore return value */
+				usb_restart_device(dev);
+				result = usb_stor_get_info(dev,
+						&usb_stor[usb_max_devs],
+						&usb_dev_desc[usb_max_devs]);
+			}
+			if (result == 1)
 				usb_max_devs++;
 		}
 		/* if storage device */
@@ -690,10 +709,13 @@ int usb_stor_BBB_transport(ccb *srb, struct us_data *us)
 			goto st;
 	}
 	if (result < 0) {
-		USB_STOR_PRINTF("usb_bulk_msg error status %ld\n",
+		USB_STOR_PRINTF("usb_bulk_msg error status %#lx\n",
 			us->pusb_dev->status);
 		usb_stor_BBB_reset(us);
-		return USB_STOR_TRANSPORT_FAILED;
+
+		/* if we got a critical device error, report it specially */
+		return result == USB_EDEVCRITICAL ? result
+				: USB_STOR_TRANSPORT_FAILED;
 	}
 #ifdef BBB_XPORT_TRACE
 	for (index = 0; index < data_actlen; index++)
@@ -900,6 +922,7 @@ static int usb_inquiry(ccb *srb, struct us_data *ss)
 
 static int usb_request_sense(ccb *srb, struct us_data *ss)
 {
+	int result;
 	char *ptr;
 
 	ptr = (char *)srb->pdata;
@@ -909,7 +932,12 @@ static int usb_request_sense(ccb *srb, struct us_data *ss)
 	srb->datalen = 18;
 	srb->pdata = &srb->sense_buf[0];
 	srb->cmdlen = 12;
-	ss->transport(srb, ss);
+	result = ss->transport(srb, ss);
+	if (result < 0) {
+		if (result != USB_EDEVCRITICAL)
+			USB_STOR_PRINTF("Request Sense failed\n");
+		return result;
+	}
 	USB_STOR_PRINTF("Request Sense returned %02X %02X %02X\n",
 			srb->sense_buf[2], srb->sense_buf[12],
 			srb->sense_buf[13]);
@@ -920,6 +948,7 @@ static int usb_request_sense(ccb *srb, struct us_data *ss)
 static int usb_test_unit_ready(ccb *srb, struct us_data *ss)
 {
 	int retries = 10;
+	int result;
 
 	do {
 		memset(&srb->cmd[0], 0, 12);
@@ -928,7 +957,9 @@ static int usb_test_unit_ready(ccb *srb, struct us_data *ss)
 		srb->cmdlen = 12;
 		if (ss->transport(srb, ss) == USB_STOR_TRANSPORT_GOOD)
 			return 0;
-		usb_request_sense(srb, ss);
+		result = usb_request_sense(srb, ss);
+		if (result == USB_EDEVCRITICAL)
+			return result;
 		wait_ms(100);
 	} while (retries--);
 
@@ -1314,6 +1345,7 @@ int usb_stor_get_info(struct usb_device *dev, struct us_data *ss,
 	unsigned long cap[2];
 	unsigned long *capacity, *blksz;
 	ccb *pccb = &usb_ccb;
+	int result;
 
 	/* for some reasons a couple of devices would not survive this reset */
 	if (
@@ -1372,11 +1404,14 @@ int usb_stor_get_info(struct usb_device *dev, struct us_data *ss,
 #endif /* CONFIG_USB_BIN_FIXUP */
 	USB_STOR_PRINTF("ISO Vers %X, Response Data %X\n", usb_stor_buf[2],
 			usb_stor_buf[3]);
-	if (usb_test_unit_ready(pccb, ss)) {
+	result = usb_test_unit_ready(pccb, ss);
+	if (result) {
+		if (result == USB_EDEVCRITICAL)
+			return result;
 		printf("Device NOT ready\n"
-		       "   Request Sense returned %02X %02X %02X\n",
-		       pccb->sense_buf[2], pccb->sense_buf[12],
-		       pccb->sense_buf[13]);
+			"   Request Sense returned %02X %02X %02X\n",
+		pccb->sense_buf[2], pccb->sense_buf[12],
+		pccb->sense_buf[13]);
 		if (dev_desc->removable == 1) {
 			dev_desc->type = perq;
 			return 1;

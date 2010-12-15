@@ -330,6 +330,7 @@ ehci_submit_async(struct usb_device *dev, unsigned long pipe, void *buffer,
 	uint32_t c, toggle;
 	uint32_t cmd;
 	int ret = 0;
+	int result = USB_EFAIL;
 
 #ifdef CONFIG_USB_EHCI_DATA_ALIGN
 	/* In case ehci host requires alignment for buffers */
@@ -342,8 +343,8 @@ ehci_submit_async(struct usb_device *dev, unsigned long pipe, void *buffer,
 		if (!align_buf)
 			return -1;
 		if ((int)align_buf & (CONFIG_USB_EHCI_DATA_ALIGN - 1))
-			buffer = (void *)((int)align_buf + 
-				CONFIG_USB_EHCI_DATA_ALIGN - 
+			buffer = (void *)((int)align_buf +
+				CONFIG_USB_EHCI_DATA_ALIGN -
 				((int)align_buf & (CONFIG_USB_EHCI_DATA_ALIGN - 1)));
 		else
 			buffer = align_buf;
@@ -475,7 +476,10 @@ ehci_submit_async(struct usb_device *dev, unsigned long pipe, void *buffer,
 		goto fail;
 	}
 
-	/* Wait for TDs to be processed. */
+	/*
+	 * Wait for TDs to be processed. We wait 3s since some USB
+	 * sticks can take a long time immediately after system reset
+	 */
 	ts = get_timer(0);
 	vtd = td;
 	do {
@@ -484,7 +488,7 @@ ehci_submit_async(struct usb_device *dev, unsigned long pipe, void *buffer,
 		token = hc32_to_cpu(vtd->qt_token);
 		if (!(token & 0x80))
 			break;
-	} while (get_timer(ts) < CONFIG_SYS_HZ);
+	} while (get_timer(ts) < CONFIG_SYS_HZ * 3);
 
 	/* Disable async schedule. */
 	cmd = ehci_readl(&hcor->or_usbcmd);
@@ -495,6 +499,12 @@ ehci_submit_async(struct usb_device *dev, unsigned long pipe, void *buffer,
 			100 * 1000);
 	if (ret < 0) {
 		printf("EHCI fail timeout STD_ASS reset\n");
+		goto fail;
+	}
+	/* check that the TD processing happened */
+	if (token & 0x80) {
+		printf("EHCI timed out on TD - token=%#x\n", token);
+		result = USB_EDEVCRITICAL;
 		goto fail;
 	}
 
@@ -559,7 +569,7 @@ fail:
 		td = (void *)hc32_to_cpu(qh->qh_overlay.qt_next);
 	}
 	ehci_free(qh, sizeof(*qh));
-	return -1;
+	return result;
 }
 
 static inline int min3(int a, int b, int c)

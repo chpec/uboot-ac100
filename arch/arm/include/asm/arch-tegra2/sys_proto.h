@@ -26,7 +26,6 @@
 
 typedef struct {
 	char *board_string;
-	char *nand_string;
 } tegra2_sysinfo;
 
 void v7_flush_dcache_all(u32);

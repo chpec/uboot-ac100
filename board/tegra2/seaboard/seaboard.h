@@ -26,11 +26,6 @@
 
 const tegra2_sysinfo sysinfo = {
 	"Tegra2 Seaboard",
-#if defined(CONFIG_ENV_IS_IN_ONENAND)
-	"OneNAND",
-#else
-	"NAND",
-#endif
 };
 
 #endif /* _SEABOARD_H_ */

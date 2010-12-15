@@ -133,12 +133,6 @@ static resource_size_t resource_size(const struct resource *res)
 	return res->end - res->start + 1;
 }
 
-static unsigned long tegra_dc_readl(struct tegra_dc *dc,
-					   unsigned long reg)
-{
-	return readl(dc->base + reg * 4);
-}
-
 static void tegra_dc_writel(struct tegra_dc *dc, unsigned long val,
 				   unsigned long reg)
 {

@@ -33,61 +33,26 @@
  * Software Foundation.
  */
 
-#ifndef __configs_chromeos_common_h__
-#define __configs_chromeos_common_h__
+#ifndef __CHROMEOS_BOOT_DEVICE_IMPL_H__
+#define __CHROMEOS_BOOT_DEVICE_IMPL_H__
 
-#include <asm/sizes.h>
-#include <config.h>
+#include <part.h>
 
-#define CONFIG_CHROMEOS
-#define CONFIG_CMD_CROS_ROFW
+/* Set boot device.
+ *
+ * Set partition number in argument part (starting from 1).  Pass part=0 for
+ * the entire device.
+ * Return zero if succees and non-zero if error.
+ */
+int set_bootdev(char *ifname, int dev, int part);
 
-/* friendly debug environment */
-#ifdef VBOOT_DEBUG
-#define CONFIG_CMD_CROS
-#define CONFIG_SYS_HUSH_PARSER
-#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
-#endif
+/* Return block device descriptor that was set by calls to set_bootdev(). */
+block_dev_desc_t *get_bootdev(void);
 
-#define CONFIG_CMDLINE_TAG		1
+/* Return the offset (in blocks) of the partition or zero if part=0. */
+ulong get_offset(void);
 
-#define CONFIG_ENV_IS_NOWHERE		1
-#define CONFIG_ENV_SIZE			SZ_128K
-#define CONFIG_ENV_OVERWRITE		1
+/* Return the size (in blocks) of the partition or entire device if part=0. */
+ulong get_limit(void);
 
-#define CONFIG_SYS_MALLOC_LEN		SZ_1M
-#define CONFIG_SYS_GBL_DATA_SIZE	128
-
-#define CONFIG_BAUDRATE			115200
-#define CONFIG_SYS_BAUDRATE_TABLE	{4800, \
-					 9600, \
-					 19200, \
-					 38400, \
-					 57600, \
-					 115200}
-
-#define CONFIG_DISPLAY_CPUINFO		1
-#define CONFIG_DISPLAY_BOARDINFO	1
-
-#define CONFIG_SYS_LONGHELP		1
-#define CONFIG_SYS_PROMPT		"CrOS> "
-
-#define CONFIG_BOOTARGS \
-	"${console} root=/dev/mmcblk0p3 ${platform_extras}"
-
-#define CONFIG_BOOTCOMMAND \
-	"ext2load mmc 0:3 ${loadaddr} /boot/vmlinux.uimg;" \
-	"bootm ${loadaddr};"
-
-#define CONFIG_CMDLINE_EDITING		1
-#define CONFIG_COMMAND_HISTORY		1
-#define CONFIG_AUTOCOMPLETE		1
-
-#define CONFIG_SYS_CBSIZE		512
-#define CONFIG_SYS_PBSIZE		(CONFIG_SYS_CBSIZE + \
-					 sizeof(CONFIG_SYS_PROMPT) + \
-					 64)
-#define CONFIG_SYS_MAXARGS		64
-#define CONFIG_SYS_BARGSIZE		(CONFIG_SYS_CBSIZE)
-
-#endif //__configs_chromeos_common_h__
+#endif /* __CHROMEOS_BOOT_DEVICE_IMPL_H__ */

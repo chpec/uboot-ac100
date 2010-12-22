@@ -35,11 +35,7 @@
 #define CONFIG_CONSOLE_MUX		1
 #define CONFIG_SYS_CONSOLE_IS_IN_ENV	1
 
-/* UARTD: keyboard satellite board uart, default */
-#define CONFIG_SYS_NS16550_COM1		NV_ADDRESS_MAP_APB_UARTD_BASE
-
-/* UARTA: debug board uart */
-#define CONFIG_SYS_NS16550_COM2		NV_ADDRESS_MAP_APB_UARTA_BASE
+#include <configs/chromeos/tegra2/seaboard/parts/uart.h>
 
 #ifdef CONFIG_TEGRA2_LP0
 #define CONFIG_EXTRA_ENV_SETTINGS	\
@@ -61,64 +57,13 @@
 #define LINUX_MACH_TYPE			MACH_TYPE_SEABOARD
 #define CONFIG_SYS_BOARD_ODMDATA	0x300d8011  //lp1, 1GB
 
-#define CONFIG_I2CP_PIN_MUX		1
-#define CONFIG_I2C1_PIN_MUX		1
-#define CONFIG_I2C2_PIN_MUX		2
-#define CONFIG_I2C3_PIN_MUX		1
-
 #define CONFIG_SYS_MEMTEST_START       0x0000
 #define CONFIG_SYS_MEMTEST_END         0x1000
 
-/*
- * SPI Settings
- */
-#define CONFIG_TEGRA2_SPI
-#define CONFIG_SPI_FLASH
-#define CONFIG_SPI_FLASH_WINBOND
-#define CONFIG_SPI_FLASH_SLOW_READ
-#define CONFIG_SF_DEFAULT_MODE	SPI_MODE_0
-#define CONFIG_CMD_SPI
-#define CONFIG_CMD_SF
-
-/*
- * To put the env in SPI-Flash on Seaboard, define the following,
- *  and undef or delete the CONFIG_ENV_IS_NOWHERE (if present).
- * Note that you MUST change the ENV_OFFSET to be beyond the BCT/BL area!
- */
-#if	0
-#define CONFIG_ENV_IS_IN_SPI_FLASH
-#define CONFIG_ENV_SECT_SIZE	0x1000	/* 4K sectors */
-#define CONFIG_ENV_OFFSET	0x0	/* DANGER! for test, use offset != 0 */
-#endif
-
-/*
- * These config switches are for SD/MMC controller support
- */
-/* Define this if device is always on EMMC4 controller and no Card Detect pin */
-#define CONFIG_TEGRA2_EMMC4_ALWAYS_INSERTED     1
-
-#define MMC_DEV_INSTANCES 2
-#define NvEmmcx_0       NvEmmc4
-#define NvEmmcx_1       NvEmmc3
-#define NvEmmcx_2       0
-#define NvEmmcx_3       0
-
-/* To set base address of USB controller */
-#define NvUSBx_0	USB_EHCI_TEGRA_BASE_ADDR_USB3
-#define NvUSBx_1	USB_EHCI_TEGRA_BASE_ADDR_USB1
-#define NvUSBx_2	0
-#define NvUSBx_3	0
-
-/*
- * USB1 takes 3 ms to clear Port Reset bit after issuing a Port Reset.
- * The expected time is 2 ms. Please refer to page 28 of EHCI 1.0 specification.
- */
-#define CONFIG_USB_RESET_CLEARED_MS     3 * 1000
-
-/* LCD Settings */
-#ifdef CONFIG_LCD
-#define LCD_vl_col	1366
-#define LCD_vl_row	768
-#endif
+#include <configs/chromeos/tegra2/seaboard/parts/i2c.h>
+#include <configs/chromeos/tegra2/seaboard/parts/spi.h>
+#include <configs/chromeos/tegra2/seaboard/parts/mmc.h>
+#include <configs/chromeos/tegra2/seaboard/parts/usb.h>
+#include <configs/chromeos/tegra2/seaboard/parts/lcd.h>
 
 #endif //__configs_chromeos_tegra2_seaboard_recovery_h__

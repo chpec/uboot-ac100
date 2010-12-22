@@ -53,20 +53,8 @@
  */
 #define CONFIG_SYS_CPU_OSC_FREQUENCY    1000000        /* Set CPU clock to 1GHz */
 
-/*
- * NS16550 Configuration
- */
-#define CONFIG_SYS_NS16550
-#define CONFIG_SYS_NS16550_SERIAL
-#define CONFIG_SYS_NS16550_REG_SIZE	(-4)
-#define CONFIG_SYS_NS16550_CLK		216000000	/* 216MHz (pllp_out0) */
-
-/*
- * select serial console configuration
- */
-#define CONFIG_CONS_INDEX		1
-
-#define CONFIG_TEGRA2_MMC		1
+#include <configs/chromeos/tegra2/parts/uart.h>
+#include <configs/chromeos/tegra2/parts/mmc.h>
 
 #define CONFIG_SYS_NO_FLASH
 
@@ -76,51 +64,9 @@
 #define CONFIG_TEGRA2_GPIO		1
 #define CONFIG_CMD_TEGRA2_GPIO_INFO	1
 
-/*-----------------------------------------------------------------------
- * USB Config
- */
-#define CONFIG_CMD_USB
-
-#define CONFIG_USB_EHCI
-#define CONFIG_USB_EHCI_TEGRA
-#define CONFIG_USB_CONTROLLER_INSTANCES 2
-#define USB_EHCI_TEGRA_BASE_ADDR_USB3	0xC5008000	/* USB3 base address */
-#define USB_EHCI_TEGRA_BASE_ADDR_USB1	0xC5000000	/* USB1 base address */
-#define CONFIG_USB_EHCI_DATA_ALIGN	4
-
-/*
- * This parameter affects a TXFILLTUNING field that controls how much data is
- * sent to the latency fifo before it is sent to the wire. Without this
- * parameter, the default (2) causes occasional Data Buffer Errors in OUT
- * packets depending on the buffer address and size.
- */
-#define CONFIG_USB_EHCI_TXFIFO_THRESH	10
-
-#define CONFIG_EHCI_IS_TDI
-
-#define CONFIG_USB_STORAGE
-
-/*-----------------------------------------------------------------------
- * Board NAND Info.
- */
-#define CONFIG_CMD_NAND
-
-#define CONFIG_NAND_TEGRA2
-#define CONFIG_SYS_NAND_ADDR		NAND_BASE
-#define CONFIG_SYS_NAND_BASE		NAND_BASE
-#define CONFIG_SYS_MAX_NAND_DEVICE	1
-
-/*-------------------------
- *  I2C configuration
- */
-#define CONFIG_TEGRA2_I2C
-
-#ifdef CONFIG_TEGRA2_I2C
-#define CONFIG_CMD_I2C
-#define CONFIG_I2C_MULTI_BUS		1
-#define CONFIG_SYS_MAX_I2C_BUS		4
-#define CONFIG_SYS_I2C_SPEED		100000
-#endif
+#include <configs/chromeos/tegra2/parts/usb.h>
+#include <configs/chromeos/tegra2/parts/nand.h>
+#include <configs/chromeos/tegra2/parts/i2c.h>
 
 /* Enable Warmboot code and lp0_vec */
 #define CONFIG_TEGRA2_LP0		1
@@ -195,17 +141,6 @@
 #define PHYS_SDRAM_1		TEGRA2_SDRC_CS0
 #define PHYS_SDRAM_1_SIZE	SZ_512M
 
-/*
- *  LCDC configuration
- */
-
-#define CONFIG_LCD
-
-#ifdef CONFIG_LCD
-#define CONFIG_TEGRA2_LCD
-#define LCD_BPP             LCD_COLOR16
-#define LCD_FB_ADDR         0x1C022000   /* FB could be passed from bl */
-#define CONFIG_SYS_WHITE_ON_BLACK       /*Console colors*/
-#endif
+#include <configs/chromeos/tegra2/parts/lcd.h>
 
 #endif //__configs_chromeos_tegra2_common_h__

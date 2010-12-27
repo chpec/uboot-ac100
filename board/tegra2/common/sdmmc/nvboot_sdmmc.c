@@ -2089,7 +2089,7 @@ static NvBootError SdmmcGetCsd(void)
     {
         /* Capacity is > 2GB and should be calculated from ECSD fields, 
            which is done in EmmcGetExtCSD() method. */
-        debug("SdmmcGetCsd:Capacity is > 2GB\n")
+        debug("SdmmcGetCsd:Capacity is > 2GB\n");
     }
     else
     {

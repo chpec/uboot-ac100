@@ -58,13 +58,7 @@
 
 #define CONFIG_SYS_NO_FLASH
 
-/*-----------------------------------------------------------------------
- * GPIO Config
- */
-#define CONFIG_TEGRA2_GPIO		1
-#define CONFIG_CMD_TEGRA2_GPIO_INFO	1
-
-#include <configs/chromeos/tegra2/parts/usb.h>
+#include <configs/chromeos/tegra2/parts/gpio.h>
 #include <configs/chromeos/tegra2/parts/nand.h>
 #include <configs/chromeos/tegra2/parts/i2c.h>
 
@@ -140,7 +134,5 @@
 #define CONFIG_NR_DRAM_BANKS	1
 #define PHYS_SDRAM_1		TEGRA2_SDRC_CS0
 #define PHYS_SDRAM_1_SIZE	SZ_512M
-
-#include <configs/chromeos/tegra2/parts/lcd.h>
 
 #endif //__configs_chromeos_tegra2_common_h__

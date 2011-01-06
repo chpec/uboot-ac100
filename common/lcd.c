@@ -800,8 +800,10 @@ int lcd_display_bitmap(ulong bmp_image, int x, int y)
 		height = panel_info.vl_row - y;
 
 	bmap = (uchar *)bmp + le32_to_cpu(bmp->header.data_offset);
-	fb   = (uchar *) (lcd_base +
-		(y + height - 1) * lcd_line_length + x);
+	fb   = (uchar *) (lcd_base + (y + height - 1) * lcd_line_length + x);
+	/* additional fb shift for bpix == 16 since each pixel is 2-byte */
+	if (bpix == 16)
+		fb += x;
 
 	switch (bmp_bpix) {
 	case 1: /* pass through */

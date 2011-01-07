@@ -39,6 +39,14 @@
 #include <asm/sizes.h>
 #include <config.h>
 
+/*
+ * QUOTE(m) will evaluate to a string version of the value of the macro m
+ * passed in.  The extra level of indirection here is to first evaluate the
+ * macro m before applying the quoting operator.
+ */
+#define QUOTE_(m) #m
+#define QUOTE(m) QUOTE_(m)
+
 #define CONFIG_CHROMEOS
 #define CONFIG_CMD_CROS_ROFW
 

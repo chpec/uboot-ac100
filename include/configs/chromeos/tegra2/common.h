@@ -27,7 +27,6 @@
 #include <configs/chromeos/common.h>
 #include <asm/arch/tegra2.h>
 
-#undef DEBUG
 /*
  * High Level Configuration Options
  */

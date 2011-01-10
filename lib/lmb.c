@@ -114,6 +114,9 @@ static long lmb_add_region(struct lmb_region *rgn, phys_addr_t base, phys_size_t
 	unsigned long coalesced = 0;
 	long adjacent, i;
 
+	debug("lmb_add_region(lmb=%x, base=%.8lx, size=%.8lx)\n",
+		(ulong)rgn, (ulong)base, (ulong)size);
+
 	if ((rgn->cnt == 1) && (rgn->region[0].size == 0)) {
 		rgn->region[0].base = base;
 		rgn->region[0].size = size;
@@ -266,9 +269,11 @@ phys_addr_t lmb_alloc_base(struct lmb *lmb, phys_size_t size, ulong align, phys_
 
 	alloc = __lmb_alloc_base(lmb, size, align, max_addr);
 
-	if (alloc == 0)
-		printf("ERROR: Failed to allocate 0x%lx bytes below 0x%lx.\n",
+	if (alloc == LMB_ALLOC_ERROR) {
+		debug("ERROR: Failed to allocate 0x%lx bytes below 0x%lx.\n",
 		      (ulong)size, (ulong)max_addr);
+		lmb_dump_all(lmb);
+	}
 
 	return alloc;
 }
@@ -289,10 +294,15 @@ phys_addr_t __lmb_alloc_base(struct lmb *lmb, phys_size_t size, ulong align, phy
 	phys_addr_t base = 0;
 	phys_addr_t res_base;
 
+	debug("lmb_alloc_base(lmb=%lx, size=%lx, align=%li, max_addr=%lx)\n",
+		(ulong)lmb, (ulong)size, (ulong)align, (ulong)max_addr);
+
 	for (i = lmb->memory.cnt-1; i >= 0; i--) {
 		phys_addr_t lmbbase = lmb->memory.region[i].base;
 		phys_size_t lmbsize = lmb->memory.region[i].size;
 
+		debug("--loop i=%i, lmbbase=%lx, lmbsize=%lx\n",
+			i, (ulong)lmbbase, (ulong)lmbsize);
 		if (lmbsize < size)
 			continue;
 		if (max_addr == LMB_ALLOC_ANYWHERE)
@@ -303,14 +313,15 @@ phys_addr_t __lmb_alloc_base(struct lmb *lmb, phys_size_t size, ulong align, phy
 		} else
 			continue;
 
-		while (base && lmbbase <= base) {
+		while (lmbbase <= base) {
 			j = lmb_overlaps_region(&lmb->reserved, base, size);
+			debug("----loop base=%lx, j=%i\n", (ulong)base, j);
 			if (j < 0) {
 				/* This area isn't reserved, take it */
 				if (lmb_add_region(&lmb->reserved, base,
 							lmb_align_up(size,
 								align)) < 0)
-					return 0;
+					return LMB_ALLOC_ERROR;
 				return base;
 			}
 			res_base = lmb->reserved.region[j].base;
@@ -319,7 +330,7 @@ phys_addr_t __lmb_alloc_base(struct lmb *lmb, phys_size_t size, ulong align, phy
 			base = lmb_align_down(res_base - size, align);
 		}
 	}
-	return 0;
+	return LMB_ALLOC_ERROR;
 }
 
 int lmb_is_reserved(struct lmb *lmb, phys_addr_t addr)

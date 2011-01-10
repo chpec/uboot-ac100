@@ -1053,7 +1053,7 @@ int boot_ramdisk_high (struct lmb *lmb, ulong rd_data, ulong rd_len,
 			else
 				*initrd_start = (ulong)lmb_alloc (lmb, rd_len, 0x1000);
 
-			if (*initrd_start == 0) {
+			if (*initrd_start == LMB_ALLOC_ERROR) {
 				puts ("ramdisk - allocation error\n");
 				goto error;
 			}
@@ -1228,7 +1228,7 @@ int boot_relocate_fdt (struct lmb *lmb, ulong bootmap_base,
 		of_start = (unsigned long)lmb_alloc_base(lmb, of_len, 0x1000,
 				(CONFIG_SYS_BOOTMAPSZ + bootmap_base));
 
-		if (of_start == 0) {
+		if (of_start == (unsigned long)LMB_ALLOC_ERROR) {
 			puts("device tree - allocation error\n");
 			goto error;
 		}
@@ -1614,7 +1614,7 @@ int boot_get_cmdline (struct lmb *lmb, ulong *cmd_start, ulong *cmd_end,
 	cmdline = (char *)(ulong)lmb_alloc_base(lmb, CONFIG_SYS_BARGSIZE, 0xf,
 					 CONFIG_SYS_BOOTMAPSZ + bootmap_base);
 
-	if (cmdline == NULL)
+	if (cmdline == (char*)(ulong)LMB_ALLOC_ERROR)
 		return -1;
 
 	if ((s = getenv("bootargs")) == NULL)
@@ -1651,7 +1651,7 @@ int boot_get_kbd (struct lmb *lmb, bd_t **kbd, ulong bootmap_base)
 {
 	*kbd = (bd_t *)(ulong)lmb_alloc_base(lmb, sizeof(bd_t), 0xf,
 				      CONFIG_SYS_BOOTMAPSZ + bootmap_base);
-	if (*kbd == NULL)
+	if (*kbd == (bd_t *)(ulong)LMB_ALLOC_ERROR)
 		return -1;
 
 	**kbd = *(gd->bd);

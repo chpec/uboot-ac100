@@ -15,6 +15,7 @@
  */
 
 #define MAX_LMB_REGIONS 8
+#define LMB_ALLOC_ERROR ((phys_addr_t) ~0)
 
 struct lmb_property {
 	phys_addr_t base;

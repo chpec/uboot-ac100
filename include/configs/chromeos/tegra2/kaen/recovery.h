@@ -24,8 +24,8 @@
 #ifndef __configs_chromeos_tegra2_kaen_recovery_h__
 #define __configs_chromeos_tegra2_kaen_recovery_h__
 
-#include <configs/chromeos/recovery.h>
-#include <configs/chromeos/tegra2/common.h>
+#include <configs/chromeos/tegra2/recovery.h>
+#include <configs/chromeos/tegra2/kaen/common.h>
 
 #define CONFIG_SERIAL_MULTI		1
 #define CONFIG_TEGRA2_ENABLE_UARTB	1
@@ -54,9 +54,6 @@
 	"stdout=serial,lcd\0" \
 	"stderr=serial,lcd\0"
 #endif
-
-#define LINUX_MACH_TYPE			MACH_TYPE_KAEN
-#define CONFIG_SYS_BOARD_ODMDATA	0x300d8011  //lp1, 1GB
 
 #define CONFIG_I2CP_PIN_MUX		1
 #define CONFIG_I2C1_PIN_MUX		1
@@ -118,4 +115,4 @@
 #define LCD_vl_row	768
 #endif
 
-#endif //__configs_chromeos_tegra2_kaen_recovery_h__
+#endif /*__configs_chromeos_tegra2_kaen_recovery_h__*/

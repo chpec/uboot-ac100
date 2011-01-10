@@ -24,8 +24,8 @@
 #ifndef __configs_chromeos_tegra2_harmony_recovery_h__
 #define __configs_chromeos_tegra2_harmony_recovery_h__
 
-#include <configs/chromeos/recovery.h>
-#include <configs/chromeos/tegra2/common.h>
+#include <configs/chromeos/tegra2/recovery.h>
+#include <configs/chromeos/tegra2/harmony/common.h>
 
 #define CONFIG_SERIAL_MULTI		1
 #define CONFIG_TEGRA2_ENABLE_UARTD	1
@@ -57,9 +57,6 @@
 	"stderr=serial,lcd\0"
 #endif
 
-#define LINUX_MACH_TYPE			MACH_TYPE_HARMONY
-#define CONFIG_SYS_BOARD_ODMDATA	0x300d8011  // lp1, 1GB
-
 #define CONFIG_SYS_MEMTEST_START       0x0000
 #define CONFIG_SYS_MEMTEST_END         0x1000
 
@@ -89,4 +86,4 @@
 #define LCD_vl_row	600
 #endif
 
-#endif //__configs_chromeos_tegra2_harmony_recovery_h__
+#endif /*__configs_chromeos_tegra2_harmony_recovery_h__*/

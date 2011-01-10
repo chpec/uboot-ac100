@@ -1,5 +1,5 @@
 /*
- * Copyright 2010, Google Inc.
+ * Copyright 2011, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,16 +33,12 @@
  * Software Foundation.
  */
 
-#ifndef __configs_chromeos_tegra2_seaboard_common_h__
-#define __configs_chromeos_tegra2_seaboard_common_h__
+#ifndef __configs_chromeos_tegra2_kaen_common_h__
+#define __configs_chromeos_tegra2_kaen_common_h__
 
 #include <configs/chromeos/tegra2/common.h>
 
-#define LINUX_MACH_TYPE			MACH_TYPE_SEABOARD
+#define LINUX_MACH_TYPE			MACH_TYPE_KAEN
 #define CONFIG_SYS_BOARD_ODMDATA	0x300d8011  /* lp1, 1GB */
 
-#include <configs/chromeos/tegra2/seaboard/parts/i2c.h>
-#include <configs/chromeos/tegra2/seaboard/parts/spi.h>
-#include <configs/chromeos/tegra2/seaboard/parts/mmc.h>
-
-#endif /*__configs_chromeos_tegra2_seaboard_common_h__*/
+#endif /*__configs_chromeos_tegra2_kaen_common_h__*/

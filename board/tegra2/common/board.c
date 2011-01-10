@@ -212,80 +212,117 @@ static char s_Hex2Char[] =
     'A', 'B', 'C', 'D', 'E', 'F'
 };
 
-static NV_INLINE NvU32
-NvBlUartTxReadyA(void)
+void NvBlUartClockInit(NvU32 reset_register,
+		       NvU32 reset_mask,
+		       NvU32 reset_enable,
+		       NvU32 reset_disable,
+		       NvU32 clock_register,
+		       NvU32 clock_mask,
+		       NvU32 clock_enable,
+		       NvU32 clock_source_register,
+		       NvU32 clock_source)
 {
     NvU32 Reg;
 
-    NV_UARTA_READ(LSR, Reg);
-    return Reg & UART_LSR_0_THRE_FIELD;
+    // 1. Assert Reset to UART D
+    Reg = NV_READ32(NV_ADDRESS_MAP_PPSB_CLK_RST_BASE + reset_register);
+    Reg = (Reg & ~reset_mask) | reset_enable;
+    NV_WRITE32(NV_ADDRESS_MAP_PPSB_CLK_RST_BASE + reset_register, Reg);
+
+    // 2. Enable clk to UART D
+    Reg = NV_READ32(NV_ADDRESS_MAP_PPSB_CLK_RST_BASE + clock_register);
+    Reg = (Reg & ~clock_mask) | clock_enable;
+    NV_WRITE32(NV_ADDRESS_MAP_PPSB_CLK_RST_BASE + clock_register, Reg);
+
+    // Override pllp setup for 216MHz operation.
+    Reg = NV_DRF_DEF(CLK_RST_CONTROLLER, PLLP_BASE, PLLP_BYPASS, ENABLE)
+          | NV_DRF_DEF(CLK_RST_CONTROLLER, PLLP_BASE, PLLP_ENABLE, DISABLE)
+          | NV_DRF_DEF(CLK_RST_CONTROLLER, PLLP_BASE, PLLP_REF_DIS, REF_ENABLE)
+          | NV_DRF_DEF(CLK_RST_CONTROLLER, PLLP_BASE, PLLP_BASE_OVRRIDE, ENABLE)
+          | NV_DRF_NUM(CLK_RST_CONTROLLER, PLLP_BASE, PLLP_LOCK, 0x0)
+          | NV_DRF_NUM(CLK_RST_CONTROLLER, PLLP_BASE, PLLP_DIVP, 0x1)
+          | NV_DRF_NUM(CLK_RST_CONTROLLER, PLLP_BASE, PLLP_DIVN,
+                       NVRM_PLLP_FIXED_FREQ_KHZ/500)
+          | NV_DRF_NUM(CLK_RST_CONTROLLER, PLLP_BASE, PLLP_DIVM, 0x0C);
+    NV_CLK_RST_WRITE(PLLP_BASE, Reg);
+
+    Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, PLLP_BASE,
+                             PLLP_ENABLE, ENABLE, Reg);
+    NV_CLK_RST_WRITE(PLLP_BASE, Reg);
+
+    Reg = NV_FLD_SET_DRF_DEF(CLK_RST_CONTROLLER, PLLP_BASE,
+                             PLLP_BYPASS, DISABLE, Reg);
+    NV_CLK_RST_WRITE(PLLP_BASE, Reg);
+
+    // Enable pllp_out0 to UARTD.
+    NV_WRITE32(NV_ADDRESS_MAP_PPSB_CLK_RST_BASE + clock_source_register,
+	       clock_source);
+
+    // wait for 2us
+    NvBlAvpStallUs(2);
+
+    // De-assert reset to UART D
+    Reg = NV_READ32(NV_ADDRESS_MAP_PPSB_CLK_RST_BASE + reset_register);
+    Reg = (Reg & ~reset_mask) | reset_disable;
+    NV_WRITE32(NV_ADDRESS_MAP_PPSB_CLK_RST_BASE + reset_register, Reg);
 }
 
-static NV_INLINE NvU32
-NvBlUartTxReadyD(void)
+void NvBlUartInitBase(NvU8 * uart_base)
 {
-    NvU32 Reg;
+    NvU32 divisor = (NVRM_PLLP_FIXED_FREQ_KHZ * 1000 /
+		     NV_DEFAULT_DEBUG_BAUD / 16);
 
-    NV_UARTD_READ(LSR, Reg);
-    return Reg & UART_LSR_0_THRE_FIELD;
+    // Set up UART parameters.
+    NV_WRITE08(uart_base + UART_LCR_0,        0x80);
+    NV_WRITE08(uart_base + UART_THR_DLAB_0_0, divisor);
+    NV_WRITE08(uart_base + UART_IER_DLAB_0_0, 0x00);
+    NV_WRITE08(uart_base + UART_LCR_0,        0x00);
+    NV_WRITE08(uart_base + UART_IIR_FCR_0,    0x37);
+    NV_WRITE08(uart_base + UART_IER_DLAB_0_0, 0x00);
+    NV_WRITE08(uart_base + UART_LCR_0,        0x03); /* 8N1 */
+    NV_WRITE08(uart_base + UART_MCR_0,        0x02);
+    NV_WRITE08(uart_base + UART_MSR_0,        0x00);
+    NV_WRITE08(uart_base + UART_SPR_0,        0x00);
+    NV_WRITE08(uart_base + UART_IRDA_CSR_0,   0x00);
+    NV_WRITE08(uart_base + UART_ASR_0,        0x00);
+
+    NV_WRITE08(uart_base + UART_IIR_FCR_0,    0x31);
+
+    // Flush any old characters out of the RX FIFO.
+    while (NvBlUartRxReady(uart_base))
+        (void)NvBlUartRx(uart_base);
 }
 
-NvU32
-NvBlUartRxReadyA(void)
+static NV_INLINE NvU32 NvBlUartTxReady(NvU8 const * uart_base)
 {
-    NvU32 Reg;
-
-    NV_UARTA_READ(LSR, Reg);
-    return Reg & UART_LSR_0_RDR_FIELD;
+    return NV_READ8(uart_base + UART_LSR_0) & UART_LSR_0_THRE_FIELD;
 }
 
-NvU32
-NvBlUartRxReadyD(void)
+NvU32 NvBlUartRxReady(NvU8 const * uart_base)
 {
-    NvU32 Reg;
-
-    NV_UARTD_READ(LSR, Reg);
-    return Reg & UART_LSR_0_RDR_FIELD;
+    return NV_READ8(uart_base + UART_LSR_0) & UART_LSR_0_RDR_FIELD;
 }
 
-static NV_INLINE void
-NvBlUartTxA(NvU8 c)
+static NV_INLINE void NvBlUartTx(NvU8 * uart_base, NvU8 c)
 {
-    NV_UARTA_WRITE(THR_DLAB_0, c);
+    NV_WRITE08(uart_base + UART_THR_DLAB_0_0, c);
 }
 
-static NV_INLINE void
-NvBlUartTxD(NvU8 c)
+NvU32 NvBlUartRx(NvU8 const * uart_base)
 {
-    NV_UARTD_WRITE(THR_DLAB_0, c);
+    return NV_READ8(uart_base + UART_THR_DLAB_0_0);
 }
 
-NvU32
-NvBlUartRxA(void)
+int NvBlUartPoll(void)
 {
-    NvU32 Reg;
+    if (NvBlUartRxReady((NvU8 *)NV_ADDRESS_MAP_APB_UARTA_BASE))
+        return NvBlUartRx((NvU8 *) NV_ADDRESS_MAP_APB_UARTA_BASE);
 
-    NV_UARTA_READ(THR_DLAB_0, Reg);
-    return Reg;
-}
+    if (NvBlUartRxReady((NvU8 *)NV_ADDRESS_MAP_APB_UARTB_BASE))
+        return NvBlUartRx((NvU8 *)NV_ADDRESS_MAP_APB_UARTB_BASE);
 
-NvU32
-NvBlUartRxD(void)
-{
-    NvU32 Reg;
-
-    NV_UARTD_READ(THR_DLAB_0, Reg);
-    return Reg;
-}
-
-int
-NvBlUartPoll(void)
-{
-    if (NvBlUartRxReadyA())
-        return NvBlUartRxA();
-
-    if (NvBlUartRxReadyD())
-        return NvBlUartRxD();
+    if (NvBlUartRxReady((NvU8 *)NV_ADDRESS_MAP_APB_UARTD_BASE))
+        return NvBlUartRx((NvU8 *)NV_ADDRESS_MAP_APB_UARTD_BASE);
 
     return -1;
 }
@@ -339,15 +376,21 @@ void uart_post(char c)
 #if defined(TEGRA2_TRACE)
 
 #if (CONFIG_TEGRA2_ENABLE_UARTA)
-    while (!NvBlUartTxReadyA())
+    while (!NvBlUartTxReady((NvU8 *)NV_ADDRESS_MAP_APB_UARTA_BASE))
         ;
-    NvBlUartTxA(c);
+    NvBlUartTx((NvU8 *)NV_ADDRESS_MAP_APB_UARTA_BASE, c);
+#endif
+
+#if (CONFIG_TEGRA2_ENABLE_UARTB)
+    while (!NvBlUartTxReady((NvU8 *)NV_ADDRESS_MAP_APB_UARTB_BASE))
+        ;
+    NvBlUartTx((NvU8 *)NV_ADDRESS_MAP_APB_UARTB_BASE, c);
 #endif
 
 #if (CONFIG_TEGRA2_ENABLE_UARTD)
-    while (!NvBlUartTxReadyD())
+    while (!NvBlUartTxReady((NvU8 *)NV_ADDRESS_MAP_APB_UARTD_BASE))
         ;
-    NvBlUartTxD(c);
+    NvBlUartTx((NvU8 *)NV_ADDRESS_MAP_APB_UARTD_BASE, c);
 #endif
 
 #endif

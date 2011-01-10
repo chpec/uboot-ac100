@@ -28,15 +28,15 @@
 #include <configs/chromeos/tegra2/common.h>
 
 #define CONFIG_SERIAL_MULTI		1
-#define CONFIG_TEGRA2_ENABLE_UARTA	1
+#define CONFIG_TEGRA2_ENABLE_UARTB	1
 #define CONFIG_TEGRA2_KEYBOARD		1
 #define CONFIG_KEYBOARD			1
 
 #define CONFIG_CONSOLE_MUX		1
 #define CONFIG_SYS_CONSOLE_IS_IN_ENV	1
 
-/* UARTA: debug uart, default */
-#define CONFIG_SYS_NS16550_COM1		NV_ADDRESS_MAP_APB_UARTA_BASE
+/* UARTB: debug uart, default */
+#define CONFIG_SYS_NS16550_COM1		NV_ADDRESS_MAP_APB_UARTB_BASE
 
 #ifdef CONFIG_TEGRA2_LP0
 #define CONFIG_EXTRA_ENV_SETTINGS	\

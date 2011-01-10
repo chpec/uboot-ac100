@@ -50,6 +50,10 @@
 #define CONFIG_CHROMEOS
 #define CONFIG_CMD_CROS_ROFW
 
+#define CONFIG_CMD_RUN
+#define CONFIG_CMD_READ
+#define CONFIG_CMD_SOURCE
+
 /* friendly debug environment */
 #ifdef VBOOT_DEBUG
 #define CONFIG_CMD_CROS

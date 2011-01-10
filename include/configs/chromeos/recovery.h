@@ -51,10 +51,8 @@
 #define CONFIG_CMD_MEMORY
 #define CONFIG_CMD_READ
 #define CONFIG_CMD_MISC
-#define CONFIG_CMD_RUN
 #define CONFIG_CMD_SAVEENV
 #define CONFIG_CMD_SETGETDCR
-#define CONFIG_CMD_SOURCE
 #define CONFIG_CMD_XIMG
 
 #define CONFIG_MMC
@@ -64,6 +62,5 @@
 #define CONFIG_CMD_MMC
 #define CONFIG_CMD_EXT2
 #define CONFIG_CMD_FAT
-#define CONFIG_CMD_READ
 
 #endif //__configs_chromeos_recovery_h__

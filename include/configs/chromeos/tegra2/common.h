@@ -93,12 +93,6 @@
 		"setenv devname sda;" \
 		"run scriptboot;\0"
 
-#undef CONFIG_BOOTCOMMAND
-#define CONFIG_BOOTCOMMAND		"run usb0boot ; " \
-					"run usb1boot ; " \
-					"run mmc1boot ; " \
-					"run mmc0boot"
-
 #define CONFIG_SYS_LOAD_ADDR		0xA00800
 
 #define CONFIG_SYS_HZ			1000

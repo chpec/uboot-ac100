@@ -80,13 +80,6 @@
 #define CONFIG_SYS_LONGHELP		1
 #define CONFIG_SYS_PROMPT		"CrOS> "
 
-#define CONFIG_BOOTARGS \
-	"${console} root=/dev/mmcblk0p3 ${platform_extras}"
-
-#define CONFIG_BOOTCOMMAND \
-	"ext2load mmc 0:3 ${loadaddr} /boot/vmlinux.uimg;" \
-	"bootm ${loadaddr};"
-
 #define CONFIG_CMDLINE_EDITING		1
 #define CONFIG_COMMAND_HISTORY		1
 #define CONFIG_AUTOCOMPLETE		1

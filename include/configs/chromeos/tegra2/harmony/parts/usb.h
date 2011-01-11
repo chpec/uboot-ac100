@@ -33,16 +33,10 @@
  * Software Foundation.
  */
 
-#ifndef __configs_chromeos_tegra2_kaen_common_h__
-#define __configs_chromeos_tegra2_kaen_common_h__
+#define USB_CONTROLLER_INSTANCES 2
 
-#include <configs/chromeos/tegra2/common.h>
-
-#define LINUX_MACH_TYPE			MACH_TYPE_KAEN
-#define CONFIG_SYS_BOARD_ODMDATA	0x300d8011  /* lp1, 1GB */
-
-#include <configs/chromeos/tegra2/kaen/parts/i2c.h>
-#include <configs/chromeos/tegra2/kaen/parts/spi.h>
-#include <configs/chromeos/tegra2/kaen/parts/mmc.h>
-
-#endif /*__configs_chromeos_tegra2_kaen_common_h__*/
+/* To set base address of USB controller */
+#define NvUSBx_0        USB_EHCI_TEGRA_BASE_ADDR_USB3
+#define NvUSBx_1        USB_EHCI_TEGRA_BASE_ADDR_USB1
+#define NvUSBx_2        0
+#define NvUSBx_3        0

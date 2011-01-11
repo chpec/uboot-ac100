@@ -41,4 +41,7 @@
 #define LINUX_MACH_TYPE			MACH_TYPE_HARMONY
 #define CONFIG_SYS_BOARD_ODMDATA	0x300d8011  /* lp1, 1GB */
 
+#include <configs/chromeos/tegra2/harmony/parts/i2c.h>
+#include <configs/chromeos/tegra2/harmony/parts/mmc.h>
+
 #endif /*__configs_chromeos_tegra2_harmony_common_h__*/

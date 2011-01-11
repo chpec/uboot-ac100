@@ -34,11 +34,7 @@
 #define CONFIG_CONSOLE_MUX		1
 #define CONFIG_SYS_CONSOLE_IS_IN_ENV	1
 
-/* UARTD: keyboard satellite board uart, default */
-#define CONFIG_SYS_NS16550_COM1		NV_ADDRESS_MAP_APB_UARTD_BASE
-
-/* UARTA: debug board uart */
-#define CONFIG_SYS_NS16550_COM2		NV_ADDRESS_MAP_APB_UARTA_BASE
+#include <configs/chromeos/tegra2/harmony/parts/uart.h>
 
 #ifdef CONFIG_TEGRA2_LP0
 #define CONFIG_EXTRA_ENV_SETTINGS	\
@@ -66,30 +62,7 @@
 #define CONFIG_SYS_MEMTEST_START       0x0000
 #define CONFIG_SYS_MEMTEST_END         0x1000
 
-/* These config switches are for I2C support */
-#define CONFIG_I2CP_PIN_MUX		1
-#define CONFIG_I2C1_PIN_MUX		1
-#define CONFIG_I2C2_PIN_MUX		1
-#define CONFIG_I2C3_PIN_MUX		1
-
-/* These config switches are for SD/MMC controller support */
-#define MMC_DEV_INSTANCES 2
-#define NvEmmcx_0       NvEmmc4
-#define NvEmmcx_1       NvEmmc2
-#define NvEmmcx_2       0
-#define NvEmmcx_3       0
-
-/* To set base address of USB controller */
-#define USB_CONTROLLER_INSTANCES 2
-#define NvUSBx_0	USB_EHCI_TEGRA_BASE_ADDR_USB3
-#define NvUSBx_1	USB_EHCI_TEGRA_BASE_ADDR_USB1
-#define NvUSBx_2	0
-#define NvUSBx_3	0
-
-/* LCD Settings */
-#ifdef CONFIG_LCD
-#define LCD_vl_col	1024
-#define LCD_vl_row	600
-#endif
+#include <configs/chromeos/tegra2/harmony/parts/usb.h>
+#include <configs/chromeos/tegra2/harmony/parts/lcd.h>
 
 #endif /*__configs_chromeos_tegra2_harmony_recovery_h__*/

@@ -33,16 +33,8 @@
  * Software Foundation.
  */
 
-#ifndef __configs_chromeos_tegra2_kaen_common_h__
-#define __configs_chromeos_tegra2_kaen_common_h__
+/* UARTD: keyboard satellite board uart, default */
+#define CONFIG_SYS_NS16550_COM1         NV_ADDRESS_MAP_APB_UARTD_BASE
 
-#include <configs/chromeos/tegra2/common.h>
-
-#define LINUX_MACH_TYPE			MACH_TYPE_KAEN
-#define CONFIG_SYS_BOARD_ODMDATA	0x300d8011  /* lp1, 1GB */
-
-#include <configs/chromeos/tegra2/kaen/parts/i2c.h>
-#include <configs/chromeos/tegra2/kaen/parts/spi.h>
-#include <configs/chromeos/tegra2/kaen/parts/mmc.h>
-
-#endif /*__configs_chromeos_tegra2_kaen_common_h__*/
+/* UARTA: debug board uart */
+#define CONFIG_SYS_NS16550_COM2         NV_ADDRESS_MAP_APB_UARTA_BASE

@@ -69,29 +69,25 @@
 
 #define CONFIG_LOADADDR			0x40C000
 #define CONFIG_BOOTDELAY		2	/* 2s to break to prompt */
-#define CONFIG_TEGRA_ENV_SETTINGS	\
+#define CONFIG_EXTRA_ENV_SETTINGS_ARCH \
 	"scriptaddr=0x408000\0" \
 	"script_img=/u-boot/boot.scr.uimg\0" \
-	"scriptboot=fatload ${devtype} ${devnum}:c ${scriptaddr} ${script_img};" \
+	"mmc0_boot=setenv devnum 0; run mmc_boot;\0" \
+	"mmc1_boot=setenv devnum 1; run mmc_boot;\0" \
+	"usb0_boot=usb start 0; run usb_boot;\0" \
+	"usb1_boot=usb start 1; run usb_boot;\0" \
+	"scr_boot=fatload ${devtype} ${devnum}:c ${scriptaddr} ${script_img};" \
 		"source ${scriptaddr};" \
 		"read ${devtype} ${devnum}:${kernelpart} ${scriptaddr} 0 10;" \
 		"source ${scriptaddr};\0" \
-	"mmc0boot=setenv devnum 0;" \
-		"run mmcboot;\0" \
-	"mmc1boot=setenv devnum 1;" \
-		"run mmcboot;\0" \
-	"mmcboot=mmc init ${devnum};" \
+	"mmc_boot=mmc init ${devnum};" \
 		"setenv devtype mmc;" \
 	        "setenv devname mmcblk${devnum}p;" \
-		"run scriptboot;\0" \
-	"usb0boot=usb start 0;" \
-		"run usbboot;\0" \
-	"usb1boot=usb start 1;" \
-		"run usbboot;\0" \
-	"usbboot=setenv devtype usb;" \
+		"run scr_boot;\0" \
+	"usb_boot=setenv devtype usb;" \
 		"setenv devnum 0;" \
 		"setenv devname sda;" \
-		"run scriptboot;\0"
+		"run scr_boot;\0"
 
 #define CONFIG_SYS_LOAD_ADDR		0xA00800
 

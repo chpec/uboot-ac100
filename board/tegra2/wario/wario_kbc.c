@@ -5,78 +5,78 @@
  */
 
 #include <common.h>
+#include <tegra-kbc.h>
 
-#define TEGRA_MISC_BASE 0x70000000
-#define TEGRA_CLK_BASE 0x60006000
+static tegra_pinmux_config keyboard_pinmux[] = {
+    {{0x14, 0, 22}, {0x88, 0, 10}, {0xA4, 2,  8}},
+    {{0x14, 0, 21}, {0x88, 0, 12}, {0xA4, 2, 10}},
+    {{0x18, 0, 26}, {0x88, 0, 14}, {0xA4, 2, 12}},
+    {{0x20, 0, 10}, {0x98, 0, 26}, {0xA4, 2, 14}},
+    {{0x14, 0, 26}, {0x80, 0, 28}, {0xb0, 2,  2}},
+    {{0x14, 0, 27}, {0x80, 0, 26}, {0xb0, 2,  0}},
+};
 
-#define KBC_CLK_REG 0x328
+static int plain_keycode[] = {
+       0,    0,    0,    0,    0,    0,    0,    0,
+       0, 0x1b, 0x09,  '`',  'a',  'z',  '1',  'q',
+       0,    0,    0,    0,  'd',  'c',  '3',  'e',
+       0,    0,    0,    0,    0,    0,    0,    0,
+     'b',  'g',  't',  '5',  'f',  'v',  '4',  'r',
+       0,    0,    0,    0,  's',  'x',  '2',  'w',
+       0,    0,  ']',    0,  'k',  ',',  '8',  'i',
+       0,    0,    0,    0,    0,    0,    0,    0,
+     'n',  'h',  'y',  '6',  'j',  'm',  '7',  'u',
+       0,    0,    0,    0,    0, KEY_SHIFT, 0, KEY_SHIFT,
+     '=', '\'',  '[',  '-',  ';',  '/',  '0',  'p',
+       0,    0,    0,    0,  'l',  '.',  '9',  'o',
+       0,    0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,    0,
+       0, 0x08,    0, '\\', '\r',  ' ',    0,    0,
+       0,    0,    0,    0,    0,    0,    0,    0
+};
 
-#define readl(addr) (*(volatile unsigned int *)(addr))
-#define writel(b, addr) ((*(volatile unsigned int *) (addr)) = (b))
-#define misc_readl(addr) readl(TEGRA_MISC_BASE + addr)
-#define misc_writel(b, addr) writel(b, TEGRA_MISC_BASE + addr)
-#define clk_writel(b, addr) writel(b, TEGRA_CLK_BASE + addr)
+static int shift_keycode[] = {
+       0,    0,    0,    0,    0,    0,    0,    0,
+       0, 0x1b, 0x09,  '~',  'A',  'Z',  '!',  'Q',
+       0,    0,    0,    0,  'D',  'C',  '#',  'E',
+       0,    0,    0,    0,    0,    0,    0,    0,
+     'B',  'G',  'T',  '%',  'F',  'V',  '$',  'R',
+       0,    0,    0,    0,  'S',  'X',  '@',  'W',
+       0,    0,  '}',    0,  'K',  '<',  '*',  'I',
+       0,    0,    0,    0,    0,    0,    0,    0,
+     'N',  'H',  'Y',  '^',  'J',  'M',  '&',  'U',
+       0,    0,    0,    0,    0, KEY_SHIFT, 0, KEY_SHIFT,
+     '+',  '"',  '{',  '_',  ':',  '?',  ')',  'P',
+       0,    0,    0,    0,  'L',  '>',  '(',  'O',
+       0,    0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,    0,
+       0, 0x08,    0,  '|', '\r',  ' ',    0,    0,
+       0,    0,    0,    0,    0,    0,    0,    0
+};
 
-static void pinmux_set_func(u32 mux_reg, u32 mux_val, u32 mux_bit)
-{
-	u32 reg;
+static int function_keycode[] = {
+       0,    0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,    0,
+};
 
-	reg = misc_readl(mux_reg);
-	reg &= ~(0x3 << mux_bit);
-	reg |= mux_val << mux_bit;
-	misc_writel(reg, mux_reg);
-}
-
-static void pinmux_set_tri(u32 tri_reg, u32 tri_val, u32 tri_bit)
-{
-	u32 reg;
-
-	reg = misc_readl(tri_reg);
-	reg &= ~(0x1 << tri_bit);
-	if (tri_val)
-		reg |= 1 << tri_bit;
-	misc_writel(reg, tri_reg);
-}
-
-static void pinmux_set_pupd(u32 pupd_reg, u32 pupd_val, u32 pupd_bit)
-{
-	u32 reg;
-
-	reg = misc_readl(pupd_reg);
-	reg &= ~(0x3 << pupd_bit);
-	reg |= pupd_val << pupd_bit;
-	misc_writel(reg, pupd_reg);
-}
-
-void config_kbc_pinmux(void)
-{
-	pinmux_set_tri(0x14, 0, 22);
-	pinmux_set_func(0x88, 0, 10);
-	pinmux_set_pupd(0xA4, 2, 8);
-
-	pinmux_set_tri(0x14, 0, 21);
-	pinmux_set_func(0x88, 0, 12);
-	pinmux_set_pupd(0xA4, 2, 10);
-
-	pinmux_set_tri(0x18, 0, 26);
-	pinmux_set_func(0x88, 0, 14);
-	pinmux_set_pupd(0xA4, 2, 12);
-
-	pinmux_set_tri(0x20, 0, 10);
-	pinmux_set_func(0x98, 0, 26);
-	pinmux_set_pupd(0xA4, 2, 14);
-
-	pinmux_set_tri(0x14, 0, 26);
-	pinmux_set_func(0x80, 0, 28);
-	pinmux_set_pupd(0xB0, 2, 2);
-
-	pinmux_set_tri(0x14, 0, 27);
-	pinmux_set_func(0x80, 0, 26);
-	pinmux_set_pupd(0xB0, 2, 0);
-
-}
-
-void config_kbc_clock(void)
-{
-	clk_writel(1 << 4, KBC_CLK_REG);
-}
+tegra_keyboard_config board_keyboard_config = {
+    .pinmux           = keyboard_pinmux,
+    .pinmux_length    = (sizeof(keyboard_pinmux) / sizeof(keyboard_pinmux[0])),
+    .plain_keycode    = plain_keycode,
+    .shift_keycode    = shift_keycode,
+    .function_keycode = function_keycode
+};

@@ -25,16 +25,22 @@
 #include <malloc.h>
 #include <stdio_dev.h>
 
+#include <tegra-kbc.h>
+
 #define DEVNAME "tegra-kbc"
 
-#define KBC_MAX_GPIO 24
-#define KBC_MAX_KPENT 8
-#define KBC_MAX_ROW 16
-#define KBC_MAX_COL 8
+#define KBC_MAX_GPIO	24
+#define KBC_MAX_KPENT	8
+#define KBC_MAX_ROW	16
+#define KBC_MAX_COL	8
 
-#define KBC_MAX_KEY (KBC_MAX_ROW*KBC_MAX_COL)
+#define KBC_MAX_KEY	(KBC_MAX_ROW * KBC_MAX_COL)
 
-#define TEGRA_KBC_BASE 0x7000E200
+#define TEGRA_CLK_BASE	0x60006000
+#define TEGRA_MISC_BASE	0x70000000
+#define TEGRA_KBC_BASE	0x7000E200
+
+#define KBC_CLK_REG	0x328
 
 #define KBC_CONTROL_0	0
 #define KBC_INT_0	4
@@ -45,17 +51,18 @@
 #define KBC_KP_ENT1_0	0x34
 #define KBC_ROW0_MASK_0	0x38
 
-#define KBC_RPT_DLY 20
-#define KBC_RPT_RATE 4
+#define KBC_RPT_DLY	20
+#define KBC_RPT_RATE	4
 
-#define readl(addr) (*(volatile unsigned int *)(addr))
-#define writel(b, addr) ((*(volatile unsigned int *) (addr)) = (b))
-#define kbc_readl(addr) readl(TEGRA_KBC_BASE + addr)
-#define kbc_writel(b, addr) writel(b, TEGRA_KBC_BASE + addr)
+#define readl(addr)		(*(volatile unsigned int *)(addr))
+#define writel(b, addr)		((*(volatile unsigned int *) (addr)) = (b))
 
-/* Define function and shift keys to untypable ASCII values */
-#define KEY_FN 222
-#define KEY_SHIFT 223
+#define kbc_readl(addr)		readl(TEGRA_KBC_BASE  + addr)
+#define misc_readl(addr)	readl(TEGRA_MISC_BASE + addr)
+
+#define kbc_writel(b, addr)	writel(b, TEGRA_KBC_BASE  + addr)
+#define misc_writel(b, addr)	writel(b, TEGRA_MISC_BASE + addr)
+#define clk_writel(b, addr)	writel(b, TEGRA_CLK_BASE  + addr)
 
 #ifdef CONFIG_SYS_CONSOLE_OVERWRITE_ROUTINE
 extern int overwrite_console(void);
@@ -64,8 +71,7 @@ extern int overwrite_console(void);
 #define OVERWRITE_CONSOLE 0
 #endif /* CONFIG_SYS_CONSOLE_OVERWRITE_ROUTINE */
 
-extern void config_kbc_pinmux(void);
-extern void config_kbc_clock(void);
+extern tegra_keyboard_config	board_keyboard_config;
 
 enum bool {false = 0, true = 1};
 
@@ -81,69 +87,43 @@ struct tegra_kbc {
 
 struct tegra_kbc *kbc;
 
-static int plain_kbd_keycode[] = {
-	0, 0, 'w', 's', 'a', 'z', 0, KEY_FN,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	'5', '4', 'r', 'e', 'f', 'd', 'x', 0,
-	'7', '6', 't', 'h', 'g', 'v', 'c', ' ',
-	'9', '8', 'u', 'y', 'j', 'n', 'b', '\\',
-	'-', '0', 'o', 'i', 'l', 'k', ',', 'm',
-	0, '=', ']', '\r', 0, 0, 0, 0,
-	0, 0, 0, 0, KEY_SHIFT, KEY_SHIFT, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	'[', 'p', '\'', ';', '/', '.', 0, 0,
-	0, 0, 0x08, '3', '2', 0, 0, 0,
-	0, 0x7F, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 'q', 0, 0, '1', 0,
-	0x1B, '`', 0, 0x9, 0, 0, 0, 0
-};
-
-static int shift_kbd_keycode[] = {
-	0, 0, 'W', 'S', 'A', 'Z', 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	'%', '$', 'R', 'E', 'F', 'D', 'X', 0,
-	'&', '^', 'T', 'H', 'G', 'V', 'C', ' ',
-	'(', '*', 'U', 'Y', 'J', 'N', 'B', '|',
-	'_', ')', 'O', 'I', 'L', 'K', ',', 'M',
-	0, '+', '}', '\r', 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	'{', 'P', '"', ':', '?', '>', 0, 0,
-	0, 0, 0x08, '#', '@', 0, 0, 0,
-	0, 0x7F, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 'Q', 0, 0, '!', 0,
-	0x1B, '~', 0, 0x9, 0, 0, 0, 0
-};
-
-static int fn_kbd_keycode[] = {
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	'7', 0, 0, 0, 0, 0, 0, 0,
-	'9', '8', '4', 0, '1', 0, 0, 0,
-	0, '/', '6', '5', '3', '2', 0, '0',
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, '\'', 0, '-', '+', '.', 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, '?', 0, 0, 0
-};
-
 void msleep(int a)
 {
 	int i;
 
 	for (i = 0; i < a; i++)
 		udelay(1000);
+}
+
+static void pinmux_set_func(u32 mux_reg, u32 mux_val, u32 mux_bit)
+{
+	u32 reg;
+
+	reg = misc_readl(mux_reg);
+	reg &= ~(0x3 << mux_bit);
+	reg |= mux_val << mux_bit;
+	misc_writel(reg, mux_reg);
+}
+
+static void pinmux_set_tri(u32 tri_reg, u32 tri_val, u32 tri_bit)
+{
+	u32 reg;
+
+	reg = misc_readl(tri_reg);
+	reg &= ~(0x1 << tri_bit);
+	if (tri_val)
+		reg |= 1 << tri_bit;
+	misc_writel(reg, tri_reg);
+}
+
+static void pinmux_set_pupd(u32 pupd_reg, u32 pupd_val, u32 pupd_bit)
+{
+	u32 reg;
+
+	reg = misc_readl(pupd_reg);
+	reg &= ~(0x3 << pupd_bit);
+	reg |= pupd_val << pupd_bit;
+	misc_writel(reg, pupd_reg);
 }
 
 static int tegra_kbc_keycode(struct tegra_kbc *kbc, int r, int c, int spl_key)
@@ -367,28 +347,49 @@ static int tegra_kbc_open(void)
 	return 0;
 }
 
+void config_kbc_pinmux(tegra_pinmux_config pinmux[], int count)
+{
+	int	i;
+
+	for (i = 0; i < count; ++i)
+	{
+		tegra_pinmux_config	p = pinmux[i];
+
+		pinmux_set_tri(p.tri.reg, p.tri.value, p.tri.mask);
+		pinmux_set_func(p.func.reg, p.func.value, p.func.mask);
+		pinmux_set_pupd(p.pupd.reg, p.pupd.value, p.pupd.mask);
+	}
+}
+
 int drv_keyboard_init(void)
 {
 	int error;
 	struct stdio_dev kbddev;
 	char *stdinname;
 
-	config_kbc_pinmux();
-	config_kbc_clock();
+	config_kbc_pinmux(board_keyboard_config.pinmux,
+			  board_keyboard_config.pinmux_length);
+
+	/*
+	 * All of the Tegra board use the same clock configuration for now.
+	 * This can be moved to the board specific configuration if that
+	 * changes.
+	 */
+	clk_writel(1 << 4, KBC_CLK_REG);
 
 	kbc = malloc(sizeof(*kbc));
 	if (!kbc)
 		return -1;
 
 	kbc->debounce_cnt = 2;
-	kbc->rpt_cnt = 5 * 32;
+	kbc->rpt_cnt      = 5 * 32;
 	kbc->debounce_cnt = min(kbc->debounce_cnt, 0x3fful);
-	kbc->repoll_time = 5 + (16 + kbc->debounce_cnt) * 0x10 + kbc->rpt_cnt;
-	kbc->repoll_time = (kbc->repoll_time + 31) / 32;
+	kbc->repoll_time  = 5 + (16 + kbc->debounce_cnt) * 0x10 + kbc->rpt_cnt;
+	kbc->repoll_time  = (kbc->repoll_time + 31) / 32;
 
-	kbc->plain_keycode = plain_kbd_keycode;
-	kbc->fn_keycode = fn_kbd_keycode;
-	kbc->shift_keycode = shift_kbd_keycode;
+	kbc->plain_keycode = board_keyboard_config.plain_keycode;
+	kbc->shift_keycode = board_keyboard_config.shift_keycode;
+	kbc->fn_keycode    = board_keyboard_config.function_keycode;
 
 	stdinname = getenv("stdin");
 	memset(&kbddev, 0, sizeof(kbddev));

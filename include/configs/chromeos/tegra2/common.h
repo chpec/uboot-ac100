@@ -52,20 +52,18 @@
  */
 #define CONFIG_SYS_CPU_OSC_FREQUENCY    1000000        /* Set CPU clock to 1GHz */
 
-#include <configs/chromeos/tegra2/parts/uart.h>
-#include <configs/chromeos/tegra2/parts/mmc.h>
-
 #define CONFIG_SYS_NO_FLASH
-
-#include <configs/chromeos/tegra2/parts/gpio.h>
-#include <configs/chromeos/tegra2/parts/nand.h>
-#include <configs/chromeos/tegra2/parts/i2c.h>
 
 /* Enable Warmboot code and lp0_vec */
 #define CONFIG_TEGRA2_LP0		1
 
+#ifdef CONFIG_TEGRA2_LP0
 #define TEGRA_LP0_DEFAULT_ADDR		0x1C406000
 #define TEGRA_LP0_SIZE			0x2000
+
+#define CONFIG_PLATFORM_EXTRAS_ARCH \
+	"lp0_vec=" QUOTE(TEGRA_LP0_SIZE) "@" QUOTE(TEGRA_LP0_DEFAULT_ADDR)
+#endif
 
 #define CONFIG_LOADADDR			0x40C000
 #define CONFIG_BOOTDELAY		2	/* 2s to break to prompt */
@@ -113,4 +111,10 @@
 #define PHYS_SDRAM_1		TEGRA2_SDRC_CS0
 #define PHYS_SDRAM_1_SIZE	SZ_512M
 
-#endif //__configs_chromeos_tegra2_common_h__
+#include <configs/chromeos/tegra2/parts/gpio.h>
+#include <configs/chromeos/tegra2/parts/i2c.h>
+#include <configs/chromeos/tegra2/parts/mmc.h>
+#include <configs/chromeos/tegra2/parts/nand.h>
+#include <configs/chromeos/tegra2/parts/uart.h>
+
+#endif /*__configs_chromeos_tegra2_common_h__*/

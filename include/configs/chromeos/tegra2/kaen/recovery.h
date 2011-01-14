@@ -18,22 +18,13 @@
 #define CONFIG_CONSOLE_MUX		1
 #define CONFIG_SYS_CONSOLE_IS_IN_ENV	1
 
-#include <configs/chromeos/tegra2/kaen/parts/uart.h>
+#define CONFIG_EXTRA_ENV_SETTINGS_BOARD \
+	"stdin=serial,tegra-kbc\0" \
+	"stdout=serial,lcd\0" \
+	"stderr=serial,lcd\0"
 
-#ifdef CONFIG_TEGRA2_LP0
-#define CONFIG_EXTRA_ENV_SETTINGS_BOARD \
-	"platform_extras=mem=384M@0M nvmem=128M@384M mem=512M@512M " \
-	"lp0_vec="QUOTE(TEGRA_LP0_SIZE)"@"QUOTE(TEGRA_LP0_DEFAULT_ADDR)"\0" \
-	"stdin=serial,tegra-kbc\0" \
-	"stdout=serial,lcd\0" \
-	"stderr=serial,lcd\0"
-#else
-#define CONFIG_EXTRA_ENV_SETTINGS_BOARD \
-	"platform_extras=mem=384M@0M nvmem=128M@384M mem=512M@512M\0" \
-	"stdin=serial,tegra-kbc\0" \
-	"stdout=serial,lcd\0" \
-	"stderr=serial,lcd\0"
-#endif
+#define CONFIG_PLATFORM_EXTRAS_BOARD \
+	"mem=384M@0M nvmem=128M@384M mem=512M@512M"
 
 #define CONFIG_BOOTCOMMAND \
 	"run usb0_boot ; " \
@@ -44,7 +35,8 @@
 #define CONFIG_SYS_MEMTEST_START       0x0000
 #define CONFIG_SYS_MEMTEST_END         0x1000
 
-#include <configs/chromeos/tegra2/kaen/parts/usb.h>
 #include <configs/chromeos/tegra2/kaen/parts/lcd.h>
+#include <configs/chromeos/tegra2/kaen/parts/uart.h>
+#include <configs/chromeos/tegra2/kaen/parts/usb.h>
 
 #endif /*__configs_chromeos_tegra2_kaen_recovery_h__*/

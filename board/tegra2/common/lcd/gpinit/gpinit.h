@@ -30,12 +30,20 @@
 #define TEGRA_DISPLAY_SIZE		0x00040000
 #define TEGRA_TMRUS_BASE		0x60005010
 #define TEGRA_TMRUS_SIZE		0x00010000
-#define TEGRA_CLK_RESET_BASE	0x60006000
-#define TEGRA_CLK_RESET_SIZE	0x00001000
+#define TEGRA_CLK_RESET_BASE		0x60006000
+#define TEGRA_CLK_RESET_SIZE		0x00001000
 #define TEGRA_GPIO_BASE			0x6000D000
 #define TEGRA_GPIO_SIZE			0x00001000
 #define TEGRA_APB_MISC_BASE		0x70000000
 #define TEGAR_APB_MISC_SIZE		0x00001000
+#define TEGRA_PWFM0_BASE		0x7000A000
+#define TEGRA_PWFM0_SIZE		0x4
+#define TEGRA_PWFM1_BASE		0x7000A010
+#define TEGRA_PWFM1_SIZE		0x4
+#define TEGRA_PWFM2_BASE		0x7000A020
+#define TEGRA_PWFM2_SIZE		0x4
+#define TEGRA_PWFM3_BASE		0x7000A030
+#define TEGRA_PWFM3_SIZE		0x4
 #define TEGRA_PMC_BASE			0x7000E400
 #define TEGRA_PMC_SIZE			0x00000100
 
@@ -47,7 +55,6 @@ struct resource {
 	resource_size_t start;
 	resource_size_t end;
 	const char *name;
-	unsigned long flags;
 };
 
 struct tegra_clk_init_table {
@@ -188,8 +195,14 @@ struct tegra_dc {
 	int				n_windows;
 	struct resource			*fb_mem;
 	struct tegra_fb_data		*fb;
+	struct resource			*pwm;
 	struct tegra_dc_win		windows[DC_N_WINDOWS];
 	struct tegra_dc_blend		blend;
+};
+
+struct tegra_gpio_init_table {
+	unsigned	offset;
+	bool		set;
 };
 
 /* GPIO */
@@ -238,6 +251,7 @@ void tegra_dc_register(struct resource *panel,
 		struct tegra_dc_mode *modes,
 		struct tegra_fb_data *fb);
 int tegra_dc_probe(void);
+void tegra_pwm_enable(void);
 
 void gpinit(void);
 

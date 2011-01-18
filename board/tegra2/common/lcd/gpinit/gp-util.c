@@ -40,8 +40,13 @@ static void panel_init(void)
 {
 	int i;
 
-	for (i = 0; i < tegra2_gp_gpio_offset_tab_len; i++)
-		tg2_gpio_direction_output_ex(tegra2_gp_gpio_offset[i], 1);
+	for (i = 0; i < tegra2_gp_gpio_offset_tab_len; i++) {
+		tg2_gpio_direction_output_ex(
+			tegra2_gp_gpio_init_table[i].offset, 1);
+		if (tegra2_gp_gpio_init_table[i].set == true)
+			tg2_gpio_set_value_ex(
+				tegra2_gp_gpio_init_table[i].offset, 1);
+	}
 }
 
 void gpinit(void)
@@ -53,5 +58,6 @@ void gpinit(void)
 	tegra_dc_register(tegra2_gp_panel_resources,
 			tegra2_gp_panel_modes,
 			&tegra2_gp_fb_data);
+	tegra_pwm_enable();
 	tegra_dc_probe();
 }

@@ -790,6 +790,7 @@ static struct clk_mux_sel mux_pllp_plld_pllc_clkm[] = {
 static struct clk_mux_sel mux_pllp_pllc_audio_clkm_clk32[] = {
 	{.input = &tegra_pll_p, .value = 0},
 	{.input = &tegra_clk_m, .value = 3},
+	{.input = &tegra_clk_32k, .value = 4},
 	{ 0, 0},
 };
 
@@ -825,6 +826,7 @@ struct clk tegra_periph_clks[] = {
 
 struct clk_lookup tegra_clk_lookups[] = {
 	/* external root sources */
+	CLK(NULL,	"32k_clk",	&tegra_clk_32k),
 	CLK(NULL,	"clk_m",	&tegra_clk_m),
 	CLK(NULL,	"pll_m",	&tegra_pll_m),
 	CLK(NULL,	"pll_p",	&tegra_pll_p),

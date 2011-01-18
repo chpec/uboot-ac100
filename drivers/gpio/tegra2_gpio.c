@@ -143,6 +143,11 @@ int tg2_gpio_get_value(unsigned port, unsigned bit)
 	return (val >> bit) & 1;
 }
 
+int tg2_gpio_get_value_ex(unsigned offset)
+{
+	tg2_gpio_get_value(GPIO_PORT(offset), GPIO_BIT(offset));
+}
+
 /* write GPIO OUT value of a port:bit */
 void tg2_gpio_set_value(unsigned port, unsigned bit, int value)
 {
@@ -150,6 +155,11 @@ void tg2_gpio_set_value(unsigned port, unsigned bit, int value)
 
 	/* Configure GPIO output value. */
 	__set_level(port, bit, value);
+}
+
+void tg2_gpio_set_value_ex(unsigned offset, int value)
+{
+	tg2_gpio_set_value(GPIO_PORT(offset), GPIO_BIT(offset), value);
 }
 
 #ifdef CONFIG_CMD_TEGRA2_GPIO_INFO

@@ -36,14 +36,13 @@
 #define TEGRA_GPIO_BACKLIGHT_VDD	TEGRA_GPIO_PW0
 #define TEGRA_GPIO_EN_VDD_PNL		TEGRA_GPIO_PC6
 
-unsigned int tegra2_gp_gpio_offset[] = {
-	TEGRA_GPIO_BACKLIGHT,
-	TEGRA_GPIO_BACKLIGHT_PWM,
-	TEGRA_GPIO_LVDS_SHUTDOWN,
-	TEGRA_GPIO_BACKLIGHT_VDD,
-	TEGRA_GPIO_EN_VDD_PNL,
+struct tegra_gpio_init_table tegra2_gp_gpio_init_table[] = {
+	{ TEGRA_GPIO_BACKLIGHT,		true},
+	{ TEGRA_GPIO_LVDS_SHUTDOWN,	true},
+	{ TEGRA_GPIO_BACKLIGHT_VDD,	false},
+	{ TEGRA_GPIO_EN_VDD_PNL,	true},
 };
-unsigned int tegra2_gp_gpio_offset_tab_len = ARRAY_SIZE(tegra2_gp_gpio_offset);
+unsigned int tegra2_gp_gpio_offset_tab_len = ARRAY_SIZE(tegra2_gp_gpio_init_table);
 
 struct tegra_clk_init_table tegra2_gp_clk_init_table[] = {
 	/* name		parent		rate		enabled */
@@ -52,6 +51,8 @@ struct tegra_clk_init_table tegra2_gp_clk_init_table[] = {
 	{ "2d",		"pll_m",	300000000,	true},
 	{ "host1x",	"pll_p",	144000000,	true},
 	{ "disp1",	"pll_p",	216000000,	true},
+	{ "pwm",	"clk_32k",	32768,		true},
+	{ "clk_32k",	NULL,		32768,		true},
 	{ NULL,		NULL,		0,		0},
 };
 
@@ -112,12 +113,17 @@ struct resource tegra2_gp_panel_resources[] = {
 	{
 		.name	= "regs",
 		.start	= TEGRA_DISPLAY_BASE,
-		.end	= TEGRA_DISPLAY_BASE + TEGRA_DISPLAY_SIZE-1,
+		.end	= TEGRA_DISPLAY_BASE + TEGRA_DISPLAY_SIZE - 1,
 	},
 	{
 		.name	= "fbmem",
 		.start	= LCD_FB_ADDR,
 		.end	= LCD_FB_ADDR + 0x4000000 - 1, /* 64M */
+	},
+	{
+		.name	= "pwm",
+		.start	= TEGRA_PWFM2_BASE,
+		.end	= TEGRA_PWFM2_BASE + TEGRA_PWFM2_SIZE - 1,
 	},
 };
 

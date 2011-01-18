@@ -30,7 +30,7 @@
 #include "gpinit.h"
 #include "gp-pinmux.h"
 
-extern unsigned int			tegra2_gp_gpio_offset[];
+extern struct tegra_gpio_init_table	tegra2_gp_gpio_init_table[];
 extern unsigned int			tegra2_gp_gpio_offset_tab_len;
 extern struct tegra_clk_init_table	tegra2_gp_clk_init_table[];
 extern struct tegra_pingroup_config	tegra2_gp_pinmux[];

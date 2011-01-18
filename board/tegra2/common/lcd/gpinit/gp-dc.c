@@ -388,6 +388,8 @@ void tegra_dc_register(struct resource *panel,
 
 	dc->fb_mem = &panel[2];
 
+	dc->pwm = &panel[3];
+
 	tegra_dc_set_mode(dc, &modes[0]);
 
 	dc->fb = fb;
@@ -439,4 +441,16 @@ int poweron_3d(void)
 	tegra2_periph_reset_deassert(clk);
 
 	return 0;
+}
+
+#define PWM_ENABLE (1 << 31)
+void tegra_pwm_enable(void)
+{
+	struct tegra_dc *dc;
+	u32 val;
+
+	dc = &gp_dc;
+	val = 0xdf0001;
+	val |= PWM_ENABLE;
+	writel(val, dc->pwm->start);
 }

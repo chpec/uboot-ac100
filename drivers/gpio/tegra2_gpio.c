@@ -145,7 +145,7 @@ int tg2_gpio_get_value(unsigned port, unsigned bit)
 
 int tg2_gpio_get_value_ex(unsigned offset)
 {
-	tg2_gpio_get_value(GPIO_PORT(offset), GPIO_BIT(offset));
+	return tg2_gpio_get_value(GPIO_PORT(offset), GPIO_BIT(offset));
 }
 
 /* write GPIO OUT value of a port:bit */

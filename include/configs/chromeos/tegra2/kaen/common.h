@@ -45,4 +45,6 @@
 #include <configs/chromeos/tegra2/kaen/parts/spi.h>
 #include <configs/chromeos/tegra2/kaen/parts/mmc.h>
 
+#define CONFIG_CHROMEOS_HWID	"ARM KAEN TEST 3084"
+
 #endif /*__configs_chromeos_tegra2_kaen_common_h__*/

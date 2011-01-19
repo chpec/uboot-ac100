@@ -33,17 +33,46 @@
  * Software Foundation.
  */
 
-#ifndef __configs_chromeos_tegra2_harmony_common_h__
-#define __configs_chromeos_tegra2_harmony_common_h__
+#ifndef __FIRMWARE_LAYOUT_H__
+#define __FIRMWARE_LAYOUT_H__
 
-#include <configs/chromeos/tegra2/common.h>
+#define CONFIG_FIRMWARE_SIZE	0x00400000 /* 4 MB */
 
-#define LINUX_MACH_TYPE			MACH_TYPE_HARMONY
-#define CONFIG_SYS_BOARD_ODMDATA	0x300d8011  /* lp1, 1GB */
+/* The board configuration data must be the first */
+#define CONFIG_OFFSET_BOARD_CONFIG_DATA	0x00000000
+#define CONFIG_LENGTH_BOARD_CONFIG_DATA	0x00010000
 
-#include <configs/chromeos/tegra2/harmony/parts/i2c.h>
-#include <configs/chromeos/tegra2/harmony/parts/mmc.h>
+#define CONFIG_OFFSET_BOOTSTUB	0x00010000
+#define CONFIG_LENGTH_BOOTSTUB	0x00040000
 
-#define CONFIG_CHROMEOS_HWID	"ARM HARMONY TEST 2428"
+#define CONFIG_OFFSET_RECOVERY	0x00050000
+#define CONFIG_LENGTH_RECOVERY	0x00100000
 
-#endif /*__configs_chromeos_tegra2_harmony_common_h__*/
+#define CONFIG_OFFSET_FMAP	0x00150000
+#define CONFIG_LENGTH_FMAP	0x00010000
+
+#define CONFIG_OFFSET_GBB	0x00160000
+#define CONFIG_LENGTH_GBB	0x00040000
+
+#define CONFIG_OFFSET_ROVPD	0x001a0000
+#define CONFIG_LENGTH_ROVPD	0x00020000
+
+#define CONFIG_OFFSET_FW_A_KEY	0x00200000
+#define CONFIG_LENGTH_FW_A_KEY	0x00010000
+
+#define CONFIG_OFFSET_FW_A_DATA	0x00210000
+#define CONFIG_LENGTH_FW_A_DATA	0x000d0000
+
+#define CONFIG_OFFSET_FW_B_KEY	0x002e0000
+#define CONFIG_LENGTH_FW_B_KEY	0x00010000
+
+#define CONFIG_OFFSET_FW_B_DATA	0x002f0000
+#define CONFIG_LENGTH_FW_B_DATA	0x000d0000
+
+#define CONFIG_OFFSET_RWVPD	0x003c0000
+#define CONFIG_LENGTH_RWVPD	0x00001000
+
+#define CONFIG_OFFSET_LOGVOL	0x003d0000
+#define CONFIG_LENGTH_LOGVOL	0x00030000
+
+#endif /* __FIRMWARE_LAYOUT_H__ */

@@ -184,7 +184,9 @@ OBJS := $(addprefix $(obj),$(OBJS))
 LIBS  = lib/libgeneric.a
 LIBS += lib/lzma/liblzma.a
 LIBS += lib/lzo/liblzo.a
+ifdef VBOOT
 LIBS += lib/chromeos/libchromeos.a
+endif
 LIBS += $(shell if [ -f board/$(VENDOR)/common/Makefile ]; then echo \
 	"board/$(VENDOR)/common/lib$(VENDOR).a"; fi)
 LIBS += $(CPUDIR)/lib$(CPU).a
@@ -312,6 +314,9 @@ endif
 
 # Always append ALL so that arch config.mk's can add custom ones
 ALL += $(obj)u-boot.srec $(obj)u-boot.bin $(obj)System.map $(U_BOOT_NAND) $(U_BOOT_ONENAND)
+ifdef VBOOT
+ALL += $(obj)image.bin
+endif
 
 all:		$(ALL)
 
@@ -354,6 +359,30 @@ $(obj)u-boot.sha1:	$(obj)u-boot.bin
 
 $(obj)u-boot.dis:	$(obj)u-boot
 		$(OBJDUMP) -d $< > $@
+
+$(obj)image.bin:	$(obj)u-boot.bin
+		@$(XECHO) Generating $@ ; \
+		set -e ; \
+		HWID="$$(grep CONFIG_CHROMEOS_HWID $(obj)include/autoconf.mk | \
+			tr -d "\"" | cut -d = -f 2)" ; \
+		gbb_utility -c 0x100,0x1000,0x03de80,0x1000 $(obj)gbb.bin ; \
+		gbb_utility -s \
+			--hwid="$$HWID" \
+			--rootkey=/usr/share/vboot/devkeys/root_key.vbpubk \
+			--recoverykey=/usr/share/vboot/devkeys/recovery_key.vbpubk \
+			$(obj)gbb.bin ; \
+		grep -E 'CONFIG_FIRMWARE_SIZE|CONFIG_CHROMEOS_HWID|CONFIG_(OFFSET|LENGTH)_\w+' \
+			$(obj)include/autoconf.mk > $(obj)firmware_layout_config.tmp ; \
+		cat firmware_layout_config >> $(obj)firmware_layout_config.tmp ; \
+		pack_firmware_image $(obj)firmware_layout_config.tmp \
+			KEYDIR=/usr/share/vboot/devkeys/ \
+			BOOTSTUB_IMAGE=$(obj)u-boot.bin \
+			RECOVERY_IMAGE=$(obj)u-boot.bin \
+			GBB_IMAGE=$(obj)gbb.bin \
+			FIRMWARE_A_IMAGE=$(obj)u-boot.bin \
+			FIRMWARE_B_IMAGE=$(obj)u-boot.bin \
+			OUTPUT=$(obj)image.bin ; \
+		rm -f $(obj)firmware_layout_config.tmp $(obj)gbb.bin
 
 GEN_UBOOT = \
 		UNDEF_SYM=`$(OBJDUMP) -x $(LIBBOARD) $(LIBS) | \

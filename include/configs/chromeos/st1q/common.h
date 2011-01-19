@@ -37,6 +37,8 @@
 #include <asm-armv7Scorpion/armv7Scorpion.h>
 #include <config.h>
 
+#define CONFIG_CHROMEOS_HWID	"ARM ST1Q TEST 9468"
+
 #define IO_READ32(addr)        (*((volatile unsigned int *) (addr)))
 #define IO_WRITE32(addr, val)  (*((volatile unsigned int *) (addr)) = ((unsigned int) (val)))
 #define IO_READ16(addr)        (*((volatile unsigned short *) (addr)))

@@ -10,6 +10,8 @@
 #include <asm/sizes.h>
 #include <config.h>
 
+#include <configs/chromeos/firmware_layout.h>
+
 /*
  * QUOTE(m) will evaluate to a string version of the value of the macro m
  * passed in.  The extra level of indirection here is to first evaluate the

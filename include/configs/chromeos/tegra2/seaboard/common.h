@@ -1,5 +1,5 @@
 /*
- * Copyright 2010, Google Inc.
+ * Copyright 2011, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,5 +44,7 @@
 #include <configs/chromeos/tegra2/seaboard/parts/i2c.h>
 #include <configs/chromeos/tegra2/seaboard/parts/spi.h>
 #include <configs/chromeos/tegra2/seaboard/parts/mmc.h>
+
+#define CONFIG_CHROMEOS_HWID	"ARM SEABOARD TEST 1176"
 
 #endif /*__configs_chromeos_tegra2_seaboard_common_h__*/

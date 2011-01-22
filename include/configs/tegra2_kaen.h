@@ -34,7 +34,7 @@
 #define TEGRA_NFSPORT_DEFAULT		"usb0"
 
 #define CONFIG_SERIAL_MULTI		1
-#define CONFIG_TEGRA2_ENABLE_UARTA	1
+#define CONFIG_TEGRA2_ENABLE_UARTB	1
 #define CONFIG_TEGRA2_KEYBOARD		1
 #define CONFIG_KEYBOARD			1
 
@@ -45,7 +45,7 @@
 					"stderr=serial,lcd\0"
 
 /* UARTA: default */
-#define CONFIG_SYS_NS16550_COM1		NV_ADDRESS_MAP_APB_UARTA_BASE
+#define CONFIG_SYS_NS16550_COM1		NV_ADDRESS_MAP_APB_UARTB_BASE
 
 /* These config switches are for GPIO support */
 #define CONFIG_TEGRA2_GPIO		1

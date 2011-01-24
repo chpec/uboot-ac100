@@ -164,7 +164,7 @@ static void clk_recalculate_rate(struct clk *c)
 		do_div(rate, c->div);
 	}
 
-	if (rate > c->max_rate)
+	if ((rate > c->max_rate) && (c->state == ON))
 		printf("clocks: Set clock %s to rate %llu, max is %lu\n",
 			c->name, rate, c->max_rate);
 
@@ -270,6 +270,11 @@ static int clk_enable_locked(struct clk *c)
 int clk_enable(struct clk *c)
 {
 	int ret;
+	if (c->rate > c->max_rate) {
+		printf("clocks: Enable clock %s, the rate is %lu, max is %lu\n",
+			c->name, c->rate, c->max_rate);
+		return -1;
+	}
 	ret = clk_enable_locked(c);
 	return ret;
 }

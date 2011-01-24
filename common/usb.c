@@ -1084,8 +1084,8 @@ static void usb_hub_power_on(struct usb_hub_device *hub)
 	for (i = 0; i < dev->maxchild; i++) {
 		usb_set_port_feature(dev, i + 1, USB_PORT_FEAT_POWER);
 		USB_HUB_PRINTF("port %d returns %lX\n", i + 1, dev->status);
-		wait_ms(hub->desc.bPwrOn2PwrGood * 2);
 	}
+	wait_ms(hub->desc.bPwrOn2PwrGood * 2);
 }
 
 void usb_hub_reset(void)
@@ -1115,7 +1115,7 @@ static inline char *portspeed(int portstatus)
 }
 
 /* brought this in from kernel 2.6.36 as it is a problem area. Some USB
-sticks do not operate properly with the previous reset code */
+sticks do not detect the first time with the previous reset code */
 #define PORT_RESET_TRIES	5
 #define SET_ADDRESS_TRIES	2
 #define GET_DESCRIPTOR_TRIES	2
@@ -1220,7 +1220,7 @@ static int hub_port_reset(struct usb_device *dev, int port,
 			/* TRSTRCY = 10 ms; plus some extra */
 			wait_ms(10 + 40);
 			/* FALL THROUGH */
-		case -1:
+		case -ENOTCONN:
 			/* we have finished trying to reset, so return */
 			usb_clear_port_feature(dev,
 				port + 1, USB_PORT_FEAT_C_RESET);
@@ -1233,6 +1233,7 @@ static int hub_port_reset(struct usb_device *dev, int port,
 		delay = HUB_LONG_RESET_TIME;
 	}
 
+	/* we have finished trying to reset, so return */
 	if (tries == MAX_TRIES) {
 		USB_HUB_PRINTF("Cannot enable port %i after %i retries, " \
 				"disabling port.\n", port + 1, MAX_TRIES);

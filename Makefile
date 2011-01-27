@@ -316,6 +316,7 @@ endif
 ALL += $(obj)u-boot.srec $(obj)u-boot.bin $(obj)System.map $(U_BOOT_NAND) $(U_BOOT_ONENAND)
 ifdef VBOOT
 ALL += $(obj)image.bin
+ALL += $(obj)firmware_layout.cfg
 endif
 
 all:		$(ALL)
@@ -396,6 +397,13 @@ $(obj)image.bin:	$(obj)u-boot.bin
 			OUTPUT=$(obj)image.bin ; \
 		rm -f $(obj)firmware_layout_config.tmp $(obj)gbb.bin ; \
 		echo "Successfully create image.bin"
+
+$(obj)firmware_layout.cfg: $(obj)include/autoconf.mk
+		@$(XECHO) Generating $@ ; \
+		grep -E 'CONFIG_FIRMWARE_SIZE' $< > $@
+		grep -E 'CONFIG_CHROMEOS_HWID' $< >> $@
+		grep -E 'CONFIG_(OFFSET|LENGTH)_\w+' $< >> $@
+		cat firmware_layout_config >> $@
 
 GEN_UBOOT = \
 		UNDEF_SYM=`$(OBJDUMP) -x $(LIBBOARD) $(LIBS) | \

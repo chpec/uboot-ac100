@@ -382,9 +382,11 @@ $(obj)image.bin:	$(obj)u-boot.bin
 			--recoverykey=/usr/share/vboot/devkeys/recovery_key.vbpubk \
 			$(obj)gbb.bin ; \
 		grep -E 'CONFIG_FIRMWARE_SIZE|CONFIG_CHROMEOS_HWID|CONFIG_(OFFSET|LENGTH)_\w+' \
-			$(obj)include/autoconf.mk > $(obj)firmware_layout_config.tmp ; \
-		cat firmware_layout_config >> $(obj)firmware_layout_config.tmp ; \
-		pack_firmware_image $(obj)firmware_layout_config.tmp \
+			$(obj)include/autoconf.mk > $(obj)firmware_layout_config.tmp || \
+		(echo "ERROR: grep firmware layout macros failed" ; exit 1) ; \
+		cat firmware_layout_config >> $(obj)firmware_layout_config.tmp || \
+		(echo "ERROR: copy-pasting firmware_layout_config failed" ; exit 1) ; \
+		pack_firmware_image -v $(obj)firmware_layout_config.tmp \
 			KEYDIR=/usr/share/vboot/devkeys/ \
 			BOOTSTUB_IMAGE=$(obj)u-boot.bin \
 			RECOVERY_IMAGE=$(obj)u-boot.bin \
@@ -392,7 +394,8 @@ $(obj)image.bin:	$(obj)u-boot.bin
 			FIRMWARE_A_IMAGE=$(obj)u-boot.bin \
 			FIRMWARE_B_IMAGE=$(obj)u-boot.bin \
 			OUTPUT=$(obj)image.bin ; \
-		rm -f $(obj)firmware_layout_config.tmp $(obj)gbb.bin
+		rm -f $(obj)firmware_layout_config.tmp $(obj)gbb.bin ; \
+		echo "Successfully create image.bin"
 
 GEN_UBOOT = \
 		UNDEF_SYM=`$(OBJDUMP) -x $(LIBBOARD) $(LIBS) | \

@@ -45,21 +45,11 @@
 /*
  * Configuration required for using ethernet over usb.
  */
-/* disable USB-USB networking for now */
-#if 0
-#define CONFIG_USB_GADGET
-#define CONFIG_USB_GADGET_TEGRA2
-#define CONFIG_USB_GADGET_DUALSPEED
-#define CONFIG_USB_DEVICE
-#define CONFIG_USB_ETHER
-#endif
+#define CONFIG_USB_HOST_ETHER
 
 /*
- * ethaddr settings can be overruled via environment settings:
- *  usbnet_devaddr and usbnet_hostaddr
+ * Ethernet support
  */
-#define CONFIG_USBNET_DEV_ADDR          "e4:9b:e7:66:2f:7b"
-#define CONFIG_USBNET_HOST_ADDR         "0a:fa:63:8b:e8:0a"
 #define CONFIG_CMD_NET
 #define CONFIG_NET_MULTI
 #define CONFIG_CMD_PING
@@ -216,9 +206,6 @@
 
 #define CONFIG_EHCI_IS_TDI
 #define CONFIG_USB_STORAGE
-#define CONFIG_USB_HOST_ETHER
-#define CONFIG_USB_ETHER_ASIX
-#define CONFIG_USB_ETHER_SMSC95XX
 
 /* Enable Warmboot code and lp0_vec */
 #define CONFIG_TEGRA2_LP0		1

@@ -4,9 +4,9 @@
  * found in the LICENSE file.
  */
 
-#ifndef __configs_chromeos_stub_h__
-#define __configs_chromeos_stub_h__
+#ifndef __configs_chromeos_normal_h__
+#define __configs_chromeos_normal_h__
 
 #include <configs/chromeos/common.h>
 
-#endif //__configs_chromeos_stub_h__
+#endif //__configs_chromeos_normal_h__

@@ -113,6 +113,7 @@
 
 #include <configs/chromeos/tegra2/parts/gpio.h>
 #include <configs/chromeos/tegra2/parts/i2c.h>
+#include <configs/chromeos/tegra2/parts/lcd.h>
 #include <configs/chromeos/tegra2/parts/mmc.h>
 #include <configs/chromeos/tegra2/parts/nand.h>
 #include <configs/chromeos/tegra2/parts/uart.h>

@@ -592,6 +592,25 @@ U_BOOT_CMD(
 	""
 );
 
+/*
+ * The next U-Boot version has support for 'env default' - add the equivalent
+ * old-style command here just for convenience until we rebase to this. File
+ * it under 'saveenv'. Otherwise there is no easy way to reset the
+ * environment.
+ */
+static int do_env_default (cmd_tbl_t *cmdtp, int flag, int argc,
+			   char * const argv[])
+{
+	puts ("*** Reseting to default environment\n\n");
+	set_default_env();
+	return 0;
+}
+
+U_BOOT_CMD(
+	defaultenv, 1, 0,	do_env_default,
+	"reset environment variables to default",
+);
+
 #endif
 
 

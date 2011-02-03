@@ -73,6 +73,12 @@
 #define CONFIG_LENGTH_RWVPD	0x00001000
 
 #define CONFIG_OFFSET_LOGVOL	0x003d0000
-#define CONFIG_LENGTH_LOGVOL	0x00030000
+#define CONFIG_LENGTH_LOGVOL	0x0002f000
+
+/* where are the meanings of these documented? Add a comment/link here */
+#define CONFIG_OFFSET_ENV	0x003ff000
+#define CONFIG_LENGTH_ENV	0x00001000
+
+
 
 #endif /* __FIRMWARE_LAYOUT_H__ */

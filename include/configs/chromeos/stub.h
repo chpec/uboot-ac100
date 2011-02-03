@@ -9,4 +9,6 @@
 
 #include <configs/chromeos/common.h>
 
+#define CONFIG_ENV_IS_NOWHERE
+
 #endif //__configs_chromeos_stub_h__

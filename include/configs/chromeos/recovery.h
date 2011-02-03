@@ -46,4 +46,6 @@
 #define CONFIG_COMMAND_HISTORY          1
 #define CONFIG_AUTOCOMPLETE             1
 
+#define CONFIG_ENV_IS_NOWHERE
+
 #endif //__configs_chromeos_recovery_h__

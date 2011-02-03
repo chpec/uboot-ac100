@@ -69,16 +69,20 @@
 #define CONFIG_SF_DEFAULT_MODE	SPI_MODE_0
 #define CONFIG_CMD_SPI
 #define CONFIG_CMD_SF
-/*
- * To put the env in SPI-Flash on Kaen, define the following,
- *  and undef or delete the CONFIG_ENV_IS_NOWHERE (if present).
- * Note that you MUST change the ENV_OFFSET to be beyond the BCT/BL area!
- */
-#if	0
+
+#undef CONFIG_ENV_IS_NOWHERE
 #define CONFIG_ENV_IS_IN_SPI_FLASH
-#define CONFIG_ENV_SECT_SIZE	0x1000	/* 4K sectors */
-#define CONFIG_ENV_OFFSET		0x0		/* DANGER! for test, use offset != 0 */
-#endif
+
+/*
+ * These are defined in firmware_layout_config.h for Chromium OS. It might be
+ * convenient to use the same area for all Kaen U-Boot builds, but we don't
+ * want to pull in this header file.
+ */
+#define CONFIG_OFFSET_ENV	0x003ff000
+#define CONFIG_LENGTH_ENV	0x00001000
+
+#define CONFIG_ENV_SECT_SIZE	CONFIG_LENGTH_ENV
+#define CONFIG_ENV_OFFSET	CONFIG_OFFSET_ENV
 
 /* Define this if device is always on EMMC4 controller and no Card Detect pin */
 #define CONFIG_TEGRA2_EMMC4_ALWAYS_INSERTED	1

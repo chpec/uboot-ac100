@@ -10,4 +10,7 @@
 #include <configs/chromeos/tegra2/developer.h>
 #include <configs/chromeos/tegra2/harmony/common.h>
 
+/* We don't have environment support on Harmony yet */
+#define CONFIG_ENV_IS_NOWHERE
+
 #endif /*__configs_chromeos_tegra2_harmony_developer_h__*/

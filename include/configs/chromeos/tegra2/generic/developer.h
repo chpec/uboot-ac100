@@ -12,4 +12,7 @@
 
 #include <configs/chromeos/tegra2/generic/parts/usb.h>
 
+/* We don't have environment support on the Generic build yet */
+#define CONFIG_ENV_IS_NOWHERE
+
 #endif /*__configs_chromeos_tegra2_generic_developer_h__*/

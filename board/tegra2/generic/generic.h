@@ -4,11 +4,11 @@
  * found in the LICENSE file.
  */
 
-#ifndef _WARIO_H_
-#define _WARIO_H_
+#ifndef _GENERIC_H_
+#define _GENERIC_H_
 
 const tegra2_sysinfo sysinfo = {
-	"Tegra2 Wario",
+	"Tegra2 Generic",
 };
 
-#endif /* _WARIO_H_ */
+#endif /* _GENERIC_H_ */

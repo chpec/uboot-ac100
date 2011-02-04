@@ -34,4 +34,6 @@
 #include <configs/chromeos/tegra2/wario/parts/mmc.h>
 #include <configs/chromeos/tegra2/wario/parts/uart.h>
 
+#define CONFIG_CHROMEOS_HWID	"ARM WARIO BOGUS 0000"
+
 #endif /*__configs_chromeos_tegra2_wario_common_h__*/

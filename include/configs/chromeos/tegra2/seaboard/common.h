@@ -29,9 +29,10 @@
 	"mem=384M@0M nvmem=128M@384M mem=512M@512M"
 
 #include <configs/chromeos/tegra2/seaboard/parts/i2c.h>
-#include <configs/chromeos/tegra2/seaboard/parts/spi.h>
+#include <configs/chromeos/tegra2/seaboard/parts/keyboard.h>
 #include <configs/chromeos/tegra2/seaboard/parts/lcd.h>
 #include <configs/chromeos/tegra2/seaboard/parts/mmc.h>
+#include <configs/chromeos/tegra2/seaboard/parts/spi.h>
 #include <configs/chromeos/tegra2/seaboard/parts/uart.h>
 
 #define CONFIG_CHROMEOS_HWID	"ARM SEABOARD TEST 1176"

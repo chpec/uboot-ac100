@@ -29,9 +29,10 @@
 	"mem=384M@0M nvmem=128M@384M mem=512M@512M"
 
 #include <configs/chromeos/tegra2/wario/parts/i2c.h>
-#include <configs/chromeos/tegra2/wario/parts/spi.h>
+#include <configs/chromeos/tegra2/wario/parts/keyboard.h>
 #include <configs/chromeos/tegra2/wario/parts/lcd.h>
 #include <configs/chromeos/tegra2/wario/parts/mmc.h>
+#include <configs/chromeos/tegra2/wario/parts/spi.h>
 #include <configs/chromeos/tegra2/wario/parts/uart.h>
 
 #define CONFIG_CHROMEOS_HWID	"ARM WARIO BOGUS 0000"

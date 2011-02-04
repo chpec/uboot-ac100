@@ -29,9 +29,10 @@
 	"mem=384M@0M nvmem=128M@384M mem=512M@512M"
 
 #include <configs/chromeos/tegra2/kaen/parts/i2c.h>
-#include <configs/chromeos/tegra2/kaen/parts/spi.h>
+#include <configs/chromeos/tegra2/kaen/parts/keyboard.h>
 #include <configs/chromeos/tegra2/kaen/parts/lcd.h>
 #include <configs/chromeos/tegra2/kaen/parts/mmc.h>
+#include <configs/chromeos/tegra2/kaen/parts/spi.h>
 #include <configs/chromeos/tegra2/kaen/parts/uart.h>
 
 #define CONFIG_CHROMEOS_HWID	"ARM KAEN TEST 3084"

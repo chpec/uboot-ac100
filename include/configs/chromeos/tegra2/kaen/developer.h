@@ -10,4 +10,6 @@
 #include <configs/chromeos/tegra2/developer.h>
 #include <configs/chromeos/tegra2/kaen/common.h>
 
+#include <configs/chromeos/tegra2/kaen/parts/usb.h>
+
 #endif /*__configs_chromeos_tegra2_kaen_developer_h__*/

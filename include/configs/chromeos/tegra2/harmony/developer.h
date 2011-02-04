@@ -10,6 +10,8 @@
 #include <configs/chromeos/tegra2/developer.h>
 #include <configs/chromeos/tegra2/harmony/common.h>
 
+#include <configs/chromeos/tegra2/harmony/parts/usb.h>
+
 /* We don't have environment support on Harmony yet */
 #define CONFIG_ENV_IS_NOWHERE
 

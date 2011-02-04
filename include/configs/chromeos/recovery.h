@@ -19,10 +19,8 @@
 #define CONFIG_CMD_ITEST
 #define CONFIG_CMD_LOADB
 #define CONFIG_CMD_LOADS
-#define CONFIG_CMD_MEMORY
 #define CONFIG_CMD_READ
 #define CONFIG_CMD_MISC
-#define CONFIG_CMD_SAVEENV
 #define CONFIG_CMD_SETGETDCR
 #define CONFIG_CMD_XIMG
 
@@ -34,17 +32,6 @@
 #define CONFIG_CMD_MMC
 #define CONFIG_CMD_EXT2
 #define CONFIG_CMD_FAT
-
-/*
- * The following make using the console nicer.
- */
-#define CONFIG_DISPLAY_CPUINFO          1
-#define CONFIG_DISPLAY_BOARDINFO        1
-
-#define CONFIG_SYS_LONGHELP             1
-#define CONFIG_CMDLINE_EDITING          1
-#define CONFIG_COMMAND_HISTORY          1
-#define CONFIG_AUTOCOMPLETE             1
 
 #define CONFIG_ENV_IS_NOWHERE
 

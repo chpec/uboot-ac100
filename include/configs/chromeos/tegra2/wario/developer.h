@@ -10,4 +10,6 @@
 #include <configs/chromeos/tegra2/developer.h>
 #include <configs/chromeos/tegra2/wario/common.h>
 
+#include <configs/chromeos/tegra2/wario/parts/usb.h>
+
 #endif /*__configs_chromeos_tegra2_wario_developer_h__*/

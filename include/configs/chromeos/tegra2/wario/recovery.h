@@ -15,9 +15,6 @@
 	"run mmc1_boot ; " \
 	"run mmc0_boot"
 
-#define CONFIG_SYS_MEMTEST_START       0x0000
-#define CONFIG_SYS_MEMTEST_END         0x1000
-
 #include <configs/chromeos/tegra2/wario/parts/usb.h>
 
 #endif /*__configs_chromeos_tegra2_wario_recovery_h__*/

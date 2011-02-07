@@ -25,7 +25,6 @@
 #define __TEGRA2_COMMON_H
 #include <asm/sizes.h>
 
-#undef DEBUG
 /*
  * High Level Configuration Options
  */
@@ -46,6 +45,7 @@
  * Configuration required for using ethernet over usb.
  */
 #define CONFIG_USB_HOST_ETHER
+#define CONFIG_USB_ETHER_ASIX
 
 /*
  * Ethernet support
@@ -54,6 +54,14 @@
 #define CONFIG_NET_MULTI
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_DHCP
+
+/*
+ * BOOTP options
+ */
+#define CONFIG_BOOTP_SUBNETMASK
+#define CONFIG_BOOTP_GATEWAY
+#define CONFIG_BOOTP_HOSTNAME
+#define CONFIG_BOOTP_BOOTPATH
 
 #include <asm/arch/tegra2.h>            /* get chip and board defs */
 

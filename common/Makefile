@@ -153,6 +153,7 @@ COBJS-y += cmd_usb.o
 COBJS-y += usb.o
 COBJS-$(CONFIG_USB_STORAGE) += usb_storage.o
 COBJS-$(CONFIG_USB_HOST_ETHER) += usb_ether.o
+COBJS-$(CONFIG_USB_ETHER_ASIX) += usb_ether_asix.o
 endif
 COBJS-$(CONFIG_CMD_XIMG) += cmd_ximg.o
 COBJS-$(CONFIG_YAFFS2) += cmd_yaffs2.o

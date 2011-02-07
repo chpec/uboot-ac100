@@ -48,6 +48,11 @@ CONFIG_NAME="${1%_config}"
 [ "${BOARD_NAME}" ] || BOARD_NAME="${CONFIG_NAME}"
 
 if [[ ${CONFIG_NAME} =~ "chromeos_" ]] ; then
+    # Set U_BOOT_IMAGE_NAME to the dot concatenated last two underscore
+    # separated elements of the CONFIG_NAME. This results in a string of the
+    # form <variant>.<build_type>.
+    U_BOOT_IMAGE_NAME=$(echo ${CONFIG_NAME} | \
+      sed 's/^.*_\([^_]\+\)_\([^_]\+\)$/\1.\2/')
     CONFIG_NAME=${CONFIG_NAME//_/\/}
 fi
 
@@ -131,6 +136,9 @@ else
 fi
 echo "/* Automatically generated - do not edit */" >>config.h
 
+if [ -n "${U_BOOT_IMAGE_NAME}" ]; then
+	echo "#define CONFIG_IMAGE_NAME \"${U_BOOT_IMAGE_NAME^}\"" >>config.h
+fi
 for i in ${TARGETS} ; do
 	echo "#define CONFIG_MK_${i} 1" >>config.h ;
 done

@@ -31,7 +31,7 @@
 #include <asm/arch/nv_drf.h>
 #include <asm/arch/tegra2.h>
 #include "../common/board.h"
-#include "harmony.h"
+#include "../generic/generic.h"
 
 void board_spi_init(void)
 {

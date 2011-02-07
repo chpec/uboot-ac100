@@ -8,7 +8,7 @@
 #define _GENERIC_H_
 
 const tegra2_sysinfo sysinfo = {
-	"Tegra2 Generic",
+	"Tegra2 " CONFIG_IMAGE_NAME,
 };
 
 #endif /* _GENERIC_H_ */

@@ -118,4 +118,6 @@
 #include <configs/chromeos/tegra2/parts/nand.h>
 #include <configs/chromeos/tegra2/parts/uart.h>
 
+#define CONFIG_DISPLAY_BOARDINFO        1
+
 #endif /*__configs_chromeos_tegra2_common_h__*/

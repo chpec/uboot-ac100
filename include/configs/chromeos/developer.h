@@ -39,7 +39,6 @@
  * The following make using the console nicer.
  */
 #define CONFIG_DISPLAY_CPUINFO          1
-#define CONFIG_DISPLAY_BOARDINFO        1
 
 #define CONFIG_SYS_LONGHELP             1
 #define CONFIG_CMDLINE_EDITING          1

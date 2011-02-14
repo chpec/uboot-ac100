@@ -37,8 +37,8 @@ short console_col;
 short console_row;
 
 vidinfo_t panel_info = {
-	.vl_col = LCD_vl_col,
-	.vl_row = LCD_vl_row,
+	.vl_col = CONFIG_LCD_vl_col,
+	.vl_row = CONFIG_LCD_vl_row,
 	.vl_bpix = LCD_BPP,
 
 	.cmap = NULL,       /* Pointer to the colormap */

@@ -133,8 +133,8 @@ struct tegra_dc_mode tegra2_gp_panel_modes[] = {
 		.v_sync_width = 4,
 		.h_back_porch = 138,
 		.v_back_porch = 21,
-		.h_active = LCD_vl_col,
-		.v_active = LCD_vl_row,
+		.h_active = CONFIG_LCD_vl_col,
+		.v_active = CONFIG_LCD_vl_row,
 		.h_front_porch = 34,
 		.v_front_porch = 4,
 	},
@@ -142,7 +142,7 @@ struct tegra_dc_mode tegra2_gp_panel_modes[] = {
 
 struct tegra_fb_data tegra2_gp_fb_data = {
 	.win            = 0,
-	.xres           = LCD_vl_col,
-	.yres           = LCD_vl_row,
+	.xres           = CONFIG_LCD_vl_col,
+	.yres           = CONFIG_LCD_vl_row,
 	.bits_per_pixel = 16,
 };

@@ -106,8 +106,8 @@
 
 /* LCD Settings */
 #ifdef CONFIG_LCD
-#define LCD_vl_col	1366
-#define LCD_vl_row	768
+#define CONFIG_LCD_vl_col	1366
+#define CONFIG_LCD_vl_row	768
 #endif
 
 #endif /* __CONFIG_H */

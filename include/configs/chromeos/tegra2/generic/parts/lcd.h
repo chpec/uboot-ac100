@@ -4,5 +4,5 @@
  * found in the LICENSE file.
  */
 
-#define LCD_vl_col      1024
-#define LCD_vl_row      768
+#define CONFIG_LCD_vl_col      1024
+#define CONFIG_LCD_vl_row      768

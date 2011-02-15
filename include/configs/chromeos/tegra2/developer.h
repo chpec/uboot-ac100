@@ -12,6 +12,8 @@
 
 #include <configs/chromeos/tegra2/parts/usb.h>
 
+#define CONFIG_EXTRA_ENV_SETTINGS_ARCH CONFIG_EXTRA_ENV_SETTINGS_ARCH_COMMON
+
 /*
  * We expect all Tegra2 machines to have SPI flash as defined by the
  * firmware_layout.h config file. The environment will go there.

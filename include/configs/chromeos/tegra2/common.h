@@ -67,7 +67,7 @@
 
 #define CONFIG_LOADADDR			0x40C000
 #define CONFIG_BOOTDELAY		2	/* 2s to break to prompt */
-#define CONFIG_EXTRA_ENV_SETTINGS_ARCH \
+#define CONFIG_EXTRA_ENV_SETTINGS_ARCH_COMMON \
 	"scriptaddr=0x408000\0" \
 	"script_img=/u-boot/boot.scr.uimg\0" \
 	"mmc0_boot=setenv devnum 0; run mmc_boot;\0" \

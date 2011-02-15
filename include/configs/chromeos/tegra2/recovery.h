@@ -12,4 +12,6 @@
 
 #include <configs/chromeos/tegra2/parts/usb.h>
 
+#define CONFIG_EXTRA_ENV_SETTINGS_ARCH CONFIG_EXTRA_ENV_SETTINGS_ARCH_COMMON
+
 #endif //__configs_chromeos_tegra2_recovery_h__

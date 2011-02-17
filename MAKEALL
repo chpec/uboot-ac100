@@ -739,6 +739,40 @@ LIST_ixp="		\
 	scpu		\
 "
 
+LIST_tegra="		\
+	tegra2_kaen	\
+	tegra2_harmony	\
+	tegra2_seaboard	\
+"
+
+LIST_chromeos="					\
+	chromeos_tegra2_generic_developer	\
+	chromeos_tegra2_generic_flasher		\
+	chromeos_tegra2_generic_normal		\
+	chromeos_tegra2_generic_recovery	\
+	chromeos_tegra2_generic_stub		\
+	chromeos_tegra2_harmony_developer	\
+	chromeos_tegra2_harmony_flasher		\
+	chromeos_tegra2_harmony_normal		\
+	chromeos_tegra2_harmony_recovery	\
+	chromeos_tegra2_harmony_stub		\
+	chromeos_tegra2_seaboard_developer	\
+	chromeos_tegra2_seaboard_flasher	\
+	chromeos_tegra2_seaboard_normal		\
+	chromeos_tegra2_seaboard_recovery	\
+	chromeos_tegra2_seaboard_stub		\
+	chromeos_tegra2_kaen_developer		\
+	chromeos_tegra2_kaen_flasher		\
+	chromeos_tegra2_kaen_normal		\
+	chromeos_tegra2_kaen_recovery		\
+	chromeos_tegra2_kaen_stub		\
+	chromeos_tegra2_wario_developer		\
+	chromeos_tegra2_wario_flasher		\
+	chromeos_tegra2_wario_normal		\
+	chromeos_tegra2_wario_recovery		\
+	chromeos_tegra2_wario_stub		\
+"
+
 #########################################################################
 ## ARM groups
 #########################################################################
@@ -749,10 +783,11 @@ LIST_arm="			\
 	${LIST_ARM9}		\
 	${LIST_ARM10}		\
 	${LIST_ARM11}		\
-	${LIST_ARMV7}	\
+	${LIST_ARMV7}		\
 	${LIST_at91}		\
 	${LIST_pxa}		\
 	${LIST_ixp}		\
+	${LIST_tegra}		\
 "
 
 #########################################################################
@@ -1010,7 +1045,7 @@ print_stats() {
 for arg in $@
 do
 	case "$arg" in
-	arm|SA|ARM7|ARM9|ARM10|ARM11|ARMV7|at91|ixp|pxa \
+	arm|SA|ARM7|ARM9|ARM10|ARM11|ARMV7|at91|ixp|pxa|tegra|chromeos \
 	|avr32 \
 	|blackfin \
 	|coldfire \

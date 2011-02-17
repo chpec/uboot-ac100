@@ -728,7 +728,8 @@ void board_usb_init(void)
 	writel(RegVal, NV_ADDRESS_MAP_USB3_BASE+UTMIP_XCVR_CFG1);
 
 #if ((LINUX_MACH_TYPE == MACH_TYPE_SEABOARD) || \
-     (LINUX_MACH_TYPE == MACH_TYPE_KAEN))
+     (LINUX_MACH_TYPE == MACH_TYPE_KAEN) || \
+     (LINUX_MACH_TYPE == MACH_TYPE_AEBL))
 	usb1_set_host_mode();
 #endif
 }

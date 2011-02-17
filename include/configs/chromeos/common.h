@@ -27,6 +27,7 @@
 #define CONFIG_CMD_SOURCE
 
 /* friendly debug environment */
+/* TODO(clchiou): Should now use Chrome OS developer config instead */
 #ifdef VBOOT_DEBUG
 #define CONFIG_CMD_CROS
 #define CONFIG_SYS_HUSH_PARSER

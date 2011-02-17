@@ -44,6 +44,8 @@
 #define CONFIG_CMDLINE_EDITING          1
 #define CONFIG_COMMAND_HISTORY          1
 #define CONFIG_AUTOCOMPLETE             1
+#define CONFIG_SYS_HUSH_PARSER          1
+#define	CONFIG_SYS_PROMPT_HUSH_PS2      "> "
 
 /*
  * Recovery, normal and stub configs define CONFIG_ENV_IS_NOWHERE, but this
@@ -74,5 +76,20 @@
 #define CONFIG_BOOTP_GATEWAY
 #define CONFIG_BOOTP_HOSTNAME
 #define CONFIG_BOOTP_BOOTPATH
+
+#define CONFIG_IPADDR		10.0.0.2
+#define CONFIG_SERVERIP		10.0.0.1
+#define CONFIG_BOOTFILE		uImage
+
+/*
+ * We decorate the nfsroot name so that multiple users / boards can easily
+ * share an NFS server:
+ *   user - username, e.g. 'frank'
+ *   board - board, e.g. 'seaboard'
+ *   serial - serial number, e.g. '1234'
+ */
+#define CONFIG_ROOTPATH		"/export/nfsroot-${user}-${board}-${serial#}"
+
+
 
 #endif //__configs_chromeos_developer_h__

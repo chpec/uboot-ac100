@@ -527,6 +527,11 @@ static void NvBlAvpEnableCpuPowerRailAp20(void)
     Reg = NV_PMC_REGR(PMC_PA_BASE, CNTRL);
     Reg = NV_FLD_SET_DRF_DEF(APBDEV_PMC, CNTRL, CPUPWRREQ_OE, ENABLE, Reg);
     NV_PMC_REGW(PMC_PA_BASE, CNTRL, Reg);
+
+    /* Timing between enabling of CPU_PWR_REQ and output of VDD_CPU,
+     * based on PMU data sheet.
+     */
+    NvBlAvpStallUs(3750);
 }
 
 static void NvBlAvpResetCpuAp20(NvBool reset)

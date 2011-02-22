@@ -186,6 +186,7 @@ LIBS += lib/lzma/liblzma.a
 LIBS += lib/lzo/liblzo.a
 ifdef VBOOT
 LIBS += lib/chromeos/libchromeos.a
+LIBS += board/$(BOARDDIR)/chromeos/libchromeos_hardware_interface.a
 endif
 LIBS += $(shell if [ -f board/$(VENDOR)/common/Makefile ]; then echo \
 	"board/$(VENDOR)/common/lib$(VENDOR).a"; fi)

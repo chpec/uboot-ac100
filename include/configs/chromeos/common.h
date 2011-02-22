@@ -26,14 +26,6 @@
 #define CONFIG_CMD_RUN
 #define CONFIG_CMD_SOURCE
 
-/* friendly debug environment */
-/* TODO(clchiou): Should now use Chrome OS developer config instead */
-#ifdef VBOOT_DEBUG
-#define CONFIG_CMD_CROS
-#define CONFIG_SYS_HUSH_PARSER
-#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
-#endif
-
 #define CONFIG_OF_LIBFDT		1
 /*
  * The early kernel mapping on ARM currently only maps from the base of DRAM

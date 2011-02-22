@@ -206,15 +206,22 @@ struct tegra_gpio_init_table {
 };
 
 /* GPIO */
-#define TEGRA_GPIO_PB2		10
-#define TEGRA_GPIO_PB4		12
-#define TEGRA_GPIO_PB5		13
-#define TEGRA_GPIO_PC6		22
-#define TEGRA_GPIO_PC7		23
-#define TEGRA_GPIO_PD4		28
-#define TEGRA_GPIO_PU5		165
-#define TEGRA_GPIO_PV2		170
-#define TEGRA_GPIO_PW0		176
+#define TEGRA_GPIO_NUMBER(port, bit) (((port) << 3) | ((bit) & 7))
+#define TEGRA_GPIO_PORT(gpio_number)	((gpio_number) >> 3)
+#define TEGRA_GPIO_BIT(gpio_number)	((gpio_number) & 7)
+/* GPIO ports */
+#define TEGRA_GPIO_PB2 TEGRA_GPIO_NUMBER(1, 2) /* 10 */
+#define TEGRA_GPIO_PB4 TEGRA_GPIO_NUMBER(1, 4) /* 12 */
+#define TEGRA_GPIO_PB5 TEGRA_GPIO_NUMBER(1, 5) /* 13 */
+#define TEGRA_GPIO_PC6 TEGRA_GPIO_NUMBER(2, 6) /* 22 */
+#define TEGRA_GPIO_PC7 TEGRA_GPIO_NUMBER(2, 7) /* 23 */
+#define TEGRA_GPIO_PD4 TEGRA_GPIO_NUMBER(3, 4) /* 28 */
+#define TEGRA_GPIO_PH0 TEGRA_GPIO_NUMBER(7, 0) /* 56 */
+#define TEGRA_GPIO_PH3 TEGRA_GPIO_NUMBER(7, 3) /* 59 */
+#define TEGRA_GPIO_PU5 TEGRA_GPIO_NUMBER(20, 5) /* 165 */
+#define TEGRA_GPIO_PV0 TEGRA_GPIO_NUMBER(21, 0) /* 168 */
+#define TEGRA_GPIO_PV2 TEGRA_GPIO_NUMBER(21, 2) /* 170 */
+#define TEGRA_GPIO_PW0 TEGRA_GPIO_NUMBER(22, 0) /* 176 */
 
 /* Clock */
 #define DIV_BUS			(1 << 0)

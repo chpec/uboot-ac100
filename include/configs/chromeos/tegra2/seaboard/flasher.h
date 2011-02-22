@@ -7,12 +7,7 @@
 #ifndef __configs_chromeos_tegra2_seaboard_flasher_h__
 #define __configs_chromeos_tegra2_seaboard_flasher_h__
 
-/*
- * Order of headers (tegra2/seaboard/common.h before
- * tegra2/{developer,normal,recovery,stub}.h) must be preserved so that
- * seaboard/firmware_layout.h can override top-level firmware layout header.
- */
-#include <configs/chromeos/tegra2/seaboard/common.h>
 #include <configs/chromeos/tegra2/flasher.h>
+#include <configs/chromeos/tegra2/seaboard/common.h>
 
 #endif /*__configs_chromeos_tegra2_seaboard_flasher_h__*/

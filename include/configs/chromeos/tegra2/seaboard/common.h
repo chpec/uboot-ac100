@@ -7,13 +7,6 @@
 #ifndef __configs_chromeos_tegra2_seaboard_common_h__
 #define __configs_chromeos_tegra2_seaboard_common_h__
 
-/*
- * You must include per-board layout before the default layout included by
- * top-level common.h so that the default layout is masked off by #ifndef
- * statement of top-level common.h
- */
-#include <configs/chromeos/tegra2/seaboard/firmware_layout.h>
-
 #include <configs/chromeos/tegra2/common.h>
 
 #define LINUX_MACH_TYPE			MACH_TYPE_SEABOARD

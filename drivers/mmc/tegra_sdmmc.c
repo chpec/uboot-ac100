@@ -55,7 +55,7 @@ block_dev_desc_t *mmc_get_dev(int dev)
 
 NvEmmcDeviceId mmc_get_device_id(int dev)
 {
-	if (dev < MMC_DEV_INSTANCES) {
+	if (dev >= 0 && dev < MMC_DEV_INSTANCES) {
 	    return mmc_device_id[dev];
         }
 
@@ -232,4 +232,3 @@ fail :
     mmc_set_current_device(-1);
     return -1 ; 
 }
-

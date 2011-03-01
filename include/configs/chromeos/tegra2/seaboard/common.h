@@ -34,7 +34,6 @@
 #include <configs/chromeos/tegra2/seaboard/parts/mmc.h>
 #include <configs/chromeos/tegra2/seaboard/parts/spi.h>
 #include <configs/chromeos/tegra2/seaboard/parts/uart.h>
-#include <configs/chromeos/tegra2/seaboard/parts/tpm.h>
 
 #define CONFIG_CHROMEOS_HWID	"ARM SEABOARD TEST 1176"
 

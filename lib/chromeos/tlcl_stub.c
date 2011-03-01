@@ -36,35 +36,26 @@
 #include <config.h>
 #include <common.h>
 #include <tlcl_stub.h>
-#include <tpm.h>
 
-/* A simple TPM library implementation for now */
+/* A dummy TPM library implementation for now */
 
 uint32_t TlclStubInit(void)
 {
-	return tpm_init();
+	return 0;
 }
 
 uint32_t TlclCloseDevice(void)
 {
-	return TPM_SUCCESS;
+	return 0;
 }
 
 uint32_t TlclOpenDevice(void)
 {
-	return TPM_SUCCESS;
+	return 0;
 }
 
 uint32_t TlclStubSendReceive(const uint8_t* request, int request_length,
 		uint8_t* response, int max_length)
 {
-	int ret_code;
-	ret_code = tpm_send(request, request_length);
-	if (ret_code)
-		return TPM_E_IOERROR;
-	ret_code = tpm_receive(response, max_length);
-	if (ret_code)
-		return TPM_E_IOERROR;
-	return TPM_SUCCESS;
+	return TPM_E_NON_FATAL;
 }
-

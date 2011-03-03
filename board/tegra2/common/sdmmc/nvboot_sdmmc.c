@@ -199,6 +199,13 @@ NvBootSdmmcGetParams(
      * version less than 4.3.
      */
     s_DefaultSdmmcParams.ClockDivider = QUOTIENT_CEILING(SDMMC_PLL_FREQ_IN_MHZ, 20);
+#ifdef CONFIG_TEGRA2_EMMC4_IS_HS
+    /* Only HS eMMC parts are used, so force a 26MHz clock */
+    if (s_FuseInfo.CardType == 0) {	/* eMMC */
+        s_DefaultSdmmcParams.ClockDivider = QUOTIENT_CEILING(SDMMC_PLL_FREQ_IN_MHZ, 26);
+    }
+#endif
+
     /*
      * Max Power class supported by target board is unknown. Bct would give us
      * the Max power class supported. So, Till that time, Let it be 0 and work
@@ -1843,7 +1850,7 @@ static void HwSdmmcCalculateCardClockDivisor(void)
             s_SdmmcContext->CardClockDivisor <<= 1;
             TotalClockDivisor <<= 1;
         }
-        if (QUOTIENT_CEILING(SDMMC_PLL_FREQ_IN_MHZ, TotalClockDivisor) > 
+        if (QUOTIENT_CEILING(SDMMC_PLL_FREQ_IN_MHZ, TotalClockDivisor) >= 
             s_SdmmcContext->TranSpeedInMHz)
             s_SdmmcContext->HighSpeedMode = NV_TRUE;
     }

@@ -29,7 +29,6 @@ unsigned int tegra2_gp_gpio_offset_tab_len = ARRAY_SIZE(tegra2_gp_gpio_init_tabl
 
 struct tegra_clk_init_table tegra2_gp_clk_init_table[] = {
 	/* name		parent		rate		enabled */
-	{ "pll_m",	"clk_m",	600000000,	true},
 	{ "3d",		"pll_m",	300000000,	true},
 	{ "2d",		"pll_m",	300000000,	true},
 	{ "host1x",	"pll_p",	144000000,	true},

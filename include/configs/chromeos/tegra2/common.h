@@ -133,4 +133,10 @@
 
 #define CONFIG_DISPLAY_BOARDINFO        1
 
+/*-----------------------------------------------------------------------
+ * Statically Allocated Buffers for Verified Boot
+ */
+#define CONFIG_KERNEL_SIGN_KEY_BLOB	0x10000000
+#define CONFIG_KERNEL_SIGN_KEY_SIZE	LOAD_FIRMWARE_KEY_BLOB_REC_SIZE
+
 #endif /*__configs_chromeos_tegra2_common_h__*/

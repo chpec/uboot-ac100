@@ -21,7 +21,6 @@
 #define QUOTE(m) QUOTE_(m)
 
 #define CONFIG_CHROMEOS
-#define CONFIG_CMD_CROS_ROFW
 
 #define CONFIG_CMD_RUN
 #define CONFIG_CMD_SOURCE

@@ -11,4 +11,8 @@
 
 #define CONFIG_ENV_IS_NOWHERE
 
+#define CONFIG_CMD_CROS_BOOTSTUB
+
+#define CONFIG_BOOTCOMMAND "cros_bootstub"
+
 #endif //__configs_chromeos_stub_h__

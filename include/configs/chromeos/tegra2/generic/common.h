@@ -29,6 +29,7 @@
 #include <configs/chromeos/tegra2/generic/parts/i2c.h>
 #include <configs/chromeos/tegra2/generic/parts/lcd.h>
 #include <configs/chromeos/tegra2/generic/parts/mmc.h>
+#include <configs/chromeos/tegra2/generic/parts/pinmux.h>
 #include <configs/chromeos/tegra2/generic/parts/uart.h>
 
 #define CONFIG_CHROMEOS_HWID	"ARM TEGRA2 GENERIC BOGUS 0000"

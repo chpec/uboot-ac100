@@ -30,6 +30,7 @@
 #include <configs/chromeos/tegra2/harmony/parts/i2c.h>
 #include <configs/chromeos/tegra2/harmony/parts/lcd.h>
 #include <configs/chromeos/tegra2/harmony/parts/mmc.h>
+#include <configs/chromeos/tegra2/harmony/parts/pinmux.h>
 #include <configs/chromeos/tegra2/harmony/parts/uart.h>
 
 #define CONFIG_CHROMEOS_HWID	"ARM HARMONY TEST 2428"

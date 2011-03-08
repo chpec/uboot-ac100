@@ -32,6 +32,7 @@
 #include <configs/chromeos/tegra2/wario/parts/keyboard.h>
 #include <configs/chromeos/tegra2/wario/parts/lcd.h>
 #include <configs/chromeos/tegra2/wario/parts/mmc.h>
+#include <configs/chromeos/tegra2/wario/parts/pinmux.h>
 #include <configs/chromeos/tegra2/wario/parts/spi.h>
 #include <configs/chromeos/tegra2/wario/parts/uart.h>
 

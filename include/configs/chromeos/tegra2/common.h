@@ -129,6 +129,7 @@
 #include <configs/chromeos/tegra2/parts/i2c.h>
 #include <configs/chromeos/tegra2/parts/lcd.h>
 #include <configs/chromeos/tegra2/parts/mmc.h>
+#include <configs/chromeos/tegra2/parts/pinmux.h>
 #include <configs/chromeos/tegra2/parts/uart.h>
 
 #define CONFIG_DISPLAY_BOARDINFO        1

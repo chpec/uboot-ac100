@@ -166,4 +166,7 @@
         0,    0,    0,    0,    0,    0,    0,    0,            \
         0,    0,    0,    0,    0,    0,    0,    0,
 
+#define CONFIG_TEGRA2_PINMUX                    \
+        CONFIG_TEGRA2_PINMUX_DISPLAY_SEABOARD
+
 #endif /* __CONFIG_H */

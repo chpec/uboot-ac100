@@ -32,6 +32,7 @@
 #include <configs/chromeos/tegra2/kaen/parts/keyboard.h>
 #include <configs/chromeos/tegra2/kaen/parts/lcd.h>
 #include <configs/chromeos/tegra2/kaen/parts/mmc.h>
+#include <configs/chromeos/tegra2/kaen/parts/pinmux.h>
 #include <configs/chromeos/tegra2/kaen/parts/spi.h>
 #include <configs/chromeos/tegra2/kaen/parts/uart.h>
 

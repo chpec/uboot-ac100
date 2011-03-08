@@ -4,6 +4,10 @@
  * found in the LICENSE file.
  */
 
+#define PINMUX(group, mux, pupd, tri)                   \
+        {TEGRA_PINGROUP_##group, TEGRA_MUX_##mux,       \
+         TEGRA_PUPD_##pupd, TEGRA_TRI_##tri},
+
 #define CONFIG_TEGRA2_PINMUX_DISPLAY_CROS_1                     \
         PINMUX(GPU,   PWM,           NORMAL,    NORMAL)         \
         PINMUX(LD0,   DISPLAYA,      NORMAL,    NORMAL)         \

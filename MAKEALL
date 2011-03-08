@@ -743,6 +743,7 @@ LIST_tegra="		\
 	tegra2_kaen	\
 	tegra2_harmony	\
 	tegra2_seaboard	\
+	tegra2_ventana	\
 "
 
 LIST_chromeos="					\

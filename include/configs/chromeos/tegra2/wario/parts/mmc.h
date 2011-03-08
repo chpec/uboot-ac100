@@ -6,6 +6,7 @@
 
 /* Define this if device is always on EMMC4 controller and no Card Detect pin */
 #define CONFIG_TEGRA2_EMMC4_ALWAYS_INSERTED     1
+#define CONFIG_TEGRA2_EMMC4_IS_HS		1	/* only HS parts used */
 
 #define MMC_DEV_INSTANCES 2
 #define NvEmmcx_0       NvEmmc4

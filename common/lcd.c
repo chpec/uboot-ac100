@@ -80,7 +80,8 @@ static inline void lcd_putc_xy(ushort x, ushort y, uchar  c);
 
 static int lcd_init(void *lcdbase);
 
-static int lcd_clear(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[]);
+static int do_lcd_clear(cmd_tbl_t *cmdtp, int flag, int argc,
+			char *const argv[]);
 static void *lcd_logo(void);
 int lcd_display_bitmap_24(ulong bmp_image, int x, int y);
 
@@ -399,7 +400,7 @@ int drv_lcd_init(void)
 }
 
 /*----------------------------------------------------------------------*/
-static int lcd_clear(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+int lcd_clear()
 {
 #if LCD_BPP == LCD_MONOCHROME
 	/* Setting the palette */
@@ -444,8 +445,14 @@ static int lcd_clear(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	return 0;
 }
 
+static int do_lcd_clear(cmd_tbl_t *cmdtp, int flag, int argc,
+			char *const argv[])
+{
+	return lcd_clear();
+}
+
 U_BOOT_CMD(
-	cls,	1,	1,	lcd_clear,
+	cls,	1,	1,	do_lcd_clear,
 	"clear screen",
 	""
 );
@@ -459,7 +466,7 @@ static int lcd_init(void *lcdbase)
 
 	lcd_ctrl_init(lcdbase);
 	lcd_is_enabled = 1;
-	lcd_clear(NULL, 1, 1, NULL);	/* dummy args */
+	lcd_clear();
 #ifdef CONFIG_QSD8X50_LCDC
 	lcd_enable();
 #endif

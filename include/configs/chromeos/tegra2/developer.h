@@ -24,7 +24,6 @@
 #define CONFIG_SYS_MEMTEST_START       0x0000
 #define CONFIG_SYS_MEMTEST_END         0x1000
 
-
 /*
  * Developer-friendly booting options:
  *

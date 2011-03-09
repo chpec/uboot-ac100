@@ -9,11 +9,10 @@
 
 #include <configs/chromeos/common.h>
 
-#define CONFIG_CHROMEOS_BMPBLK
-#define CONFIG_CMD_BMP
-#define CONFIG_LCD_BMP_RLE8
-#define CONFIG_LZMA
-
 #define CONFIG_ENV_IS_NOWHERE
+
+#define CONFIG_CMD_CROS_NORMAL_FIRMWARE
+
+#define CONFIG_BOOTCOMMAND "cros_normal_firmware"
 
 #endif //__configs_chromeos_normal_h__

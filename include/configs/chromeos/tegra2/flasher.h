@@ -12,6 +12,12 @@
 
 #define SCRIPT_ADDRESS   0xe48000 // TEXT_BASE + 0x40000
 
+/*
+ * Flasher is supposed to be loaded to fixed location, and so does not have
+ * to able to relocate itself
+ */
+#define CONFIG_SKIP_RELOCATE_UBOOT
+
 #define CONFIG_EXTRA_ENV_SETTINGS_ARCH  CONFIG_EXTRA_ENV_SETTINGS_ARCH_COMMON
 #define CONFIG_BOOTCOMMAND              "source " QUOTE(SCRIPT_ADDRESS)
 

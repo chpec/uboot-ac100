@@ -400,7 +400,7 @@ int drv_lcd_init(void)
 }
 
 /*----------------------------------------------------------------------*/
-int lcd_clear()
+int lcd_clear(void)
 {
 #if LCD_BPP == LCD_MONOCHROME
 	/* Setting the palette */
